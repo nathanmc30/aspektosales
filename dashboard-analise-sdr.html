@@ -339,6 +339,7 @@
         '</div>' +
         '<div class="c-meta">' +
           '<span class="c-tag"><i class="ti ti-calendar"></i>' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + '</span>' +
+          (d.telefone ? '<span class="c-tag" title="Copiar" style="cursor:pointer;" onclick="event.stopPropagation();navigator.clipboard.writeText(\''+d.telefone+'\');this.style.color=\'#4ade80\'"><i class="ti ti-phone"></i>' + d.telefone + '</span>' : '') +
           (met ? '<span class="c-tag"><i class="ti ti-clock"></i>1ª resp ' + fmtSeg(met.first_response_seconds) + '</span>' : '') +
           (met ? '<span class="c-tag"><i class="ti ti-messages"></i>' + met.messages_total + ' msgs</span>' : '') +
           (met && met.audio_count > 0 ? '<span class="c-tag"><i class="ti ti-microphone"></i>' + met.audio_count + ' áudios</span>' : '') +
@@ -372,7 +373,7 @@
     var met = d.objective_metrics && d.objective_metrics.length ? d.objective_metrics[0] : null;
     var html = '<button class="m-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>' +
       '<div class="m-title">' + d.seller_name + ' — ' + d.origin_name + '</div>' +
-      '<div class="m-sub">' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + ' · Deal ' + d.deal_status + (ia ? ' · Score <b class="' + scoreColor(ia.score_geral) + '">' + ia.score_geral.toFixed(1) + '</b>' : '') + '</div>';
+      '<div class="m-sub">' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + ' · Deal ' + d.deal_status + (d.telefone ? ' · <span style="cursor:pointer;" title="Copiar" onclick="navigator.clipboard.writeText(\'' + d.telefone + '\')">' + d.telefone + '</span>' : '') + (ia ? ' · Score <b class="' + scoreColor(ia.score_geral) + '">' + ia.score_geral.toFixed(1) + '</b>' : '') + '</div>';
 
     if (ia) {
       html += '<div class="m-sec">Resumo</div><div class="m-txt">' + (ia.resumo_conversa || '—') + '</div>';
