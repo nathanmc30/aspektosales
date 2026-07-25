@@ -134,33 +134,31 @@
   <button class="filtro-btn" data-periodo="90">90 dias</button>
   <div class="filtro-sep"></div>
   <button class="filtro-btn active" data-etapa="todas">Todas etapas</button>
-  <button class="filtro-btn" data-etapa="Etapa - SQL">SQL</button>
   <button class="filtro-btn" data-etapa="Etapa - Avaliação Agendada">Aval. Agendada</button>
   <button class="filtro-btn" data-etapa="Realizada - Closer">Closer</button>
-  <button class="filtro-btn" data-etapa="Etapa - No Show">No Show</button>
 </div>
 
 <div class="sec-label">Visão geral do período</div>
 <div class="row-kpi">
   <div class="card-hero">
-    <div class="lbl">Score médio do time</div>
-    <div class="hero-num" id="kpi-score">—</div>
-    <div class="sub">média de todas as conversas analisadas</div>
+    <div class="lbl">Conversas coletadas</div>
+    <div class="hero-num" id="kpi-total">—</div>
+    <div class="sub">no período selecionado</div>
   </div>
   <div class="card">
-    <div class="lbl">Conversas analisadas</div>
-    <div class="val-md" id="kpi-total">—</div>
-    <div class="sub">no período</div>
+    <div class="lbl">Aval. Agendada</div>
+    <div class="val-md" id="kpi-aval">—</div>
+    <div class="sub">conversas coletadas</div>
   </div>
   <div class="card">
-    <div class="lbl">Passaram pelo preço</div>
-    <div class="val-md" id="kpi-preco">—</div>
-    <div class="sub">critério obrigatório</div>
+    <div class="lbl">Closer</div>
+    <div class="val-md" id="kpi-closer">—</div>
+    <div class="sub">conversas coletadas</div>
   </div>
   <div class="card">
-    <div class="lbl">Leads avançados</div>
-    <div class="val-md" id="kpi-avancos">—</div>
-    <div class="sub">mudaram de etapa</div>
+    <div class="lbl">Áudios transcritos</div>
+    <div class="val-md" id="kpi-audios">—</div>
+    <div class="sub">total no período</div>
   </div>
 </div>
 
@@ -215,30 +213,13 @@
     });
   }
 
-  function scoreClass(s) {
-    if (s === null || s === undefined) return 'neutro';
-    if (s >= 7.5) return 'ok';
-    if (s >= 5) return 'atencao';
-    return 'alerta';
-  }
-  function scoreColor(s) {
-    if (s === null || s === undefined) return '';
-    if (s >= 7.5) return 'color-ok';
-    if (s >= 5) return 'color-warn';
-    return 'color-danger';
-  }
-  function fmtSeg(s) {
-    if (s === null || s === undefined) return '—';
-    if (s < 60) return Math.round(s) + 's';
-    if (s < 3600) return Math.round(s/60) + 'min';
-    return (s/3600).toFixed(1) + 'h';
-  }
+
 
   // ─── Carga de dados ──────────────────────────────────────────────────────────
   function carregar() {
     var desde = new Date(Date.now() - estado.periodo * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    var filtroEtapa = estado.etapa !== 'todas' ? '&origin_name=eq.' + encodeURIComponent(estado.etapa) : '';
-    var q = 'conversations?select=*,objective_metrics(*),ai_analyses(*)&conversation_date=gte.' + desde + filtroEtapa + '&order=analyzed_at.desc&limit=200';
+    var filtroEtapa = estado.etapa !== 'todas' ? '&origin_name=eq.' + encodeURIComponent(estado.etapa) : '&origin_name=in.(Etapa - Avaliação Agendada,Realizada - Closer)';
+    var q = 'conversations?select=*&conversation_date=gte.' + desde + filtroEtapa + '&order=conversation_date.desc&limit=200';
 
     Promise.all([ supa(q), supa('reference_sellers?select=seller_email') ])
       .then(function(res) {
@@ -257,56 +238,49 @@
   // ─── Render ──────────────────────────────────────────────────────────────────
   function render() {
     var dados = estado.dados;
-    var comIA = dados.filter(function(d) { return d.ai_analyses && d.ai_analyses.length; });
 
     // KPIs
-    var scores = comIA.map(function(d) { return d.ai_analyses[0].score_geral; });
-    var mediaScore = scores.length ? (scores.reduce(function(a,b){return a+b;},0) / scores.length) : null;
-    var comPreco = comIA.filter(function(d) { return d.ai_analyses[0].preco_mencionado; }).length;
-    var avancos = dados.filter(function(d) { return d.objective_metrics.length && d.objective_metrics[0].lead_advanced; }).length;
+    var totalAval = dados.filter(function(d) { return d.origin_name === 'Etapa - Avaliação Agendada'; }).length;
+    var totalCloser = dados.filter(function(d) { return d.origin_name === 'Realizada - Closer'; }).length;
+    var totalAudios = dados.reduce(function(acc, d) {
+      return acc + (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
+    }, 0);
 
-    document.getElementById('kpi-score').textContent = mediaScore !== null ? mediaScore.toFixed(1) : '—';
-    document.getElementById('kpi-score').className = 'hero-num ' + scoreColor(mediaScore);
     document.getElementById('kpi-total').textContent = dados.length;
-    document.getElementById('kpi-preco').textContent = comIA.length ? Math.round(comPreco / comIA.length * 100) + '%' : '—';
-    document.getElementById('kpi-avancos').textContent = avancos;
+    document.getElementById('kpi-aval').textContent = totalAval;
+    document.getElementById('kpi-closer').textContent = totalCloser;
+    document.getElementById('kpi-audios').textContent = totalAudios;
 
     // Ranking
     var porVendedor = VENDEDORES.map(function(v) {
       var convs = dados.filter(function(d) { return d.seller_email === v.email; });
-      var convsIA = convs.filter(function(d) { return d.ai_analyses && d.ai_analyses.length; });
-      var vscores = convsIA.map(function(d) { return d.ai_analyses[0].score_geral; });
-      var media = vscores.length ? vscores.reduce(function(a,b){return a+b;},0) / vscores.length : null;
-      var precoPct = convsIA.length ? convsIA.filter(function(d){return d.ai_analyses[0].preco_mencionado;}).length / convsIA.length * 100 : null;
-      var vAvancos = convs.filter(function(d) { return d.objective_metrics.length && d.objective_metrics[0].lead_advanced; }).length;
-      var temposResp = convs.filter(function(d){return d.objective_metrics.length && d.objective_metrics[0].first_response_seconds !== null;}).map(function(d){return d.objective_metrics[0].first_response_seconds;});
-      var tempoMedio = temposResp.length ? temposResp.reduce(function(a,b){return a+b;},0) / temposResp.length : null;
-      return { nome: v.nome, email: v.email, total: convs.length, score: media, precoPct: precoPct, avancos: vAvancos, tempoResp: tempoMedio };
-    }).sort(function(a, b) { return (b.score || -1) - (a.score || -1); });
+      var aval = convs.filter(function(d) { return d.origin_name === 'Etapa - Avaliação Agendada'; }).length;
+      var closer = convs.filter(function(d) { return d.origin_name === 'Realizada - Closer'; }).length;
+      var audios = convs.reduce(function(acc, d) {
+        return acc + (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
+      }, 0);
+      return { nome: v.nome, email: v.email, total: convs.length, aval: aval, closer: closer, audios: audios };
+    }).filter(function(v) { return v.total > 0; })
+      .sort(function(a, b) { return b.total - a.total; });
 
     var rk = document.getElementById('ranking');
     rk.innerHTML = '';
+    if (!porVendedor.length) { rk.innerHTML = '<div class="vazio">Nenhum dado no período.</div>'; return; }
     porVendedor.forEach(function(v, i) {
-      var isRef = estado.refs.indexOf(v.email) !== -1;
       var div = document.createElement('div');
-      div.className = 'vendedor ' + scoreClass(v.score);
+      div.className = 'vendedor neutro';
       div.innerHTML =
         '<div class="v-top">' +
-          '<div class="v-nome-wrap"><span class="v-rank">' + (i+1) + 'º</span><span class="v-nome">' + v.nome + '</span>' +
-          (isRef ? '<span class="v-badge badge-ref"><i class="ti ti-star"></i>Referência</span>' : '') + '</div>' +
-          '<span class="v-badge ' + (v.score >= 7.5 ? 'badge-ok' : v.score >= 5 ? 'badge-atencao' : v.score !== null ? 'badge-alerta' : 'badge-atencao') + '">' +
-          (v.score !== null ? 'Score ' + v.score.toFixed(1) : 'Sem dados') + '</span>' +
+          '<div class="v-nome-wrap"><span class="v-rank">' + (i+1) + 'º</span><span class="v-nome">' + v.nome + '</span></div>' +
+          '<span class="v-badge badge-atencao">' + v.total + ' conversa' + (v.total !== 1 ? 's' : '') + '</span>' +
         '</div>' +
         '<div class="v-info">' +
-          '<div class="v-stat"><span class="v-stat-lbl">Conversas</span><span class="v-stat-val">' + v.total + '</span></div>' +
+          '<div class="v-stat"><span class="v-stat-lbl">Aval. Agendada</span><span class="v-stat-val">' + v.aval + '</span></div>' +
           '<div class="sep"></div>' +
-          '<div class="v-stat"><span class="v-stat-lbl">Preço %</span><span class="v-stat-val">' + (v.precoPct !== null ? Math.round(v.precoPct) + '%' : '—') + '</span></div>' +
+          '<div class="v-stat"><span class="v-stat-lbl">Closer</span><span class="v-stat-val">' + v.closer + '</span></div>' +
           '<div class="sep"></div>' +
-          '<div class="v-stat"><span class="v-stat-lbl">Avanços</span><span class="v-stat-val">' + v.avancos + '</span></div>' +
-          '<div class="sep"></div>' +
-          '<div class="v-stat"><span class="v-stat-lbl">1ª resposta</span><span class="v-stat-val" style="font-size:18px;">' + fmtSeg(v.tempoResp) + '</span></div>' +
-        '</div>' +
-        '<div class="barra-wrap"><div class="barra ' + (v.score >= 7.5 ? 'barra-verde' : v.score >= 5 ? 'barra-amarela' : 'barra-vermelha') + '" style="width:' + (v.score !== null ? v.score * 10 : 0) + '%"></div></div>';
+          '<div class="v-stat"><span class="v-stat-lbl">Áudios transcritos</span><span class="v-stat-val">' + v.audios + '</span></div>' +
+        '</div>';
       rk.appendChild(div);
     });
 
@@ -327,30 +301,22 @@
     lista.innerHTML = '';
     if (!dados.length) { lista.innerHTML = '<div class="vazio">Nenhuma conversa analisada no período.<br>O workflow roda diariamente às 23h.</div>'; return; }
     dados.slice(0, 50).forEach(function(d) {
-      var ia = d.ai_analyses && d.ai_analyses.length ? d.ai_analyses[0] : null;
-      var met = d.objective_metrics && d.objective_metrics.length ? d.objective_metrics[0] : null;
+      var audiosTranscritos = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
+      var audiosTotal = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO'; }).length;
+      var msgs = (d.raw_messages || []).length;
+      var label = d.origin_name === 'Realizada - Closer' ? 'Closer' : 'Aval. Agendada';
       var div = document.createElement('div');
       div.className = 'conversa';
-      var etapas = ia && ia.etapas_cumpridas ? ia.etapas_cumpridas : null;
       div.innerHTML =
         '<div class="c-top">' +
-          '<span class="c-seller">' + d.seller_name + ' <span style="color:#6e8394;font-weight:400;">· ' + d.origin_name.replace('Etapa - ','').replace('Realizada - ','') + '</span></span>' +
-          '<span class="c-score ' + (ia ? scoreColor(ia.score_geral) : '') + '">' + (ia ? ia.score_geral.toFixed(1) : '—') + '</span>' +
+          '<span class="c-seller">' + d.seller_name + ' <span style="color:#6e8394;font-weight:400;">· ' + label + '</span></span>' +
+          '<span style="font-size:11px;color:#4fc3f7;">' + audiosTranscritos + '/' + audiosTotal + ' áudios</span>' +
         '</div>' +
         '<div class="c-meta">' +
           '<span class="c-tag"><i class="ti ti-calendar"></i>' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + '</span>' +
           (d.telefone ? '<span class="c-tag" title="Copiar" style="cursor:pointer;" onclick="event.stopPropagation();navigator.clipboard.writeText(\''+d.telefone+'\');this.style.color=\'#4ade80\'"><i class="ti ti-phone"></i>' + d.telefone + '</span>' : '') +
-          (met ? '<span class="c-tag"><i class="ti ti-clock"></i>1ª resp ' + fmtSeg(met.first_response_seconds) + '</span>' : '') +
-          (met ? '<span class="c-tag"><i class="ti ti-messages"></i>' + met.messages_total + ' msgs</span>' : '') +
-          (met && met.audio_count > 0 ? '<span class="c-tag"><i class="ti ti-microphone"></i>' + met.audio_count + ' áudios</span>' : '') +
-        '</div>' +
-        (etapas ?
-        '<div class="c-etapas">' +
-          '<span class="etapa-pill ' + (etapas.abertura ? 'etapa-sim' : 'etapa-nao') + '">Abertura</span>' +
-          '<span class="etapa-pill ' + (etapas.geracao_valor ? 'etapa-sim' : 'etapa-nao') + '">Valor</span>' +
-          '<span class="etapa-pill ' + (etapas.preco ? 'etapa-sim' : 'etapa-nao') + '">Preço</span>' +
-          '<span class="etapa-pill ' + (etapas.cta_avaliacao ? 'etapa-sim' : 'etapa-nao') + '">CTA</span>' +
-        '</div>' : '');
+          '<span class="c-tag"><i class="ti ti-messages"></i>' + msgs + ' msgs</span>' +
+        '</div>';
       div.onclick = function() { abrirDetalhe(d); };
       lista.appendChild(div);
     });
@@ -369,28 +335,10 @@
 
   // ─── Modal de detalhe ────────────────────────────────────────────────────────
   function abrirDetalhe(d) {
-    var ia = d.ai_analyses && d.ai_analyses.length ? d.ai_analyses[0] : null;
-    var met = d.objective_metrics && d.objective_metrics.length ? d.objective_metrics[0] : null;
+    var label = d.origin_name === 'Realizada - Closer' ? 'Closer' : 'Aval. Agendada';
     var html = '<button class="m-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>' +
-      '<div class="m-title">' + d.seller_name + ' — ' + d.origin_name + '</div>' +
-      '<div class="m-sub">' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + ' · Deal ' + d.deal_status + (d.telefone ? ' · <span style="cursor:pointer;" title="Copiar" onclick="navigator.clipboard.writeText(\'' + d.telefone + '\')">' + d.telefone + '</span>' : '') + (ia ? ' · Score <b class="' + scoreColor(ia.score_geral) + '">' + ia.score_geral.toFixed(1) + '</b>' : '') + '</div>';
-
-    if (ia) {
-      html += '<div class="m-sec">Resumo</div><div class="m-txt">' + (ia.resumo_conversa || '—') + '</div>';
-      if (ia.analise_cruzada) html += '<div class="m-sec">Análise cruzada</div><div class="m-txt">' + ia.analise_cruzada + '</div>';
-      if (ia.analise_comparativa) html += '<div class="m-sec">Comparação com referências</div><div class="m-txt">' + ia.analise_comparativa + '</div>';
-      if (ia.pontos_de_melhoria && ia.pontos_de_melhoria.length) {
-        html += '<div class="m-sec">Pontos de melhoria</div><ul class="m-list">';
-        ia.pontos_de_melhoria.forEach(function(p) { html += '<li>' + p + '</li>'; });
-        html += '</ul>';
-      }
-      if (ia.tecnicas_utilizadas && ia.tecnicas_utilizadas.length) {
-        html += '<div class="m-sec">Técnicas identificadas</div><div class="m-txt">' + ia.tecnicas_utilizadas.join(' · ') + '</div>';
-      }
-      if (ia.objecoes_identificadas && ia.objecoes_identificadas.length) {
-        html += '<div class="m-sec">Objeções ' + (ia.objecoes_contornadas ? '<span class="color-ok">(contornadas)</span>' : '<span class="color-danger">(não contornadas)</span>') + '</div><div class="m-txt">' + ia.objecoes_identificadas.join(' · ') + '</div>';
-      }
-    }
+      '<div class="m-title">' + d.seller_name + ' — ' + label + '</div>' +
+      '<div class="m-sub">' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + ' · Deal ' + d.deal_status + (d.telefone ? ' · <span style="cursor:pointer;color:#4fc3f7;" title="Copiar telefone" onclick="navigator.clipboard.writeText(\'' + d.telefone + '\');this.style.color=\'#4ade80\'">' + d.telefone + '</span>' : '') + '</div>';
 
     if (d.raw_messages && d.raw_messages.length) {
       html += '<div class="m-sec">Conversa (' + d.raw_messages.length + ' mensagens)</div>';
