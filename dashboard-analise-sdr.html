@@ -62,15 +62,11 @@
     .v-stat-lbl { font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: #8b9aaa; }
     .v-stat-val { font-size: 24px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -0.5px; }
     .sep { width: 0.5px; height: 36px; background: #1e2d3d; }
-    .barra-wrap { height: 3px; background: #1e2d3d; border-radius: 2px; overflow: hidden; margin-top: 10px; }
-    .barra { height: 3px; border-radius: 2px; transition: width .4s; }
-    .barra-verde { background: #4ade80; }
-    .barra-amarela { background: #f5c542; }
-    .barra-vermelha { background: #f56b6b; }
-    .color-warn   { color: #f5c542 !important; }
-    .color-danger { color: #f56b6b !important; }
-    .color-ok     { color: #4ade80 !important; }
-    .color-accent { color: #4fc3f7 !important; }
+
+    .conversas-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .conversas-header .sec-label { margin-bottom: 0; }
+    .vendedor-select { font-size: 11px; color: #8b9aaa; background: #161b22; border: 0.5px solid #1e2d3d; padding: 4px 10px; border-radius: 20px; cursor: pointer; appearance: none; outline: none; }
+    .vendedor-select:focus { border-color: #1a3a52; color: #e6edf3; }
 
     .conversas-lista { display: flex; flex-direction: column; gap: 8px; max-height: 640px; overflow-y: auto; padding-right: 4px; }
     .conversas-lista::-webkit-scrollbar { width: 4px; }
@@ -79,13 +75,8 @@
     .conversa:hover { border-color: #1a3a52; }
     .c-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .c-seller { font-size: 13px; font-weight: 500; color: #e6edf3; }
-    .c-score { font-size: 18px; font-weight: 500; letter-spacing: -0.5px; }
     .c-meta { display: flex; gap: 10px; font-size: 11px; color: #8b9aaa; flex-wrap: wrap; }
     .c-tag { display: inline-flex; align-items: center; gap: 3px; }
-    .c-etapas { display: flex; gap: 4px; margin-top: 8px; }
-    .etapa-pill { font-size: 9px; font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; }
-    .etapa-sim { background: #0d2a12; color: #4ade80; }
-    .etapa-nao { background: #2a0d0d; color: #f56b6b; }
 
     .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
     .modal-bg.open { display: flex; }
@@ -96,10 +87,6 @@
     .m-title { font-size: 16px; font-weight: 500; color: #e6edf3; margin-bottom: 4px; }
     .m-sub { font-size: 12px; color: #8b9aaa; margin-bottom: 16px; }
     .m-sec { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #6e8394; margin: 16px 0 8px; }
-    .m-txt { font-size: 13px; color: #c9d5e0; line-height: 1.6; }
-    .m-list { list-style: none; }
-    .m-list li { font-size: 13px; color: #c9d5e0; padding: 6px 0 6px 18px; position: relative; line-height: 1.5; }
-    .m-list li::before { content: '→'; position: absolute; left: 0; color: #4fc3f7; }
     .msg { border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; max-width: 85%; font-size: 12px; line-height: 1.5; }
     .msg-lead { background: #0d1f2d; border: 0.5px solid #1a3a52; color: #c9d5e0; }
     .msg-sdr { background: #1a2634; border: 0.5px solid #263a4d; color: #e6edf3; margin-left: auto; }
@@ -174,7 +161,12 @@
   </div>
 
   <div>
-    <div class="sec-label">Últimas conversas analisadas</div>
+    <div class="conversas-header">
+      <div class="sec-label">Últimas conversas analisadas</div>
+      <select class="vendedor-select" id="filtro-vendedor">
+        <option value="">Todos vendedores</option>
+      </select>
+    </div>
     <div class="conversas-lista" id="conversas"></div>
   </div>
 </div>
@@ -184,7 +176,6 @@
 </div>
 
 <script>
-  // ─── Supabase ────────────────────────────────────────────────────────────────
   var SUPA_URL = 'https://mwlxudtdvflygvewuwal.supabase.co';
   var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
 
@@ -197,7 +188,7 @@
     { nome: 'Lucas Moreira', email: 'lucas.moreira@grupoaspekto.com' }
   ];
 
-  var estado = { periodo: 7, etapa: 'todas', dados: [], refs: [] };
+  var estado = { periodo: 7, etapa: 'todas', vendedor: '', dados: [], refs: [] };
 
   function supa(path) {
     return fetch(SUPA_URL + '/rest/v1/' + path, {
@@ -213,18 +204,29 @@
     });
   }
 
+  function deduplicar(dados) {
+    // Garante unicidade por deal_id, mantendo o mais recente
+    var vistos = {};
+    return dados.filter(function(d) {
+      if (vistos[d.deal_id]) return false;
+      vistos[d.deal_id] = true;
+      return true;
+    });
+  }
 
-
-  // ─── Carga de dados ──────────────────────────────────────────────────────────
   function carregar() {
     var desde = new Date(Date.now() - estado.periodo * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    var filtroEtapa = estado.etapa !== 'todas' ? '&origin_name=eq.' + encodeURIComponent(estado.etapa) : '&origin_name=in.(Etapa - Avaliação Agendada,Realizada - Closer)';
+    var filtroEtapa = estado.etapa !== 'todas'
+      ? '&origin_name=eq.' + encodeURIComponent(estado.etapa)
+      : '&origin_name=in.(Etapa - Avaliação Agendada,Realizada - Closer)';
     var q = 'conversations?select=*&conversation_date=gte.' + desde + filtroEtapa + '&order=conversation_date.desc&limit=200';
 
     Promise.all([ supa(q), supa('reference_sellers?select=seller_email') ])
       .then(function(res) {
-        estado.dados = res[0] || [];
+        // Deduplica por deal_id (segurança extra no cliente)
+        estado.dados = deduplicar(res[0] || []);
         estado.refs = (res[1] || []).map(function(r) { return r.seller_email; });
+        popularFiltroVendedor();
         render();
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('update-time').textContent = new Date().toLocaleString('pt-BR');
@@ -235,11 +237,30 @@
       });
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  function popularFiltroVendedor() {
+    var sel = document.getElementById('filtro-vendedor');
+    var vendedoresPresentes = [];
+    estado.dados.forEach(function(d) {
+      if (d.seller_name && vendedoresPresentes.indexOf(d.seller_name) === -1) {
+        vendedoresPresentes.push(d.seller_name);
+      }
+    });
+    // Mantém o valor selecionado se ainda existir
+    var valorAtual = estado.vendedor;
+    sel.innerHTML = '<option value="">Todos vendedores</option>';
+    vendedoresPresentes.sort().forEach(function(nome) {
+      var opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = nome;
+      if (nome === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
   function render() {
     var dados = estado.dados;
 
-    // KPIs
+    // KPIs (sempre sobre todos os dados, sem filtro de vendedor)
     var totalAval = dados.filter(function(d) { return d.origin_name === 'Etapa - Avaliação Agendada'; }).length;
     var totalCloser = dados.filter(function(d) { return d.origin_name === 'Realizada - Closer'; }).length;
     var totalAudios = dados.reduce(function(acc, d) {
@@ -265,24 +286,26 @@
 
     var rk = document.getElementById('ranking');
     rk.innerHTML = '';
-    if (!porVendedor.length) { rk.innerHTML = '<div class="vazio">Nenhum dado no período.</div>'; return; }
-    porVendedor.forEach(function(v, i) {
-      var div = document.createElement('div');
-      div.className = 'vendedor neutro';
-      div.innerHTML =
-        '<div class="v-top">' +
-          '<div class="v-nome-wrap"><span class="v-rank">' + (i+1) + 'º</span><span class="v-nome">' + v.nome + '</span></div>' +
-          '<span class="v-badge badge-atencao">' + v.total + ' conversa' + (v.total !== 1 ? 's' : '') + '</span>' +
-        '</div>' +
-        '<div class="v-info">' +
-          '<div class="v-stat"><span class="v-stat-lbl">Aval. Agendada</span><span class="v-stat-val">' + v.aval + '</span></div>' +
-          '<div class="sep"></div>' +
-          '<div class="v-stat"><span class="v-stat-lbl">Closer</span><span class="v-stat-val">' + v.closer + '</span></div>' +
-          '<div class="sep"></div>' +
-          '<div class="v-stat"><span class="v-stat-lbl">Áudios transcritos</span><span class="v-stat-val">' + v.audios + '</span></div>' +
-        '</div>';
-      rk.appendChild(div);
-    });
+    if (!porVendedor.length) { rk.innerHTML = '<div class="vazio">Nenhum dado no período.</div>'; }
+    else {
+      porVendedor.forEach(function(v, i) {
+        var div = document.createElement('div');
+        div.className = 'vendedor neutro';
+        div.innerHTML =
+          '<div class="v-top">' +
+            '<div class="v-nome-wrap"><span class="v-rank">' + (i+1) + 'º</span><span class="v-nome">' + v.nome + '</span></div>' +
+            '<span class="v-badge badge-atencao">' + v.total + ' conversa' + (v.total !== 1 ? 's' : '') + '</span>' +
+          '</div>' +
+          '<div class="v-info">' +
+            '<div class="v-stat"><span class="v-stat-lbl">Aval. Agendada</span><span class="v-stat-val">' + v.aval + '</span></div>' +
+            '<div class="sep"></div>' +
+            '<div class="v-stat"><span class="v-stat-lbl">Closer</span><span class="v-stat-val">' + v.closer + '</span></div>' +
+            '<div class="sep"></div>' +
+            '<div class="v-stat"><span class="v-stat-lbl">Áudios transcritos</span><span class="v-stat-val">' + v.audios + '</span></div>' +
+          '</div>';
+        rk.appendChild(div);
+      });
+    }
 
     // Chips de referência
     var chips = document.getElementById('ref-chips');
@@ -296,11 +319,19 @@
       chips.appendChild(c);
     });
 
-    // Lista de conversas
+    // Lista de conversas — aplica filtro de vendedor
     var lista = document.getElementById('conversas');
     lista.innerHTML = '';
-    if (!dados.length) { lista.innerHTML = '<div class="vazio">Nenhuma conversa analisada no período.<br>O workflow roda diariamente às 23h.</div>'; return; }
-    dados.slice(0, 50).forEach(function(d) {
+    var dadosFiltrados = estado.vendedor
+      ? dados.filter(function(d) { return d.seller_name === estado.vendedor; })
+      : dados;
+
+    if (!dadosFiltrados.length) {
+      lista.innerHTML = '<div class="vazio">Nenhuma conversa analisada no período.<br>O workflow roda diariamente às 23h.</div>';
+      return;
+    }
+
+    dadosFiltrados.slice(0, 50).forEach(function(d) {
       var audiosTranscritos = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
       var audiosTotal = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO'; }).length;
       var msgs = (d.raw_messages || []).length;
@@ -322,7 +353,6 @@
     });
   }
 
-  // ─── Referências ─────────────────────────────────────────────────────────────
   function toggleRef(v, jaSelecionado) {
     var op;
     if (jaSelecionado) {
@@ -333,7 +363,6 @@
     op.then(carregar);
   }
 
-  // ─── Modal de detalhe ────────────────────────────────────────────────────────
   function abrirDetalhe(d) {
     var label = d.origin_name === 'Realizada - Closer' ? 'Closer' : 'Aval. Agendada';
     var html = '<button class="m-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>' +
@@ -345,7 +374,9 @@
       d.raw_messages.forEach(function(m) {
         var isSdr = m.type === 'USER';
         html += '<div class="msg ' + (isSdr ? 'msg-sdr' : 'msg-lead') + '">' +
-          (m.content_type === 'AUDIO' ? '<div class="msg-audio"><i class="ti ti-microphone"></i>Áudio ' + (m.seconds ? Math.round(m.seconds) + 's' : '') + '</div>' + (m.transcricao || '<i>sem transcrição</i>') : (m.content || '')) +
+          (m.content_type === 'AUDIO'
+            ? '<div class="msg-audio"><i class="ti ti-microphone"></i>Áudio ' + (m.seconds ? Math.round(m.seconds) + 's' : '') + '</div>' + (m.transcricao || '<i>sem transcrição</i>')
+            : (m.content || '')) +
           '<div class="msg-time">' + new Date(m.created_at).toLocaleString('pt-BR') + '</div></div>';
       });
     }
@@ -353,10 +384,11 @@
     document.getElementById('modal-content').innerHTML = html;
     document.getElementById('modal-bg').classList.add('open');
   }
+
   function fecharModal() { document.getElementById('modal-bg').classList.remove('open'); }
   document.getElementById('modal-bg').addEventListener('click', function(e) { if (e.target === this) fecharModal(); });
 
-  // ─── Filtros ─────────────────────────────────────────────────────────────────
+  // Filtro de período
   document.querySelectorAll('[data-periodo]').forEach(function(b) {
     b.onclick = function() {
       document.querySelectorAll('[data-periodo]').forEach(function(x){x.classList.remove('active');});
@@ -365,6 +397,8 @@
       carregar();
     };
   });
+
+  // Filtro de etapa
   document.querySelectorAll('[data-etapa]').forEach(function(b) {
     b.onclick = function() {
       document.querySelectorAll('[data-etapa]').forEach(function(x){x.classList.remove('active');});
@@ -374,7 +408,12 @@
     };
   });
 
-  // ─── Init + refresh ──────────────────────────────────────────────────────────
+  // Filtro de vendedor (só re-renderiza, sem recarregar do banco)
+  document.getElementById('filtro-vendedor').addEventListener('change', function() {
+    estado.vendedor = this.value;
+    render();
+  });
+
   carregar();
   setInterval(carregar, 5 * 60 * 1000);
 </script>
