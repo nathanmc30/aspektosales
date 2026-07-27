@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Calculadora de Comissionamento</title>
+<title>Calculadora A — Comissionamento</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #EEF4FC; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
@@ -33,11 +33,11 @@
   .toggle::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: left 0.15s; }
   .trigger.on .toggle::after { left: 17px; }
   .trig-meta { border-top: 1px solid #BDD5EF; padding: 10px 14px; display: flex; align-items: center; gap: 8px; background: #f9fbff; }
-  .trigger.on .trig-meta { border-color: #BDD5EF; background: #deeefb; }
+  .trigger.on .trig-meta { background: #deeefb; }
   .trig-meta label { font-size: 11px; color: #666; flex-shrink: 0; }
   .trig-meta input { height: 32px; border-radius: 8px; border: 1px solid #BDD5EF; background: #fff; color: #185FA5; padding: 0 8px; font-size: 13px; font-weight: 600; width: 140px; }
   .trig-meta input:focus { outline: none; border-color: #185FA5; }
-  .trig-meta .unit { font-size: 11px; color: #999; }
+  .unit { font-size: 11px; color: #999; }
   .result-box { border-radius: 12px; background: #185FA5; padding: 1.1rem 1.25rem; margin-top: 1rem; text-align: center; }
   .res-label { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
   .res-val { font-size: 36px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
@@ -51,7 +51,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="badge">Comissionamento</div>
+  <div class="badge">Comissionamento — Versão A</div>
   <h1 class="title">Minha calculadora</h1>
   <p class="sub">Base: 0,24% do faturamento &nbsp;|&nbsp; Até +0,16% por gatilhos</p>
 
@@ -59,7 +59,7 @@
     <div class="field-label">Faturamento do mês</div>
     <div class="fat-row">
       <span>R$</span>
-      <input class="fat-input" type="number" id="fat" value="1088000" step="10000" min="0">
+      <input class="fat-input" type="number" id="fat" value="1200000" step="10000" min="0">
     </div>
 
     <div class="section-title">Gatilhos</div>
@@ -70,7 +70,7 @@
           <div class="trig-icon">🎯</div>
           <div>
             <div class="trig-name">Meta batida</div>
-            <div class="trig-cond" id="cond0">Faturamento ≥ R$ 1.088.000</div>
+            <div class="trig-cond" id="cond0">Faturamento ≥ R$ 1.200.000</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -80,7 +80,7 @@
       </div>
       <div class="trig-meta">
         <label>Meta</label>
-        <input type="number" id="meta0" value="1088000" step="10000" min="0" onclick="event.stopPropagation()" oninput="updateCond(0)">
+        <input type="number" id="meta0" value="1200000" step="10000" min="0" onclick="event.stopPropagation()" oninput="updateCond(0)">
         <span class="unit">R$</span>
       </div>
     </div>
@@ -162,53 +162,37 @@
     </div>
   </div>
 
-  <p class="footer">Calculadora de comissionamento — uso interno</p>
+  <p class="footer">Calculadora A — uso interno</p>
 </div>
-
 <script>
 const state = [false, false, false, false];
-
 const condTemplates = [
   v => 'Faturamento ≥ R$ ' + Number(v).toLocaleString('pt-BR'),
   v => 'Ticket ≥ R$ ' + Number(v).toLocaleString('pt-BR'),
   v => 'Taxa > ' + v + '%',
   v => 'Taxa ≥ ' + v + '%',
 ];
-
 function updateCond(i) {
-  const val = document.getElementById('meta' + i).value;
-  document.getElementById('cond' + i).textContent = condTemplates[i](val);
+  document.getElementById('cond' + i).textContent = condTemplates[i](document.getElementById('meta' + i).value);
 }
-
 function toggle(i) {
   state[i] = !state[i];
   document.getElementById('t' + i).classList.toggle('on', state[i]);
   render();
 }
-
-function fmt(v) {
-  return 'R$ ' + Math.round(v).toLocaleString('pt-BR');
-}
-
-function fmtPct(p) {
-  return p.toFixed(2).replace('.', ',') + '%';
-}
-
+function fmt(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+function fmtPct(p) { return p.toFixed(2).replace('.', ',') + '%'; }
 function render() {
   const fat = parseFloat(document.getElementById('fat').value) || 0;
   const active = state.filter(Boolean).length;
-  const base = 0.24;
-  const bonus = active * 0.04;
-  const total = base + bonus;
+  const base = 0.24, bonus = active * 0.04, total = base + bonus;
   const comissao = fat * total / 100;
-
   document.getElementById('res-val').textContent = fmt(comissao);
   document.getElementById('res-detail').textContent = fmtPct(total) + ' sobre ' + fmt(fat);
   document.getElementById('pct-total').textContent = fmtPct(total);
   document.getElementById('triggers-on').textContent = active + ' / 4';
   document.getElementById('bonus-extra').textContent = '+' + fmtPct(bonus);
 }
-
 document.getElementById('fat').addEventListener('input', render);
 render();
 </script>
