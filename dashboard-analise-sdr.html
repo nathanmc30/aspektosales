@@ -1,422 +1,419 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="favicon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grupo Aspekto — Análise de Conversas SDR</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; min-height: 100%; }
-    body { background: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px 24px; }
-    #loading { position: fixed; inset: 0; background: #0d1117; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 999; transition: opacity .4s; }
-    #loading.hidden { opacity: 0; pointer-events: none; }
-    .spinner { width: 32px; height: 32px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #4fc3f7; border-radius: 50%; animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-txt { font-size: 13px; color: #4a5568; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise SDR — Aspekto</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: #2a3045;
+    --text: #e8eaf0;
+    --text-muted: #7b8299;
+    --accent: #4f7cff;
+    --accent-dim: #1e2d5a;
+    --green: #2dd67c;
+    --green-dim: #0f3322;
+    --orange: #ff8c42;
+    --orange-dim: #3a1f08;
+    --red: #ff4d6a;
+    --yellow: #ffd166;
+    --seller: #a78bfa;
+    --seller-dim: #1e1438;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
 
-    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 0.5px solid #1e2d3d; margin-bottom: 16px; }
-    .brand-name { font-size: 18px; font-weight: 500; color: #e6edf3; letter-spacing: -0.4px; }
-    .brand-sub { font-size: 13px; color: #8b9aaa; margin-top: 4px; }
-    .live { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #4fc3f7; background: #0d2233; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #1a3a52; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #4fc3f7; animation: pulse 1.6s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+  .refresh-btn:hover { background: var(--accent); color: #fff; }
+  .last-update { color: var(--text-muted); font-size: 12px; }
 
-    .filtros { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-    .filtro-btn { font-size: 12px; font-weight: 500; color: #8b9aaa; background: #161b22; border: 0.5px solid #1e2d3d; padding: 6px 14px; border-radius: 20px; cursor: pointer; transition: all .15s; }
-    .filtro-btn:hover { border-color: #1a3a52; color: #e6edf3; }
-    .filtro-btn.active { color: #4fc3f7; background: #0d2233; border-color: #1a3a52; }
-    .filtro-sep { width: 0.5px; height: 20px; background: #1e2d3d; }
+  /* FILTROS */
+  .filters { padding: 16px 24px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
+  select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; outline: none; }
+  select:focus { border-color: var(--accent); }
 
-    .sec-label { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #6e8394; margin-bottom: 8px; }
+  /* KPIS */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; padding: 20px 24px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.orange { color: var(--orange); }
+  .kpi-value.yellow { color: var(--yellow); }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-    .row-kpi { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .card-hero { background: #0d1f2d; border: 0.5px solid #1a3a52; border-radius: 12px; padding: 16px 20px; }
-    .card { background: #161b22; border: 0.5px solid #1e2d3d; border-radius: 12px; padding: 16px 18px; }
-    .lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.7px; text-transform: uppercase; color: #8b9aaa; margin-bottom: 10px; }
-    .sub { font-size: 12px; color: #5ba3c9; margin-top: 8px; }
-    .hero-num { font-size: 56px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -2px; }
-    .val-md { font-size: 36px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1px; }
+  /* CONTENT */
+  .content { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 170px); }
+  .conversations-panel { border-right: 1px solid var(--border); overflow-y: auto; }
+  .ranking-panel { overflow-y: auto; padding: 16px; }
 
-    .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+  /* SECTION HEADERS */
+  .section-header { padding: 14px 20px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
 
-    .vendedores { display: flex; flex-direction: column; gap: 8px; }
-    .vendedor { border-radius: 12px; padding: 14px 16px; border: 0.5px solid transparent; cursor: pointer; transition: transform .1s; }
-    .vendedor:hover { transform: translateX(2px); }
-    .ok      { background: #0d1a0f; border-color: #1a3d20; }
-    .atencao { background: #1a1500; border-color: #3d2e00; }
-    .alerta  { background: #1a0d0d; border-color: #3d1010; }
-    .neutro  { background: #161b22; border-color: #1e2d3d; }
-    .v-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
-    .v-nome-wrap { display: flex; align-items: center; gap: 8px; }
-    .v-rank { font-size: 12px; font-weight: 500; color: #6e8394; width: 20px; }
-    .v-nome { font-size: 15px; font-weight: 500; color: #e6edf3; white-space: nowrap; }
-    .v-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
-    .badge-ok      { background: #0d2a12; color: #4ade80; border: 0.5px solid #1a5c28; }
-    .badge-atencao { background: #2a1f00; color: #f5c542; border: 0.5px solid #5a4000; }
-    .badge-alerta  { background: #2a0d0d; color: #f56b6b; border: 0.5px solid #5a1010; }
-    .badge-ref     { background: #0d2233; color: #4fc3f7; border: 0.5px solid #1a3a52; }
-    .v-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .v-stat { display: flex; flex-direction: column; gap: 2px; }
-    .v-stat-lbl { font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: #8b9aaa; }
-    .v-stat-val { font-size: 24px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -0.5px; }
-    .sep { width: 0.5px; height: 36px; background: #1e2d3d; }
+  /* CONVERSATION CARDS */
+  .conv-card { padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .conv-card:hover { background: var(--surface); }
+  .conv-card.active { background: var(--accent-dim); border-left: 3px solid var(--accent); }
+  .conv-info { flex: 1; min-width: 0; }
+  .conv-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv-name .etapa { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 6px; }
+  .conv-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; }
+  .conv-right { text-align: right; flex-shrink: 0; }
+  .audio-badge { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .audio-badge.all-done { color: var(--green); }
+  .audio-badge.pending { color: var(--orange); }
+  .audio-badge.no-audio { color: var(--text-muted); }
 
-    .conversas-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .conversas-header .sec-label { margin-bottom: 0; }
-    .vendedor-select { font-size: 11px; color: #8b9aaa; background: #161b22; border: 0.5px solid #1e2d3d; padding: 4px 10px; border-radius: 20px; cursor: pointer; appearance: none; outline: none; }
-    .vendedor-select:focus { border-color: #1a3a52; color: #e6edf3; }
+  /* RANKING */
+  .ranking-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+  .rank-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
+  .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .rank-name { font-weight: 600; font-size: 13px; }
+  .rank-pos { font-size: 11px; color: var(--text-muted); font-weight: 700; }
+  .rank-bars { display: flex; flex-direction: column; gap: 4px; }
+  .rank-bar-row { display: flex; align-items: center; gap: 6px; }
+  .rank-bar-label { font-size: 11px; color: var(--text-muted); width: 36px; flex-shrink: 0; }
+  .rank-bar-track { flex: 1; background: var(--border); border-radius: 3px; height: 6px; overflow: hidden; }
+  .rank-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .rank-bar-fill.aval { background: var(--accent); }
+  .rank-bar-fill.closer { background: var(--green); }
+  .rank-bar-fill.audio { background: var(--yellow); }
+  .rank-bar-val { font-size: 11px; color: var(--text-muted); width: 24px; text-align: right; flex-shrink: 0; }
 
-    .conversas-lista { display: flex; flex-direction: column; gap: 8px; max-height: 640px; overflow-y: auto; padding-right: 4px; }
-    .conversas-lista::-webkit-scrollbar { width: 4px; }
-    .conversas-lista::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 2px; }
-    .conversa { background: #161b22; border: 0.5px solid #1e2d3d; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color .15s; }
-    .conversa:hover { border-color: #1a3a52; }
-    .c-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .c-seller { font-size: 13px; font-weight: 500; color: #e6edf3; }
-    .c-meta { display: flex; gap: 10px; font-size: 11px; color: #8b9aaa; flex-wrap: wrap; }
-    .c-tag { display: inline-flex; align-items: center; gap: 3px; }
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 680px; max-width: 95vw; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
+  .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 4px; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { overflow-y: auto; padding: 16px 20px; flex: 1; }
 
-    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
-    .modal-bg.open { display: flex; }
-    .modal { background: #161b22; border: 0.5px solid #1e2d3d; border-radius: 16px; max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px; }
-    .modal::-webkit-scrollbar { width: 4px; }
-    .modal::-webkit-scrollbar-thumb { background: #1e2d3d; }
-    .m-close { float: right; font-size: 18px; color: #8b9aaa; cursor: pointer; background: none; border: none; }
-    .m-title { font-size: 16px; font-weight: 500; color: #e6edf3; margin-bottom: 4px; }
-    .m-sub { font-size: 12px; color: #8b9aaa; margin-bottom: 16px; }
-    .m-sec { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #6e8394; margin: 16px 0 8px; }
-    .msg { border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; max-width: 85%; font-size: 12px; line-height: 1.5; }
-    .msg-lead { background: #0d1f2d; border: 0.5px solid #1a3a52; color: #c9d5e0; }
-    .msg-sdr { background: #1a2634; border: 0.5px solid #263a4d; color: #e6edf3; margin-left: auto; }
-    .msg-time { font-size: 9px; color: #6e8394; margin-top: 4px; }
-    .msg-audio { display: flex; align-items: center; gap: 6px; color: #4fc3f7; font-size: 11px; margin-bottom: 4px; }
+  /* MENSAGENS */
+  .msg { margin-bottom: 8px; display: flex; flex-direction: column; }
+  .msg.user { align-items: flex-end; }
+  .msg.customer { align-items: flex-start; }
+  .msg-bubble { max-width: 78%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+  .msg.user .msg-bubble { background: var(--accent-dim); border: 1px solid var(--accent); border-bottom-right-radius: 3px; }
+  .msg.customer .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
 
-    .config-refs { margin-top: 16px; }
-    .ref-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .ref-chip { font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 20px; cursor: pointer; background: #161b22; border: 0.5px solid #1e2d3d; color: #8b9aaa; transition: all .15s; }
-    .ref-chip.selected { background: #0d2233; border-color: #1a3a52; color: #4fc3f7; }
-    .vazio { text-align: center; color: #6e8394; font-size: 13px; padding: 40px 20px; }
-  </style>
+  /* TIPOS ESPECIAIS */
+  .msg-audio { display: flex; align-items: flex-start; gap: 8px; }
+  .msg-audio-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+  .msg-audio-content { flex: 1; }
+  .msg-audio-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; }
+  .msg-transcricao { font-size: 13px; line-height: 1.5; }
+  .msg-pending { color: var(--orange); font-style: italic; font-size: 12px; }
+  .msg-image { color: var(--seller); font-style: italic; font-size: 12px; }
+  .msg-template { color: var(--yellow); font-size: 12px; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="spinner"></div>
-  <p class="loading-txt">Carregando análises...</p>
-</div>
-
-<div class="topbar">
-  <div>
-    <div class="brand-name">Grupo Aspekto</div>
-    <div class="brand-sub">Análise de Conversas SDR &mdash; <span id="update-time">carregando...</span></div>
-  </div>
-  <div class="live"><span class="dot"></span>Ao vivo</div>
-</div>
-
-<div class="filtros">
-  <button class="filtro-btn active" data-periodo="7">7 dias</button>
-  <button class="filtro-btn" data-periodo="30">30 dias</button>
-  <button class="filtro-btn" data-periodo="90">90 dias</button>
-  <div class="filtro-sep"></div>
-  <button class="filtro-btn active" data-etapa="todas">Todas etapas</button>
-  <button class="filtro-btn" data-etapa="Etapa - Avaliação Agendada">Aval. Agendada</button>
-  <button class="filtro-btn" data-etapa="Realizada - Closer">Closer</button>
-</div>
-
-<div class="sec-label">Visão geral do período</div>
-<div class="row-kpi">
-  <div class="card-hero">
-    <div class="lbl">Conversas coletadas</div>
-    <div class="hero-num" id="kpi-total">—</div>
-    <div class="sub">no período selecionado</div>
-  </div>
-  <div class="card">
-    <div class="lbl">Aval. Agendada</div>
-    <div class="val-md" id="kpi-aval">—</div>
-    <div class="sub">conversas coletadas</div>
-  </div>
-  <div class="card">
-    <div class="lbl">Closer</div>
-    <div class="val-md" id="kpi-closer">—</div>
-    <div class="sub">conversas coletadas</div>
-  </div>
-  <div class="card">
-    <div class="lbl">Áudios transcritos</div>
-    <div class="val-md" id="kpi-audios">—</div>
-    <div class="sub">total no período</div>
+<div class="header">
+  <div class="logo">Aspekto <span>SDR</span></div>
+  <div class="header-right">
+    <span class="last-update" id="lastUpdate">—</span>
+    <button class="refresh-btn" onclick="carregar()">↻ Atualizar</button>
   </div>
 </div>
 
-<div class="grid-main">
-  <div>
-    <div class="sec-label">Ranking dos vendedores</div>
-    <div class="vendedores" id="ranking"></div>
+<div class="filters">
+  <select id="filtPeriodo" onchange="aplicarFiltros()">
+    <option value="7">Últimos 7 dias</option>
+    <option value="30" selected>Últimos 30 dias</option>
+    <option value="90">Últimos 90 dias</option>
+  </select>
+  <select id="filtEtapa" onchange="aplicarFiltros()">
+    <option value="">Todas as etapas</option>
+    <option value="aval">Aval. Agendada</option>
+    <option value="closer">Closer</option>
+  </select>
+  <select id="filtVendedor" onchange="aplicarFiltros()">
+    <option value="">Todos vendedores</option>
+  </select>
+</div>
 
-    <div class="config-refs">
-      <div class="sec-label">Vendedores referência <span style="color:#4a5568;text-transform:none;letter-spacing:0;">— clique para selecionar</span></div>
-      <div class="ref-chips" id="ref-chips"></div>
+<div class="kpis" id="kpis">
+  <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value accent" id="kTotal">—</div></div>
+  <div class="kpi"><div class="kpi-label">Aval. Agendada</div><div class="kpi-value accent" id="kAval">—</div></div>
+  <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
+  <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
+  <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPendentes">—</div></div>
+</div>
+
+<div class="content">
+  <div class="conversations-panel">
+    <div class="section-header">
+      <span>Últimas conversas</span>
+      <span id="convCount" style="font-weight:400;color:var(--text-muted)"></span>
     </div>
+    <div id="convList"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
   </div>
-
-  <div>
-    <div class="conversas-header">
-      <div class="sec-label">Últimas conversas analisadas</div>
-      <select class="vendedor-select" id="filtro-vendedor">
-        <option value="">Todos vendedores</option>
-      </select>
-    </div>
-    <div class="conversas-lista" id="conversas"></div>
+  <div class="ranking-panel">
+    <div class="section-header"><span>Ranking vendedores</span></div>
+    <div id="ranking" style="padding-top:12px"></div>
   </div>
 </div>
 
-<div class="modal-bg" id="modal-bg">
-  <div class="modal" id="modal-content"></div>
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="modal-sub" id="modalSub">—</div>
+      </div>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
 </div>
 
 <script>
-  var SUPA_URL = 'https://mwlxudtdvflygvewuwal.supabase.co';
-  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
+const SUPA_URL = 'https://mwlxudtdvflygvewuwal.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
 
-  var VENDEDORES = [
-    { nome: 'Guilherme Jesuíno', email: 'guilherme.jesuino@grupoaspekto.com' },
-    { nome: 'Davi Matos', email: 'davi.matos@grupoaspekto.com' },
-    { nome: 'Marcos Brant', email: 'marcos.brant@grupoaspekto.com' },
-    { nome: 'Davi Guimarães', email: 'davi.guimaraes@grupoaspekto.com' },
-    { nome: 'Breno Gonçalves', email: 'breno.goncalves@grupoaspekto.com' },
-    { nome: 'Lucas Moreira', email: 'lucas.moreira@grupoaspekto.com' }
-  ];
+let dados = [];
+let filtrados = [];
+let convAtiva = null;
 
-  var estado = { periodo: 7, etapa: 'todas', vendedor: '', dados: [], refs: [] };
-
-  function supa(path) {
-    return fetch(SUPA_URL + '/rest/v1/' + path, {
-      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
-    }).then(function(r) { return r.json(); });
-  }
-
-  function supaWrite(path, method, body) {
-    return fetch(SUPA_URL + '/rest/v1/' + path, {
-      method: method,
-      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: body ? JSON.stringify(body) : undefined
+async function carregar() {
+  document.getElementById('convList').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
+  try {
+    const resp = await fetch(`${SUPA_URL}/rest/v1/conversations?select=*&order=conversation_date.desc&limit=200`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
     });
+    const raw = await resp.json();
+    // Deduplica por deal_id
+    const mapa = {};
+    for (const r of raw) { mapa[r.deal_id] = r; }
+    dados = Object.values(mapa);
+    preencherVendedores();
+    aplicarFiltros();
+    document.getElementById('lastUpdate').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    document.getElementById('convList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Erro ao carregar dados</div>';
   }
+}
 
-  function deduplicar(dados) {
-    // Garante unicidade por deal_id, mantendo o mais recente
-    var vistos = {};
-    return dados.filter(function(d) {
-      if (vistos[d.deal_id]) return false;
-      vistos[d.deal_id] = true;
-      return true;
-    });
+function preencherVendedores() {
+  const sel = document.getElementById('filtVendedor');
+  const atual = sel.value;
+  const nomes = [...new Set(dados.map(d => d.seller_name).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos vendedores</option>' + nomes.map(n => `<option value="${n}">${n}</option>`).join('');
+  sel.value = atual;
+}
+
+function aplicarFiltros() {
+  const dias = parseInt(document.getElementById('filtPeriodo').value);
+  const etapa = document.getElementById('filtEtapa').value;
+  const vendedor = document.getElementById('filtVendedor').value;
+  const corte = new Date(Date.now() - dias * 86400000).toISOString().split('T')[0];
+
+  filtrados = dados.filter(d => {
+    if (d.conversation_date < corte) return false;
+    if (etapa && d.tipo !== etapa) return false;
+    if (vendedor && d.seller_name !== vendedor) return false;
+    return true;
+  });
+
+  renderKpis();
+  renderConversas();
+  renderRanking();
+}
+
+function contarAudios(msgs) {
+  const total = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url).length;
+  const transcritos = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url && m.transcricao && !m.transcricao.startsWith('[')).length;
+  return { total, transcritos, pendentes: total - transcritos };
+}
+
+function renderKpis() {
+  const total = filtrados.length;
+  const aval = filtrados.filter(d => d.tipo === 'aval').length;
+  const closer = filtrados.filter(d => d.tipo === 'closer').length;
+  let totalAudios = 0, transcritos = 0, pendentes = 0;
+  for (const d of filtrados) {
+    const a = contarAudios(d.raw_messages);
+    totalAudios += a.total;
+    transcritos += a.transcritos;
+    pendentes += a.pendentes;
   }
+  document.getElementById('kTotal').textContent = total;
+  document.getElementById('kAval').textContent = aval;
+  document.getElementById('kCloser').textContent = closer;
+  document.getElementById('kAudios').textContent = `${transcritos}/${totalAudios}`;
+  document.getElementById('kPendentes').textContent = pendentes;
+}
 
-  function carregar() {
-    var desde = new Date(Date.now() - estado.periodo * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    var filtroEtapa = estado.etapa !== 'todas'
-      ? '&origin_name=eq.' + encodeURIComponent(estado.etapa)
-      : '&origin_name=in.(Etapa - Avaliação Agendada,Realizada - Closer)';
-    var q = 'conversations?select=*&conversation_date=gte.' + desde + filtroEtapa + '&order=conversation_date.desc&limit=200';
-
-    Promise.all([ supa(q), supa('reference_sellers?select=seller_email') ])
-      .then(function(res) {
-        // Deduplica por deal_id (segurança extra no cliente)
-        estado.dados = deduplicar(res[0] || []);
-        estado.refs = (res[1] || []).map(function(r) { return r.seller_email; });
-        popularFiltroVendedor();
-        render();
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('update-time').textContent = new Date().toLocaleString('pt-BR');
-      })
-      .catch(function(e) {
-        console.error(e);
-        document.getElementById('loading').classList.add('hidden');
-      });
+function renderConversas() {
+  const el = document.getElementById('convList');
+  document.getElementById('convCount').textContent = filtrados.length + ' conversas';
+  if (!filtrados.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div>Nenhuma conversa encontrada</div>';
+    return;
   }
+  el.innerHTML = filtrados.map(d => {
+    const a = contarAudios(d.raw_messages);
+    let audioBadge, audioClass;
+    if (a.total === 0) { audioBadge = 'sem áudios'; audioClass = 'no-audio'; }
+    else if (a.pendentes === 0) { audioBadge = `✓ ${a.transcritos}/${a.total} áudios`; audioClass = 'all-done'; }
+    else { audioBadge = `⏳ ${a.transcritos}/${a.total} áudios`; audioClass = 'pending'; }
+    const etapa = d.tipo === 'aval' ? 'Aval.' : 'Closer';
+    const msgs = (d.raw_messages||[]).length;
+    const isActive = convAtiva === d.deal_id ? 'active' : '';
+    return `<div class="conv-card ${isActive}" onclick="abrirModal('${d.deal_id}')">
+      <div class="conv-info">
+        <div class="conv-name">${d.seller_name || '—'}<span class="etapa">· ${etapa}</span></div>
+        <div class="conv-meta">
+          <span>📅 ${d.conversation_date||'—'}</span>
+          <span>📱 ${d.telefone||'—'}</span>
+          <span>💬 ${msgs} msgs</span>
+        </div>
+      </div>
+      <div class="conv-right">
+        <div class="audio-badge ${audioClass}">${audioBadge}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  function popularFiltroVendedor() {
-    var sel = document.getElementById('filtro-vendedor');
-    var vendedoresPresentes = [];
-    estado.dados.forEach(function(d) {
-      if (d.seller_name && vendedoresPresentes.indexOf(d.seller_name) === -1) {
-        vendedoresPresentes.push(d.seller_name);
-      }
-    });
-    // Mantém o valor selecionado se ainda existir
-    var valorAtual = estado.vendedor;
-    sel.innerHTML = '<option value="">Todos vendedores</option>';
-    vendedoresPresentes.sort().forEach(function(nome) {
-      var opt = document.createElement('option');
-      opt.value = nome;
-      opt.textContent = nome;
-      if (nome === valorAtual) opt.selected = true;
-      sel.appendChild(opt);
-    });
+function renderRanking() {
+  const el = document.getElementById('ranking');
+  const mapa = {};
+  for (const d of filtrados) {
+    const n = d.seller_name || '—';
+    if (!mapa[n]) mapa[n] = { aval: 0, closer: 0, audios: 0, transcritos: 0 };
+    if (d.tipo === 'aval') mapa[n].aval++;
+    else mapa[n].closer++;
+    const a = contarAudios(d.raw_messages);
+    mapa[n].audios += a.total;
+    mapa[n].transcritos += a.transcritos;
   }
+  const lista = Object.entries(mapa).map(([nome, v]) => ({ nome, ...v, total: v.aval + v.closer })).sort((a,b) => b.total - a.total);
+  const maxTotal = Math.max(...lista.map(x => x.total), 1);
+  const maxAudio = Math.max(...lista.map(x => x.audios), 1);
+  el.innerHTML = lista.map((v, i) => `
+    <div class="rank-item">
+      <div class="rank-header">
+        <span class="rank-name">${v.nome}</span>
+        <span class="rank-pos">#${i+1} · ${v.total} conv.</span>
+      </div>
+      <div class="rank-bars">
+        <div class="rank-bar-row">
+          <span class="rank-bar-label" style="color:var(--accent)">Aval</span>
+          <div class="rank-bar-track"><div class="rank-bar-fill aval" style="width:${(v.aval/maxTotal*100).toFixed(0)}%"></div></div>
+          <span class="rank-bar-val">${v.aval}</span>
+        </div>
+        <div class="rank-bar-row">
+          <span class="rank-bar-label" style="color:var(--green)">Close</span>
+          <div class="rank-bar-track"><div class="rank-bar-fill closer" style="width:${(v.closer/maxTotal*100).toFixed(0)}%"></div></div>
+          <span class="rank-bar-val">${v.closer}</span>
+        </div>
+        <div class="rank-bar-row">
+          <span class="rank-bar-label" style="color:var(--yellow)">Áudio</span>
+          <div class="rank-bar-track"><div class="rank-bar-fill audio" style="width:${(v.transcritos/Math.max(v.audios,1)*100).toFixed(0)}%"></div></div>
+          <span class="rank-bar-val">${v.transcritos}/${v.audios}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
 
-  function render() {
-    var dados = estado.dados;
+function abrirModal(dealId) {
+  convAtiva = dealId;
+  const d = dados.find(x => x.deal_id === dealId);
+  if (!d) return;
+  document.getElementById('modalTitle').textContent = `${d.seller_name || '—'} — ${d.tipo === 'aval' ? 'Aval. Agendada' : 'Closer'}`;
+  const a = contarAudios(d.raw_messages);
+  document.getElementById('modalSub').textContent = `${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${a.transcritos}/${a.total} áudios`;
+  
+  const msgs = (d.raw_messages || []);
+  document.getElementById('modalBody').innerHTML = msgs.length
+    ? msgs.map(m => renderMensagem(m)).join('')
+    : '<div class="empty"><div class="empty-icon">💬</div>Sem mensagens</div>';
+  
+  document.getElementById('modalOverlay').classList.add('open');
+  renderConversas(); // atualiza active state
+}
 
-    // KPIs (sempre sobre todos os dados, sem filtro de vendedor)
-    var totalAval = dados.filter(function(d) { return d.origin_name === 'Etapa - Avaliação Agendada'; }).length;
-    var totalCloser = dados.filter(function(d) { return d.origin_name === 'Realizada - Closer'; }).length;
-    var totalAudios = dados.reduce(function(acc, d) {
-      return acc + (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
-    }, 0);
+function renderMensagem(m) {
+  const lado = m.type === 'USER' ? 'user' : 'customer';
+  const hora = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
 
-    document.getElementById('kpi-total').textContent = dados.length;
-    document.getElementById('kpi-aval').textContent = totalAval;
-    document.getElementById('kpi-closer').textContent = totalCloser;
-    document.getElementById('kpi-audios').textContent = totalAudios;
+  let conteudo = '';
 
-    // Ranking
-    var porVendedor = VENDEDORES.map(function(v) {
-      var convs = dados.filter(function(d) { return d.seller_email === v.email; });
-      var aval = convs.filter(function(d) { return d.origin_name === 'Etapa - Avaliação Agendada'; }).length;
-      var closer = convs.filter(function(d) { return d.origin_name === 'Realizada - Closer'; }).length;
-      var audios = convs.reduce(function(acc, d) {
-        return acc + (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
-      }, 0);
-      return { nome: v.nome, email: v.email, total: convs.length, aval: aval, closer: closer, audios: audios };
-    }).filter(function(v) { return v.total > 0; })
-      .sort(function(a, b) { return b.total - a.total; });
-
-    var rk = document.getElementById('ranking');
-    rk.innerHTML = '';
-    if (!porVendedor.length) { rk.innerHTML = '<div class="vazio">Nenhum dado no período.</div>'; }
-    else {
-      porVendedor.forEach(function(v, i) {
-        var div = document.createElement('div');
-        div.className = 'vendedor neutro';
-        div.innerHTML =
-          '<div class="v-top">' +
-            '<div class="v-nome-wrap"><span class="v-rank">' + (i+1) + 'º</span><span class="v-nome">' + v.nome + '</span></div>' +
-            '<span class="v-badge badge-atencao">' + v.total + ' conversa' + (v.total !== 1 ? 's' : '') + '</span>' +
-          '</div>' +
-          '<div class="v-info">' +
-            '<div class="v-stat"><span class="v-stat-lbl">Aval. Agendada</span><span class="v-stat-val">' + v.aval + '</span></div>' +
-            '<div class="sep"></div>' +
-            '<div class="v-stat"><span class="v-stat-lbl">Closer</span><span class="v-stat-val">' + v.closer + '</span></div>' +
-            '<div class="sep"></div>' +
-            '<div class="v-stat"><span class="v-stat-lbl">Áudios transcritos</span><span class="v-stat-val">' + v.audios + '</span></div>' +
-          '</div>';
-        rk.appendChild(div);
-      });
-    }
-
-    // Chips de referência
-    var chips = document.getElementById('ref-chips');
-    chips.innerHTML = '';
-    VENDEDORES.forEach(function(v) {
-      var sel = estado.refs.indexOf(v.email) !== -1;
-      var c = document.createElement('div');
-      c.className = 'ref-chip' + (sel ? ' selected' : '');
-      c.innerHTML = (sel ? '<i class="ti ti-star" style="margin-right:4px;"></i>' : '') + v.nome;
-      c.onclick = function() { toggleRef(v, sel); };
-      chips.appendChild(c);
-    });
-
-    // Lista de conversas — aplica filtro de vendedor
-    var lista = document.getElementById('conversas');
-    lista.innerHTML = '';
-    var dadosFiltrados = estado.vendedor
-      ? dados.filter(function(d) { return d.seller_name === estado.vendedor; })
-      : dados;
-
-    if (!dadosFiltrados.length) {
-      lista.innerHTML = '<div class="vazio">Nenhuma conversa analisada no período.<br>O workflow roda diariamente às 23h.</div>';
-      return;
-    }
-
-    dadosFiltrados.slice(0, 50).forEach(function(d) {
-      var audiosTranscritos = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO' && m.transcricao && !m.transcricao.startsWith('['); }).length;
-      var audiosTotal = (d.raw_messages || []).filter(function(m) { return m.content_type === 'AUDIO'; }).length;
-      var msgs = (d.raw_messages || []).length;
-      var label = d.origin_name === 'Realizada - Closer' ? 'Closer' : 'Aval. Agendada';
-      var div = document.createElement('div');
-      div.className = 'conversa';
-      div.innerHTML =
-        '<div class="c-top">' +
-          '<span class="c-seller">' + d.seller_name + ' <span style="color:#6e8394;font-weight:400;">· ' + label + '</span></span>' +
-          '<span style="font-size:11px;color:#4fc3f7;">' + audiosTranscritos + '/' + audiosTotal + ' áudios</span>' +
-        '</div>' +
-        '<div class="c-meta">' +
-          '<span class="c-tag"><i class="ti ti-calendar"></i>' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + '</span>' +
-          (d.telefone ? '<span class="c-tag" title="Copiar" style="cursor:pointer;" onclick="event.stopPropagation();navigator.clipboard.writeText(\''+d.telefone+'\');this.style.color=\'#4ade80\'"><i class="ti ti-phone"></i>' + d.telefone + '</span>' : '') +
-          '<span class="c-tag"><i class="ti ti-messages"></i>' + msgs + ' msgs</span>' +
-        '</div>';
-      div.onclick = function() { abrirDetalhe(d); };
-      lista.appendChild(div);
-    });
-  }
-
-  function toggleRef(v, jaSelecionado) {
-    var op;
-    if (jaSelecionado) {
-      op = supaWrite('reference_sellers?seller_email=eq.' + encodeURIComponent(v.email), 'DELETE');
+  if (m.content_type === 'AUDIO') {
+    const duracao = m.seconds ? `${Math.round(m.seconds)}s` : '';
+    let transcricaoHTML = '';
+    if (m.transcricao && !m.transcricao.startsWith('[')) {
+      transcricaoHTML = `<div class="msg-transcricao">${m.transcricao}</div>`;
     } else {
-      op = supaWrite('reference_sellers', 'POST', { seller_email: v.email, seller_name: v.nome, selected_by: 'dashboard' });
+      transcricaoHTML = `<div class="msg-pending">🎵 Áudio pendente${duracao ? ` · ${duracao}` : ''}</div>`;
     }
-    op.then(carregar);
+    conteudo = `<div class="msg-audio">
+      <span class="msg-audio-icon">🎙️</span>
+      <div class="msg-audio-content">
+        <div class="msg-audio-label">Áudio${duracao ? ` · ${duracao}` : ''}</div>
+        ${transcricaoHTML}
+      </div>
+    </div>`;
+  } else if (m.content_type === 'IMAGE') {
+    conteudo = `<div class="msg-image">🖼️ Imagem</div>`;
+  } else if (m.content_type === 'TEMPLATE') {
+    const texto = m.content || (m.content_object?.components?.[0]?.formatted_text) || 'Template';
+    conteudo = `<div class="msg-template">📋 ${texto}</div>`;
+  } else if (m.content) {
+    conteudo = m.content;
+  } else {
+    conteudo = `<span style="color:var(--text-muted);font-style:italic;font-size:12px">${m.content_type||'—'}</span>`;
   }
 
-  function abrirDetalhe(d) {
-    var label = d.origin_name === 'Realizada - Closer' ? 'Closer' : 'Aval. Agendada';
-    var html = '<button class="m-close" onclick="fecharModal()"><i class="ti ti-x"></i></button>' +
-      '<div class="m-title">' + d.seller_name + ' — ' + label + '</div>' +
-      '<div class="m-sub">' + new Date(d.conversation_date + 'T12:00:00').toLocaleDateString('pt-BR') + ' · Deal ' + d.deal_status + (d.telefone ? ' · <span style="cursor:pointer;color:#4fc3f7;" title="Copiar telefone" onclick="navigator.clipboard.writeText(\'' + d.telefone + '\');this.style.color=\'#4ade80\'">' + d.telefone + '</span>' : '') + '</div>';
+  return `<div class="msg ${lado}">
+    <div class="msg-bubble">${conteudo}</div>
+    <div class="msg-time">${hora}</div>
+  </div>`;
+}
 
-    if (d.raw_messages && d.raw_messages.length) {
-      html += '<div class="m-sec">Conversa (' + d.raw_messages.length + ' mensagens)</div>';
-      d.raw_messages.forEach(function(m) {
-        var isSdr = m.type === 'USER';
-        html += '<div class="msg ' + (isSdr ? 'msg-sdr' : 'msg-lead') + '">' +
-          (m.content_type === 'AUDIO'
-            ? '<div class="msg-audio"><i class="ti ti-microphone"></i>Áudio ' + (m.seconds ? Math.round(m.seconds) + 's' : '') + '</div>' + (m.transcricao || '<i>sem transcrição</i>')
-            : (m.content || '')) +
-          '<div class="msg-time">' + new Date(m.created_at).toLocaleString('pt-BR') + '</div></div>';
-      });
-    }
+function fecharModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  convAtiva = null;
+  renderConversas();
+}
 
-    document.getElementById('modal-content').innerHTML = html;
-    document.getElementById('modal-bg').classList.add('open');
-  }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
 
-  function fecharModal() { document.getElementById('modal-bg').classList.remove('open'); }
-  document.getElementById('modal-bg').addEventListener('click', function(e) { if (e.target === this) fecharModal(); });
-
-  // Filtro de período
-  document.querySelectorAll('[data-periodo]').forEach(function(b) {
-    b.onclick = function() {
-      document.querySelectorAll('[data-periodo]').forEach(function(x){x.classList.remove('active');});
-      b.classList.add('active');
-      estado.periodo = parseInt(b.dataset.periodo);
-      carregar();
-    };
-  });
-
-  // Filtro de etapa
-  document.querySelectorAll('[data-etapa]').forEach(function(b) {
-    b.onclick = function() {
-      document.querySelectorAll('[data-etapa]').forEach(function(x){x.classList.remove('active');});
-      b.classList.add('active');
-      estado.etapa = b.dataset.etapa;
-      carregar();
-    };
-  });
-
-  // Filtro de vendedor (só re-renderiza, sem recarregar do banco)
-  document.getElementById('filtro-vendedor').addEventListener('change', function() {
-    estado.vendedor = this.value;
-    render();
-  });
-
-  carregar();
-  setInterval(carregar, 5 * 60 * 1000);
+carregar();
+setInterval(carregar, 5 * 60 * 1000);
 </script>
-
 </body>
 </html>
