@@ -17,66 +17,68 @@
     --green: #2dd67c;
     --green-dim: #0f3322;
     --orange: #ff8c42;
-    --orange-dim: #3a1f08;
     --red: #ff4d6a;
+    --red-dim: #3a0f1a;
     --yellow: #ffd166;
     --seller: #a78bfa;
-    --seller-dim: #1e1438;
     --radius: 10px;
     --radius-sm: 6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
 
-  /* HEADER */
   .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
   .logo span { color: var(--accent); }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
   .refresh-btn:hover { background: var(--accent); color: #fff; }
   .last-update { color: var(--text-muted); font-size: 12px; }
 
-  /* FILTROS */
-  .filters { padding: 16px 24px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
+  /* ALERTA DE ERRO */
+  .error-banner { display: none; background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius); margin: 12px 24px 0; padding: 12px 16px; }
+  .error-banner.visible { display: flex; align-items: flex-start; gap: 12px; }
+  .error-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .error-banner-content { flex: 1; }
+  .error-banner-title { font-weight: 700; color: var(--red); font-size: 13px; margin-bottom: 4px; }
+  .error-banner-list { list-style: none; }
+  .error-banner-list li { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .error-banner-list li:hover { color: var(--text); }
+  .error-banner-list li .err-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+
+  .filters { padding: 12px 24px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
   select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; outline: none; }
   select:focus { border-color: var(--accent); }
 
-  /* KPIS */
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; padding: 20px 24px; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
-  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px; }
-  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 16px 24px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; }
   .kpi-value.accent { color: var(--accent); }
   .kpi-value.green { color: var(--green); }
   .kpi-value.orange { color: var(--orange); }
   .kpi-value.yellow { color: var(--yellow); }
-  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-value.red { color: var(--red); }
 
-  /* CONTENT */
-  .content { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 170px); }
+  .content { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 220px); }
   .conversations-panel { border-right: 1px solid var(--border); overflow-y: auto; }
   .ranking-panel { overflow-y: auto; padding: 16px; }
 
-  /* SECTION HEADERS */
-  .section-header { padding: 14px 20px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+  .section-header { padding: 12px 20px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
 
-  /* CONVERSATION CARDS */
-  .conv-card { padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .conv-card { padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .conv-card:hover { background: var(--surface); }
   .conv-card.active { background: var(--accent-dim); border-left: 3px solid var(--accent); }
   .conv-info { flex: 1; min-width: 0; }
   .conv-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .conv-name .etapa { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 6px; }
   .conv-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; }
-  .conv-right { text-align: right; flex-shrink: 0; }
   .audio-badge { font-size: 12px; font-weight: 600; white-space: nowrap; }
   .audio-badge.all-done { color: var(--green); }
   .audio-badge.pending { color: var(--orange); }
+  .audio-badge.has-error { color: var(--red); }
   .audio-badge.no-audio { color: var(--text-muted); }
 
-  /* RANKING */
-  .ranking-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
   .rank-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
   .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .rank-name { font-weight: 600; font-size: 13px; }
@@ -89,20 +91,29 @@
   .rank-bar-fill.aval { background: var(--accent); }
   .rank-bar-fill.closer { background: var(--green); }
   .rank-bar-fill.audio { background: var(--yellow); }
-  .rank-bar-val { font-size: 11px; color: var(--text-muted); width: 24px; text-align: right; flex-shrink: 0; }
+  .rank-bar-val { font-size: 11px; color: var(--text-muted); width: 32px; text-align: right; flex-shrink: 0; }
 
   /* MODAL */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 680px; max-width: 95vw; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
-  .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
   .modal-title { font-size: 16px; font-weight: 700; }
   .modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
   .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 4px; }
   .modal-close:hover { color: var(--text); }
   .modal-body { overflow-y: auto; padding: 16px 20px; flex: 1; }
 
-  /* MENSAGENS */
+  /* MODAL DE ERRO */
+  .error-modal { background: var(--surface); border: 1px solid var(--red); border-radius: 12px; width: 520px; max-width: 95vw; max-height: 70vh; display: flex; flex-direction: column; overflow: hidden; }
+  .error-modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .error-modal-title { font-size: 15px; font-weight: 700; color: var(--red); }
+  .error-modal-body { overflow-y: auto; padding: 16px 20px; }
+  .error-item { background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
+  .error-item-seller { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .error-item-msg { font-size: 12px; color: var(--red); font-family: monospace; word-break: break-all; margin-bottom: 4px; }
+  .error-item-time { font-size: 11px; color: var(--text-muted); }
+
   .msg { margin-bottom: 8px; display: flex; flex-direction: column; }
   .msg.user { align-items: flex-end; }
   .msg.customer { align-items: flex-start; }
@@ -110,27 +121,19 @@
   .msg.user .msg-bubble { background: var(--accent-dim); border: 1px solid var(--accent); border-bottom-right-radius: 3px; }
   .msg.customer .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
   .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-
-  /* TIPOS ESPECIAIS */
-  .msg-audio { display: flex; align-items: flex-start; gap: 8px; }
   .msg-audio-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
   .msg-audio-content { flex: 1; }
   .msg-audio-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; }
-  .msg-transcricao { font-size: 13px; line-height: 1.5; }
   .msg-pending { color: var(--orange); font-style: italic; font-size: 12px; }
+  .msg-error { color: var(--red); font-style: italic; font-size: 12px; cursor: pointer; text-decoration: underline dotted; }
+  .msg-unsupported { color: var(--text-muted); font-style: italic; font-size: 12px; }
   .msg-image { color: var(--seller); font-style: italic; font-size: 12px; }
   .msg-template { color: var(--yellow); font-size: 12px; }
 
-  /* EMPTY STATE */
   .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
-
-  /* LOADING */
   .loading { text-align: center; padding: 40px; color: var(--text-muted); }
   .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* SCROLLBAR */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -143,6 +146,15 @@
   <div class="header-right">
     <span class="last-update" id="lastUpdate">—</span>
     <button class="refresh-btn" onclick="carregar()">↻ Atualizar</button>
+  </div>
+</div>
+
+<!-- BANNER DE ERROS DO WHISPER -->
+<div class="error-banner" id="errorBanner">
+  <div class="error-banner-icon">⚠️</div>
+  <div class="error-banner-content">
+    <div class="error-banner-title" id="errorBannerTitle">Erros detectados nas transcrições</div>
+    <ul class="error-banner-list" id="errorBannerList"></ul>
   </div>
 </div>
 
@@ -168,6 +180,8 @@
   <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
   <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
   <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPendentes">—</div></div>
+  <div class="kpi"><div class="kpi-label">Não suportados</div><div class="kpi-value" id="kNaoSuportados" style="color:var(--text-muted)">—</div></div>
+  <div class="kpi" style="cursor:pointer" onclick="abrirModalErros()"><div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErros">—</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">clique para detalhar</div></div>
 </div>
 
 <div class="content">
@@ -184,7 +198,7 @@
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL CONVERSA -->
 <div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
   <div class="modal">
     <div class="modal-header">
@@ -198,6 +212,17 @@
   </div>
 </div>
 
+<!-- MODAL DE ERROS -->
+<div class="modal-overlay" id="errorModalOverlay" onclick="fecharModalErros(event)">
+  <div class="error-modal">
+    <div class="error-modal-header">
+      <div class="error-modal-title">⚠️ Erros nas transcrições</div>
+      <button class="modal-close" onclick="fecharModalErros()">✕</button>
+    </div>
+    <div class="error-modal-body" id="errorModalBody"></div>
+  </div>
+</div>
+
 <script>
 const SUPA_URL = 'https://mwlxudtdvflygvewuwal.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
@@ -205,6 +230,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 let dados = [];
 let filtrados = [];
 let convAtiva = null;
+let todosErros = [];
 
 async function carregar() {
   document.getElementById('convList').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
@@ -213,7 +239,6 @@ async function carregar() {
       headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
     });
     const raw = await resp.json();
-    // Deduplica por deal_id
     const mapa = {};
     for (const r of raw) { mapa[r.deal_id] = r; }
     dados = Object.values(mapa);
@@ -221,7 +246,7 @@ async function carregar() {
     aplicarFiltros();
     document.getElementById('lastUpdate').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
   } catch(e) {
-    document.getElementById('convList').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Erro ao carregar dados</div>';
+    document.getElementById('convList').innerHTML = '<div class="empty">⚠️ Erro ao carregar dados</div>';
   }
 }
 
@@ -241,7 +266,10 @@ function aplicarFiltros() {
 
   filtrados = dados.filter(d => {
     if (d.conversation_date < corte) return false;
-    if (etapa && d.tipo !== etapa) return false;
+    if (etapa && d.origin_name) {
+      if (etapa === 'aval' && !d.origin_name.toLowerCase().includes('avalia')) return false;
+      if (etapa === 'closer' && !d.origin_name.toLowerCase().includes('closer')) return false;
+    }
     if (vendedor && d.seller_name !== vendedor) return false;
     return true;
   });
@@ -249,46 +277,108 @@ function aplicarFiltros() {
   renderKpis();
   renderConversas();
   renderRanking();
+  renderErrorBanner();
 }
 
-function contarAudios(msgs) {
-  const total = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url).length;
-  const transcritos = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url && m.transcricao && !m.transcricao.startsWith('[')).length;
-  return { total, transcritos, pendentes: total - transcritos };
+function statusAudios(msgs) {
+  const audios = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url);
+  const transcritos = audios.filter(m => m.transcricao && !String(m.transcricao).startsWith('['));
+  const erros = audios.filter(m => m.transcricao && String(m.transcricao).startsWith('[erro'));
+  const naoSuportados = audios.filter(m => m.transcricao && String(m.transcricao).startsWith('[formato-nao-suportado'));
+  const pendentes = audios.filter(m => !m.transcricao);
+  return { total: audios.length, transcritos: transcritos.length, erros: erros.length, naoSuportados: naoSuportados.length, pendentes: pendentes.length };
 }
 
 function renderKpis() {
   const total = filtrados.length;
-  const aval = filtrados.filter(d => d.tipo === 'aval').length;
-  const closer = filtrados.filter(d => d.tipo === 'closer').length;
-  let totalAudios = 0, transcritos = 0, pendentes = 0;
+  const aval = filtrados.filter(d => d.origin_name && d.origin_name.toLowerCase().includes('avalia')).length;
+  const closer = filtrados.filter(d => d.origin_name && d.origin_name.toLowerCase().includes('closer')).length;
+  let totAud=0, totTrans=0, totPend=0, totErr=0, totNaoSup=0;
   for (const d of filtrados) {
-    const a = contarAudios(d.raw_messages);
-    totalAudios += a.total;
-    transcritos += a.transcritos;
-    pendentes += a.pendentes;
+    const s = statusAudios(d.raw_messages);
+    totAud += s.total;
+    totTrans += s.transcritos;
+    totPend += s.pendentes;
+    totErr += s.erros;
+    totNaoSup += s.naoSuportados;
   }
   document.getElementById('kTotal').textContent = total;
   document.getElementById('kAval').textContent = aval;
   document.getElementById('kCloser').textContent = closer;
-  document.getElementById('kAudios').textContent = `${transcritos}/${totalAudios}`;
-  document.getElementById('kPendentes').textContent = pendentes;
+  document.getElementById('kAudios').textContent = `${totTrans}/${totAud}`;
+  document.getElementById('kPendentes').textContent = totPend;
+  document.getElementById('kNaoSuportados').textContent = totNaoSup;
+  document.getElementById('kErros').textContent = totErr;
+
+  // KPI erros: destaca se tiver erros
+  const kpiErr = document.getElementById('kErros');
+  kpiErr.style.color = totErr > 0 ? 'var(--red)' : 'var(--text-muted)';
+
+  // Coleta todos os erros para o modal
+  todosErros = [];
+  for (const d of filtrados) {
+    for (const m of (d.raw_messages||[])) {
+      if (m.transcricao && String(m.transcricao).startsWith('[erro')) {
+        todosErros.push({ seller: d.seller_name, deal_id: d.deal_id, erro: m.transcricao, created_at: m.created_at });
+      }
+    }
+  }
+}
+
+function renderErrorBanner() {
+  const banner = document.getElementById('errorBanner');
+  const list = document.getElementById('errorBannerList');
+  if (todosErros.length === 0) { banner.classList.remove('visible'); return; }
+  banner.classList.add('visible');
+  document.getElementById('errorBannerTitle').textContent = `${todosErros.length} erro(s) detectado(s) nas transcrições — clique para ver detalhes`;
+
+  // Agrupa por tipo de erro
+  const grupos = {};
+  for (const e of todosErros) {
+    const tipo = e.erro.replace(/\[erro[^:]*: /, '').replace(/\].*/, '').slice(0, 60);
+    if (!grupos[tipo]) grupos[tipo] = 0;
+    grupos[tipo]++;
+  }
+  list.innerHTML = Object.entries(grupos).map(([tipo, qtd]) =>
+    `<li onclick="abrirModalErros()"><span class="err-badge">${qtd}x</span> ${tipo}</li>`
+  ).join('');
+}
+
+function abrirModalErros() {
+  const body = document.getElementById('errorModalBody');
+  if (todosErros.length === 0) {
+    body.innerHTML = '<div class="empty" style="padding:30px">Nenhum erro encontrado ✓</div>';
+  } else {
+    body.innerHTML = todosErros.map(e => `
+      <div class="error-item">
+        <div class="error-item-seller">${e.seller || '—'}</div>
+        <div class="error-item-msg">${e.erro}</div>
+        <div class="error-item-time">${e.created_at ? new Date(e.created_at).toLocaleString('pt-BR') : '—'}</div>
+      </div>`).join('');
+  }
+  document.getElementById('errorModalOverlay').classList.add('open');
+}
+
+function fecharModalErros(e) {
+  if (e && e.target !== document.getElementById('errorModalOverlay')) return;
+  document.getElementById('errorModalOverlay').classList.remove('open');
 }
 
 function renderConversas() {
   const el = document.getElementById('convList');
   document.getElementById('convCount').textContent = filtrados.length + ' conversas';
-  if (!filtrados.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div>Nenhuma conversa encontrada</div>';
-    return;
-  }
+  if (!filtrados.length) { el.innerHTML = '<div class="empty">💬 Nenhuma conversa encontrada</div>'; return; }
+
   el.innerHTML = filtrados.map(d => {
-    const a = contarAudios(d.raw_messages);
-    let audioBadge, audioClass;
-    if (a.total === 0) { audioBadge = 'sem áudios'; audioClass = 'no-audio'; }
-    else if (a.pendentes === 0) { audioBadge = `✓ ${a.transcritos}/${a.total} áudios`; audioClass = 'all-done'; }
-    else { audioBadge = `⏳ ${a.transcritos}/${a.total} áudios`; audioClass = 'pending'; }
-    const etapa = d.tipo === 'aval' ? 'Aval.' : 'Closer';
+    const s = statusAudios(d.raw_messages);
+    let badge, badgeClass;
+    if (s.total === 0) { badge = 'sem áudios'; badgeClass = 'no-audio'; }
+    else if (s.erros > 0) { badge = `⚠️ ${s.erros} erro(s)`; badgeClass = 'has-error'; }
+    else if (s.pendentes > 0) { badge = `⏳ ${s.transcritos}/${s.total} áudios`; badgeClass = 'pending'; }
+    else { badge = `✓ ${s.transcritos}/${s.total} áudios`; badgeClass = 'all-done'; }
+    if (s.naoSuportados > 0) badge += ` · ${s.naoSuportados}✗`;
+
+    const etapa = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval.' : 'Closer';
     const msgs = (d.raw_messages||[]).length;
     const isActive = convAtiva === d.deal_id ? 'active' : '';
     return `<div class="conv-card ${isActive}" onclick="abrirModal('${d.deal_id}')">
@@ -300,8 +390,8 @@ function renderConversas() {
           <span>💬 ${msgs} msgs</span>
         </div>
       </div>
-      <div class="conv-right">
-        <div class="audio-badge ${audioClass}">${audioBadge}</div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="audio-badge ${badgeClass}">${badge}</div>
       </div>
     </div>`;
   }).join('');
@@ -313,15 +403,14 @@ function renderRanking() {
   for (const d of filtrados) {
     const n = d.seller_name || '—';
     if (!mapa[n]) mapa[n] = { aval: 0, closer: 0, audios: 0, transcritos: 0 };
-    if (d.tipo === 'aval') mapa[n].aval++;
+    if (d.origin_name && d.origin_name.toLowerCase().includes('avalia')) mapa[n].aval++;
     else mapa[n].closer++;
-    const a = contarAudios(d.raw_messages);
-    mapa[n].audios += a.total;
-    mapa[n].transcritos += a.transcritos;
+    const s = statusAudios(d.raw_messages);
+    mapa[n].audios += s.total;
+    mapa[n].transcritos += s.transcritos;
   }
   const lista = Object.entries(mapa).map(([nome, v]) => ({ nome, ...v, total: v.aval + v.closer })).sort((a,b) => b.total - a.total);
   const maxTotal = Math.max(...lista.map(x => x.total), 1);
-  const maxAudio = Math.max(...lista.map(x => x.audios), 1);
   el.innerHTML = lista.map((v, i) => `
     <div class="rank-item">
       <div class="rank-header">
@@ -352,45 +441,45 @@ function abrirModal(dealId) {
   convAtiva = dealId;
   const d = dados.find(x => x.deal_id === dealId);
   if (!d) return;
-  document.getElementById('modalTitle').textContent = `${d.seller_name || '—'} — ${d.tipo === 'aval' ? 'Aval. Agendada' : 'Closer'}`;
-  const a = contarAudios(d.raw_messages);
-  document.getElementById('modalSub').textContent = `${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${a.transcritos}/${a.total} áudios`;
-  
-  const msgs = (d.raw_messages || []);
-  document.getElementById('modalBody').innerHTML = msgs.length
-    ? msgs.map(m => renderMensagem(m)).join('')
-    : '<div class="empty"><div class="empty-icon">💬</div>Sem mensagens</div>';
-  
+  const etapa = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval. Agendada' : 'Closer';
+  document.getElementById('modalTitle').textContent = `${d.seller_name || '—'} — ${etapa}`;
+  const s = statusAudios(d.raw_messages);
+  document.getElementById('modalSub').textContent = `${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${s.transcritos}/${s.total} áudios${s.erros>0?' · '+s.erros+' erro(s)':''}${s.naoSuportados>0?' · '+s.naoSuportados+' não suportado(s)':''}`;
+  const msgs = d.raw_messages || [];
+  document.getElementById('modalBody').innerHTML = msgs.length ? msgs.map(renderMensagem).join('') : '<div class="empty">Sem mensagens</div>';
   document.getElementById('modalOverlay').classList.add('open');
-  renderConversas(); // atualiza active state
+  renderConversas();
 }
 
 function renderMensagem(m) {
   const lado = m.type === 'USER' ? 'user' : 'customer';
   const hora = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-
   let conteudo = '';
 
   if (m.content_type === 'AUDIO') {
-    const duracao = m.seconds ? `${Math.round(m.seconds)}s` : '';
-    let transcricaoHTML = '';
-    if (m.transcricao && !m.transcricao.startsWith('[')) {
-      transcricaoHTML = `<div class="msg-transcricao">${m.transcricao}</div>`;
+    const dur = m.seconds ? `${Math.round(m.seconds)}s` : '';
+    let transcHTML = '';
+    if (!m.transcricao) {
+      transcHTML = `<div class="msg-pending">🎵 Áudio pendente${dur ? ' · '+dur : ''}</div>`;
+    } else if (String(m.transcricao).startsWith('[formato-nao-suportado')) {
+      transcHTML = `<div class="msg-unsupported">🚫 Formato não suportado${dur ? ' · '+dur : ''}</div>`;
+    } else if (String(m.transcricao).startsWith('[erro')) {
+      transcHTML = `<div class="msg-error" onclick="mostrarErroDetalhe('${m.transcricao.replace(/'/g,'\\')}')">⚠️ Erro na transcrição — clique para ver</div>`;
     } else {
-      transcricaoHTML = `<div class="msg-pending">🎵 Áudio pendente${duracao ? ` · ${duracao}` : ''}</div>`;
+      transcHTML = `<div>${m.transcricao}</div>`;
     }
-    conteudo = `<div class="msg-audio">
+    conteudo = `<div style="display:flex;align-items:flex-start;gap:8px">
       <span class="msg-audio-icon">🎙️</span>
       <div class="msg-audio-content">
-        <div class="msg-audio-label">Áudio${duracao ? ` · ${duracao}` : ''}</div>
-        ${transcricaoHTML}
+        <div class="msg-audio-label">Áudio${dur ? ' · '+dur : ''}</div>
+        ${transcHTML}
       </div>
     </div>`;
   } else if (m.content_type === 'IMAGE') {
     conteudo = `<div class="msg-image">🖼️ Imagem</div>`;
   } else if (m.content_type === 'TEMPLATE') {
-    const texto = m.content || (m.content_object?.components?.[0]?.formatted_text) || 'Template';
-    conteudo = `<div class="msg-template">📋 ${texto}</div>`;
+    const txt = m.content || (m.content_object?.components?.[0]?.formatted_text) || 'Template';
+    conteudo = `<div class="msg-template">📋 ${txt}</div>`;
   } else if (m.content) {
     conteudo = m.content;
   } else {
@@ -403,6 +492,11 @@ function renderMensagem(m) {
   </div>`;
 }
 
+function mostrarErroDetalhe(erro) {
+  todosErros = [{ seller: '—', erro, created_at: null }];
+  abrirModalErros();
+}
+
 function fecharModal(e) {
   if (e && e.target !== document.getElementById('modalOverlay')) return;
   document.getElementById('modalOverlay').classList.remove('open');
@@ -410,7 +504,12 @@ function fecharModal(e) {
   renderConversas();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    fecharModal();
+    fecharModalErros();
+  }
+});
 
 carregar();
 setInterval(carregar, 5 * 60 * 1000);
