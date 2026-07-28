@@ -3,219 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análise SDR — Aspekto</title>
+<title>SDR — Aspekto</title>
 <style>
-  :root {
-    --bg:#0f1117; --surface:#181c27; --surface2:#1e2333; --border:#2a3045;
-    --text:#e8eaf0; --text-muted:#7b8299;
-    --accent:#4f7cff; --accent-dim:#1e2d5a;
-    --green:#2dd67c; --green-dim:#0f3322;
-    --orange:#ff8c42; --red:#ff4d6a; --red-dim:#3a0f1a;
-    --yellow:#ffd166; --seller:#a78bfa;
-    --purple:#a78bfa; --purple-dim:#2a1a4a;
-    --radius:10px; --radius-sm:6px;
-  }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; font-size:14px; line-height:1.5; }
+  :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3045;--text:#e8eaf0;--muted:#7b8299;
+        --accent:#4f7cff;--accent-dim:#1e2d5a;--green:#2dd67c;--green-dim:#0f3322;--orange:#ff8c42;
+        --red:#ff4d6a;--red-dim:#3a0f1a;--yellow:#ffd166;--purple:#a78bfa;--purple-dim:#2a1a4a;
+        --r:10px;--rs:6px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;}
 
-  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:0 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; height:52px; }
-  .logo { font-size:16px; font-weight:700; letter-spacing:-0.3px; }
-  .logo span { color:var(--accent); }
-  .header-right { display:flex; align-items:center; gap:12px; }
-  .last-update { color:var(--text-muted); font-size:12px; }
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;height:52px;}
+  .logo{font-size:16px;font-weight:700;letter-spacing:-.3px;}
+  .logo span{color:var(--accent);}
+  .header-right{display:flex;align-items:center;gap:12px;}
+  .last-update{color:var(--muted);font-size:12px;}
+  .tabs{display:flex;margin-left:28px;height:100%;}
+  .tab{padding:0 18px;height:100%;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent);}
 
-  .tabs { display:flex; margin-left:28px; height:100%; }
-  .tab { padding:0 18px; height:100%; display:flex; align-items:center; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; user-select:none; }
-  .tab:hover { color:var(--text); }
-  .tab.active { color:var(--text); border-bottom-color:var(--accent); }
+  .btn{padding:6px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;}
+  .btn-ghost{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);}
+  .btn-ghost:hover{background:var(--accent);color:#fff;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-green{background:var(--green-dim);border:1px solid var(--green);color:var(--green);}
+  .btn-green:hover{background:var(--green);color:#000;}
+  .btn-purple{background:var(--purple-dim);border:1px solid var(--purple);color:var(--purple);}
+  .btn-purple:hover{background:var(--purple);color:#fff;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
 
-  .btn { padding:6px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
-  .btn-ghost { background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent); }
-  .btn-ghost:hover { background:var(--accent); color:#fff; }
-  .btn-primary { background:var(--accent); color:#fff; }
-  .btn-primary:hover { background:#3d6ae0; }
-  .btn-green { background:var(--green-dim); border:1px solid var(--green); color:var(--green); }
-  .btn-green:hover { background:var(--green); color:#000; }
-  .btn-purple { background:var(--purple-dim); border:1px solid var(--purple); color:var(--purple); }
-  .btn-purple:hover { background:var(--purple); color:#fff; }
-  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .page{display:none;} .page.active{display:block;}
 
-  .page { display:none; }
-  .page.active { display:block; }
+  .error-banner{display:none;background:var(--red-dim);border:1px solid var(--red);border-radius:var(--r);margin:12px 24px 0;padding:12px 16px;}
+  .error-banner.visible{display:flex;align-items:flex-start;gap:12px;}
+  .error-banner-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+  .error-banner-title{font-weight:700;color:var(--red);font-size:13px;margin-bottom:4px;}
+  .error-banner-list{list-style:none;}
+  .error-banner-list li{font-size:12px;color:var(--muted);margin-bottom:2px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .error-banner-list li:hover{color:var(--text);}
+  .err-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;}
 
-  /* ===== P1 ===== */
-  .error-banner { display:none; background:var(--red-dim); border:1px solid var(--red); border-radius:var(--radius); margin:12px 24px 0; padding:12px 16px; }
-  .error-banner.visible { display:flex; align-items:flex-start; gap:12px; }
-  .error-banner-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
-  .error-banner-content { flex:1; }
-  .error-banner-title { font-weight:700; color:var(--red); font-size:13px; margin-bottom:4px; }
-  .error-banner-list { list-style:none; }
-  .error-banner-list li { font-size:12px; color:var(--text-muted); margin-bottom:2px; cursor:pointer; display:flex; align-items:center; gap:6px; }
-  .error-banner-list li:hover { color:var(--text); }
-  .error-banner-list li .err-badge { background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; }
+  .filters{padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);align-items:center;}
+  select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:var(--rs);font-size:13px;outline:none;font-family:inherit;}
+  select{cursor:pointer;} select:focus,textarea:focus{border-color:var(--accent);}
 
-  .filters { padding:12px 24px; display:flex; gap:10px; flex-wrap:wrap; border-bottom:1px solid var(--border); background:var(--surface); align-items:center; }
-  select { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:7px 12px; border-radius:var(--radius-sm); font-size:13px; cursor:pointer; outline:none; }
-  select:focus { border-color:var(--accent); }
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:16px 24px;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+  .kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;}
+  .kpi-value{font-size:26px;font-weight:700;line-height:1;}
+  .kpi-value.accent{color:var(--accent);} .kpi-value.green{color:var(--green);}
+  .kpi-value.orange{color:var(--orange);} .kpi-value.yellow{color:var(--yellow);}
+  .kpi-value.red{color:var(--red);} .kpi-value.purple{color:var(--purple);}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
 
-  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; padding:16px 24px; }
-  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
-  .kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); margin-bottom:6px; }
-  .kpi-value { font-size:26px; font-weight:700; line-height:1; }
-  .kpi-value.accent { color:var(--accent); } .kpi-value.green { color:var(--green); }
-  .kpi-value.orange { color:var(--orange); } .kpi-value.yellow { color:var(--yellow); }
-  .kpi-value.red { color:var(--red); } .kpi-value.purple { color:var(--purple); }
+  .content{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 220px);}
+  .conversations-panel{border-right:1px solid var(--border);overflow-y:auto;}
+  .ranking-panel{overflow-y:auto;padding:16px;}
+  .section-header{padding:12px 20px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;justify-content:space-between;align-items:center;}
 
-  .content { display:grid; grid-template-columns:1fr 340px; height:calc(100vh - 220px); }
-  .conversations-panel { border-right:1px solid var(--border); overflow-y:auto; }
-  .ranking-panel { overflow-y:auto; padding:16px; }
-  .section-header { padding:12px 20px 8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:10; display:flex; justify-content:space-between; align-items:center; }
+  .conv-card{padding:12px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .conv-card:hover{background:var(--surface);}
+  .conv-card.active{background:var(--accent-dim);border-left:3px solid var(--accent);}
+  .conv-info{flex:1;min-width:0;}
+  .conv-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .conv-name .etapa{font-size:11px;font-weight:500;color:var(--muted);margin-left:6px;}
+  .conv-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;}
+  .audio-badge{font-size:12px;font-weight:600;white-space:nowrap;}
+  .audio-badge.all-done{color:var(--green);} .audio-badge.pending{color:var(--orange);}
+  .audio-badge.has-error{color:var(--red);} .audio-badge.no-audio{color:var(--muted);}
 
-  .conv-card { padding:12px 20px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-  .conv-card:hover { background:var(--surface); }
-  .conv-card.active { background:var(--accent-dim); border-left:3px solid var(--accent); }
-  .conv-info { flex:1; min-width:0; }
-  .conv-name { font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .conv-name .etapa { font-size:11px; font-weight:500; color:var(--text-muted); margin-left:6px; }
-  .conv-meta { font-size:12px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; }
-  .audio-badge { font-size:12px; font-weight:600; white-space:nowrap; }
-  .audio-badge.all-done { color:var(--green); } .audio-badge.pending { color:var(--orange); }
-  .audio-badge.has-error { color:var(--red); } .audio-badge.no-audio { color:var(--text-muted); }
+  .rank-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
+  .rank-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .rank-name{font-weight:600;font-size:13px;}
+  .rank-pos{font-size:11px;color:var(--muted);font-weight:700;}
+  .rank-bars{display:flex;flex-direction:column;gap:4px;}
+  .rank-bar-row{display:flex;align-items:center;gap:6px;}
+  .rank-bar-label{font-size:11px;color:var(--muted);width:36px;flex-shrink:0;}
+  .rank-bar-track{flex:1;background:var(--border);border-radius:3px;height:6px;overflow:hidden;}
+  .rank-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
+  .rank-bar-fill.aval{background:var(--accent);} .rank-bar-fill.closer{background:var(--green);} .rank-bar-fill.audio{background:var(--yellow);}
+  .rank-bar-val{font-size:11px;color:var(--muted);width:32px;text-align:right;flex-shrink:0;}
 
-  .rank-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; margin-bottom:8px; }
-  .rank-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .rank-name { font-weight:600; font-size:13px; }
-  .rank-pos { font-size:11px; color:var(--text-muted); font-weight:700; }
-  .rank-bars { display:flex; flex-direction:column; gap:4px; }
-  .rank-bar-row { display:flex; align-items:center; gap:6px; }
-  .rank-bar-label { font-size:11px; color:var(--text-muted); width:36px; flex-shrink:0; }
-  .rank-bar-track { flex:1; background:var(--border); border-radius:3px; height:6px; overflow:hidden; }
-  .rank-bar-fill { height:100%; border-radius:3px; transition:width .3s; }
-  .rank-bar-fill.aval { background:var(--accent); } .rank-bar-fill.closer { background:var(--green); } .rank-bar-fill.audio { background:var(--yellow); }
-  .rank-bar-val { font-size:11px; color:var(--text-muted); width:32px; text-align:right; flex-shrink:0; }
+  /* ---- TAB 2 ---- */
+  .p2-body{padding:20px 24px;overflow-y:auto;height:calc(100vh - 112px);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
+  .card h3{font-size:13px;font-weight:700;margin-bottom:4px;}
+  .card p{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .card textarea{width:100%;line-height:1.6;resize:vertical;min-height:130px;padding:10px 12px;}
+  .card-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+  .hint{background:var(--surface2);border-left:3px solid var(--accent);padding:9px 12px;border-radius:var(--rs);font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:10px;font-family:monospace;}
 
-  /* ===== P2 ===== */
-  .p2-filters { padding:12px 24px; display:flex; gap:10px; flex-wrap:wrap; border-bottom:1px solid var(--border); background:var(--surface); align-items:center; }
-  .p2-body { padding:20px 24px; overflow-y:auto; height:calc(100vh - 112px); }
+  .lote-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+  .lote-row:last-child{border-bottom:none;}
+  .tag{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;margin-left:6px;}
+  .tag.aval{background:var(--accent-dim);color:var(--accent);}
+  .tag.closer{background:var(--green-dim);color:var(--green);}
+  .tag.novo{background:var(--purple-dim);color:var(--purple);}
+  .tag.feito{background:var(--green-dim);color:var(--green);}
 
-  .p2-status { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .p2-status-info .title { font-size:14px; font-weight:700; }
-  .p2-status-info .sub { font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:12px 0 8px;}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0;transition:width .3s;}
+  .log{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:12px;font-family:monospace;max-height:240px;overflow-y:auto;line-height:1.8;}
+  .log div{white-space:pre-wrap;word-break:break-word;}
+  .ok{color:var(--green);} .er{color:var(--red);} .wa{color:var(--yellow);} .dim{color:var(--muted);}
 
-  .prompt-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:16px; }
-  .prompt-section h4 { font-size:13px; font-weight:700; margin-bottom:4px; }
-  .prompt-section p { font-size:12px; color:var(--text-muted); margin-bottom:10px; }
-  .prompt-section textarea { width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:var(--radius-sm); font-size:13px; font-family:inherit; line-height:1.6; resize:vertical; min-height:130px; outline:none; }
-  .prompt-section textarea:focus { border-color:var(--accent); }
-  .prompt-section-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
-  .hint { background:var(--surface2); border-left:3px solid var(--accent); padding:10px 12px; border-radius:var(--radius-sm); font-size:11.5px; color:var(--text-muted); line-height:1.7; margin-bottom:10px; font-family:monospace; }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:24px;}
+  .ac{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+  .ac:hover{border-color:var(--accent);}
+  .ac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px;}
+  .ac-name{font-weight:700;font-size:14px;}
+  .ac-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .ac-scores{display:flex;gap:18px;align-items:flex-end;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
+  .ac-num{font-size:34px;font-weight:800;line-height:1;}
+  .ac-num.sm{font-size:20px;}
+  .ac-num.high{color:var(--green);} .ac-num.mid{color:var(--yellow);} .ac-num.low{color:var(--red);}
+  .ac-cap{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:4px;}
+  .delta{font-size:13px;font-weight:700;padding:2px 8px;border-radius:4px;}
+  .delta.up{background:var(--green-dim);color:var(--green);}
+  .delta.down{background:var(--red-dim);color:var(--red);}
+  .delta.flat{background:var(--surface2);color:var(--muted);}
+  .ac-block{margin-bottom:10px;}
+  .ac-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;}
+  .tags{display:flex;flex-wrap:wrap;gap:4px;}
+  .t{font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--muted);}
+  .t.pos{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+  .t.neg{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+  .t.warn{border-color:var(--yellow);color:var(--yellow);background:#2a2000;}
+  .txt{font-size:12px;color:var(--muted);line-height:1.6;}
+  .evo{font-size:12px;line-height:1.6;background:var(--surface2);border-left:3px solid var(--purple);padding:9px 11px;border-radius:var(--rs);color:var(--text);}
+  .lnk{font-size:12px;color:var(--accent);cursor:pointer;margin-top:8px;display:inline-block;}
+  .lnk:hover{text-decoration:underline;}
+  .meta-row{display:flex;align-items:flex-start;gap:6px;font-size:11.5px;padding:3px 0;}
+  .meta-ic{flex-shrink:0;}
 
-  .analysis-section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); margin-bottom:12px; }
-  .analysis-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; margin-bottom:24px; }
+  .comp{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
+  .comp h3{font-size:15px;font-weight:700;margin-bottom:4px;}
+  .comp .csub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .crow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .crow:last-of-type{border-bottom:none;}
+  .cpos{font-size:18px;font-weight:800;color:var(--muted);width:22px;flex-shrink:0;}
+  .cname{font-size:13px;font-weight:600;}
+  .ctrack{height:6px;background:var(--border);border-radius:3px;}
+  .cfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .4s;}
+  .cscore{font-size:20px;font-weight:800;width:38px;text-align:right;flex-shrink:0;}
+  .cresumo{font-size:12px;color:var(--muted);line-height:1.7;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);white-space:pre-wrap;}
 
-  .ac { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; transition:border-color .15s; }
-  .ac:hover { border-color:var(--accent); }
-  .ac-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; gap:8px; }
-  .ac-name { font-weight:700; font-size:14px; }
-  .ac-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
-  .ac-etapa { font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; white-space:nowrap; }
-  .ac-etapa.aval { background:var(--accent-dim); color:var(--accent); }
-  .ac-etapa.closer { background:var(--green-dim); color:var(--green); }
+  .chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
+  .chart h3{font-size:13px;font-weight:700;margin-bottom:12px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--muted);}
+  .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}
 
-  .ac-scores { display:flex; gap:16px; align-items:flex-end; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border); }
-  .ac-score-item { display:flex; flex-direction:column; }
-  .ac-score-num { font-size:34px; font-weight:800; line-height:1; }
-  .ac-score-num.sm { font-size:22px; }
-  .ac-score-num.high { color:var(--green); } .ac-score-num.mid { color:var(--yellow); } .ac-score-num.low { color:var(--red); }
-  .ac-score-cap { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); margin-top:4px; }
+  .empty{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty-icon{font-size:40px;margin-bottom:10px;}
+  .loading{text-align:center;padding:40px;color:var(--muted);}
+  .spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-  .ac-flags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-  .flag { font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:4px; border:1px solid var(--border); color:var(--text-muted); }
-  .flag.on { border-color:var(--green); color:var(--green); background:var(--green-dim); }
-  .flag.off { border-color:var(--red); color:var(--red); background:var(--red-dim); }
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:680px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
+  .modal-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+  .modal-title{font-size:16px;font-weight:700;}
+  .modal-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:2px 4px;}
+  .modal-close:hover{color:var(--text);}
+  .modal-body{overflow-y:auto;padding:16px 20px;flex:1;}
+  .error-modal{background:var(--surface);border:1px solid var(--red);border-radius:12px;width:520px;max-width:95vw;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;}
+  .error-modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .error-modal-title{font-size:15px;font-weight:700;color:var(--red);}
+  .error-item{background:var(--red-dim);border:1px solid var(--red);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;}
+  .error-item-seller{font-weight:600;font-size:13px;margin-bottom:4px;}
+  .error-item-msg{font-size:12px;color:var(--red);font-family:monospace;word-break:break-all;margin-bottom:4px;}
+  .error-item-time{font-size:11px;color:var(--muted);}
 
-  .ac-block { margin-bottom:10px; }
-  .ac-block-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); margin-bottom:5px; }
-  .ac-tags { display:flex; flex-wrap:wrap; gap:4px; }
-  .ac-tag { font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid var(--border); color:var(--text-muted); }
-  .ac-tag.pos { border-color:var(--green); color:var(--green); background:var(--green-dim); }
-  .ac-tag.neg { border-color:var(--red); color:var(--red); background:var(--red-dim); }
-  .ac-tag.warn { border-color:var(--yellow); color:var(--yellow); background:#2a2000; }
-  .ac-resumo { font-size:12px; color:var(--text-muted); line-height:1.6; }
-  .ac-link { font-size:12px; color:var(--accent); cursor:pointer; margin-top:8px; display:inline-block; }
-  .ac-link:hover { text-decoration:underline; }
+  .msg{margin-bottom:8px;display:flex;flex-direction:column;}
+  .msg.user{align-items:flex-end;} .msg.customer{align-items:flex-start;}
+  .msg-bubble{max-width:78%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;}
+  .msg.user .msg-bubble{background:var(--accent-dim);border:1px solid var(--accent);border-bottom-right-radius:3px;}
+  .msg.customer .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:3px;}
+  .msg-time{font-size:10px;color:var(--muted);margin-top:3px;}
+  .msg-pending{color:var(--orange);font-style:italic;font-size:12px;}
+  .msg-error{color:var(--red);font-style:italic;font-size:12px;cursor:pointer;text-decoration:underline dotted;}
+  .msg-unsupported{color:var(--muted);font-style:italic;font-size:12px;}
+  .msg-image{color:var(--purple);font-style:italic;font-size:12px;}
+  .msg-template{color:var(--yellow);font-size:12px;}
+  .msg-audio-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px;}
+  .json-pre{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-word;color:var(--muted);}
 
-  .comparative { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:16px; }
-  .comparative h3 { font-size:15px; font-weight:700; margin-bottom:4px; }
-  .comparative .csub { font-size:12px; color:var(--text-muted); margin-bottom:14px; }
-  .comp-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
-  .comp-row:last-child { border-bottom:none; }
-  .comp-pos { font-size:18px; font-weight:800; color:var(--text-muted); width:22px; flex-shrink:0; }
-  .comp-name { font-size:13px; font-weight:600; flex:1; }
-  .comp-bar-wrap { flex:2; }
-  .comp-bar-track { height:6px; background:var(--border); border-radius:3px; }
-  .comp-bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--green)); transition:width .4s; }
-  .comp-score { font-size:20px; font-weight:800; width:38px; text-align:right; flex-shrink:0; }
-  .comp-score.high { color:var(--green); } .comp-score.mid { color:var(--yellow); } .comp-score.low { color:var(--red); }
-  .comp-resumo { font-size:12px; color:var(--text-muted); line-height:1.7; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); white-space:pre-wrap; }
-
-  .empty { text-align:center; padding:60px 20px; color:var(--text-muted); }
-  .empty-icon { font-size:40px; margin-bottom:10px; }
-  .loading { text-align:center; padding:40px; color:var(--text-muted); }
-  .spinner { display:inline-block; width:24px; height:24px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin-bottom:10px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:200; align-items:center; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; width:680px; max-width:95vw; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; }
-  .modal-sm { width:480px; }
-  .modal-header { padding:16px 20px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; }
-  .modal-title { font-size:16px; font-weight:700; }
-  .modal-sub { font-size:12px; color:var(--text-muted); margin-top:3px; }
-  .modal-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px; line-height:1; padding:2px 4px; }
-  .modal-close:hover { color:var(--text); }
-  .modal-body { overflow-y:auto; padding:16px 20px; flex:1; }
-  .modal-footer { padding:12px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
-
-  .error-modal { background:var(--surface); border:1px solid var(--red); border-radius:12px; width:520px; max-width:95vw; max-height:70vh; display:flex; flex-direction:column; overflow:hidden; }
-  .error-modal-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-  .error-modal-title { font-size:15px; font-weight:700; color:var(--red); }
-  .error-modal-body { overflow-y:auto; padding:16px 20px; }
-  .error-item { background:var(--red-dim); border:1px solid var(--red); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:10px; }
-  .error-item-seller { font-weight:600; font-size:13px; margin-bottom:4px; }
-  .error-item-msg { font-size:12px; color:var(--red); font-family:monospace; word-break:break-all; margin-bottom:4px; }
-  .error-item-time { font-size:11px; color:var(--text-muted); }
-
-  .msg { margin-bottom:8px; display:flex; flex-direction:column; }
-  .msg.user { align-items:flex-end; } .msg.customer { align-items:flex-start; }
-  .msg-bubble { max-width:78%; padding:8px 12px; border-radius:10px; font-size:13px; line-height:1.5; }
-  .msg.user .msg-bubble { background:var(--accent-dim); border:1px solid var(--accent); border-bottom-right-radius:3px; }
-  .msg.customer .msg-bubble { background:var(--surface2); border:1px solid var(--border); border-bottom-left-radius:3px; }
-  .msg-time { font-size:10px; color:var(--text-muted); margin-top:3px; }
-  .msg-audio-icon { font-size:16px; margin-top:1px; flex-shrink:0; }
-  .msg-audio-content { flex:1; }
-  .msg-audio-label { font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:3px; }
-  .msg-pending { color:var(--orange); font-style:italic; font-size:12px; }
-  .msg-error { color:var(--red); font-style:italic; font-size:12px; cursor:pointer; text-decoration:underline dotted; }
-  .msg-unsupported { color:var(--text-muted); font-style:italic; font-size:12px; }
-  .msg-image { color:var(--seller); font-style:italic; font-size:12px; }
-  .msg-template { color:var(--yellow); font-size:12px; }
-
-  .json-pre { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:12px; font-family:monospace; white-space:pre-wrap; word-break:break-word; color:var(--text-muted); }
-  .md-pre { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:12px; font-family:monospace; white-space:pre-wrap; word-break:break-word; color:var(--text-muted); line-height:1.6; }
-
-  .radio-group { display:flex; flex-direction:column; gap:10px; margin:12px 0; }
-  .radio-option { display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer; }
-  .radio-option input { accent-color:var(--accent); width:15px; height:15px; }
-  .radio-desc { font-size:11px; color:var(--text-muted); margin-left:25px; margin-top:-6px; }
-
-  .chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; }
-  .chip.ok { background:var(--green-dim); color:var(--green); border:1px solid var(--green); }
-  .chip.warn { background:#2a2000; color:var(--yellow); border:1px solid var(--yellow); }
-
-  ::-webkit-scrollbar { width:6px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
 </head>
 <body>
@@ -224,8 +200,8 @@
   <div style="display:flex;align-items:center;height:100%">
     <div class="logo">Aspekto <span>SDR</span></div>
     <nav class="tabs">
-      <div class="tab active" onclick="trocarPagina(1,this)">Conversas</div>
-      <div class="tab" onclick="trocarPagina(2,this)">🤖 Análise IA</div>
+      <div class="tab active" onclick="tab(1,this)">Conversas</div>
+      <div class="tab" onclick="tab(2,this)">🧠 Inteligência</div>
     </nav>
   </div>
   <div class="header-right">
@@ -234,12 +210,12 @@
   </div>
 </div>
 
-<!-- ============ PÁGINA 1 ============ -->
+<!-- ============== TAB 1 ============== -->
 <div id="page1" class="page active">
   <div class="error-banner" id="errorBanner">
     <div class="error-banner-icon">⚠️</div>
-    <div class="error-banner-content">
-      <div class="error-banner-title" id="errorBannerTitle">Erros detectados nas transcrições</div>
+    <div style="flex:1">
+      <div class="error-banner-title" id="errorBannerTitle">Erros nas transcrições</div>
       <ul class="error-banner-list" id="errorBannerList"></ul>
     </div>
   </div>
@@ -263,17 +239,17 @@
     <div class="kpi"><div class="kpi-label">Aval. Agendada</div><div class="kpi-value accent" id="kAval">—</div></div>
     <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
     <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
-    <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPendentes">—</div></div>
-    <div class="kpi"><div class="kpi-label">Não suportados</div><div class="kpi-value" id="kNaoSuportados" style="color:var(--text-muted)">—</div></div>
-    <div class="kpi" style="cursor:pointer" onclick="abrirModalErros()">
-      <div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErros">—</div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:4px">clique para detalhar</div>
+    <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPend">—</div></div>
+    <div class="kpi"><div class="kpi-label">Não suportados</div><div class="kpi-value" id="kNS" style="color:var(--muted)">—</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="abrirErros()">
+      <div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErr">—</div>
+      <div class="kpi-sub">clique para detalhar</div>
     </div>
   </div>
 
   <div class="content">
     <div class="conversations-panel">
-      <div class="section-header"><span>Últimas conversas</span><span id="convCount" style="font-weight:400;color:var(--text-muted)"></span></div>
+      <div class="section-header"><span>Últimas conversas</span><span id="convCount" style="font-weight:400;color:var(--muted)"></span></div>
       <div id="convList"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
     </div>
     <div class="ranking-panel">
@@ -283,585 +259,557 @@
   </div>
 </div>
 
-<!-- ============ PÁGINA 2 ============ -->
+<!-- ============== TAB 2 ============== -->
 <div id="page2" class="page">
-  <div class="p2-filters">
-    <select id="p2Semana" onchange="carregarAnalises()"><option value="">Selecione a semana...</option></select>
-    <select id="p2Etapa" onchange="carregarAnalises()">
+  <div class="filters">
+    <select id="semana" onchange="onSemana()"><option value="">Carregando...</option></select>
+    <select id="etapa2" onchange="refreshP2()">
       <option value="">Todas as etapas</option>
       <option value="avaliacao">Aval. Agendada</option>
       <option value="closer">Closer</option>
     </select>
-    <select id="p2Vendedor" onchange="carregarAnalises()"><option value="">Todos vendedores</option></select>
+    <select id="vend2" onchange="refreshP2()"><option value="">Todos vendedores</option></select>
     <div style="margin-left:auto;display:flex;gap:8px">
-      <button class="btn btn-ghost"  onclick="togglePromptEditor()">⚙️ Prompt</button>
-      <button class="btn btn-green"  onclick="gerarLotes()"      id="btnLotes">📦 Gerar Lotes</button>
-      <button class="btn btn-purple" onclick="abrirModalRodar()" id="btnRodar">🤖 Rodar Análise</button>
+      <button class="btn btn-ghost"  onclick="toggleInstr()">⚙️ Instruções</button>
+      <button class="btn btn-green"  onclick="gerarLotes()" id="btnLotes">📦 Gerar Lotes</button>
+      <button class="btn btn-purple" onclick="analisar()"   id="btnGo">▶ Analisar pendentes</button>
     </div>
   </div>
 
   <div class="p2-body">
-    <div id="promptEditor" style="display:none;margin-bottom:20px">
-      <div class="prompt-section">
-        <h4>📝 Prompt — Análise Individual</h4>
-        <p>Enviado ao Claude junto com as conversas de cada vendedor. O markdown do lote é anexado automaticamente ao final. <strong>Precisa pedir JSON com estes campos</strong> para o dashboard renderizar corretamente:</p>
-        <div class="hint">score_geral (0-10) · urgencia_score (0-10) · resumo · preco_mencionado (bool) · objecoes_contornadas (bool) · tecnicas_utilizadas [] · tecnicas_bem_aplicadas [] · objecoes_identificadas [] · pontos_de_melhoria [] · etapas_cumpridas {}</div>
-        <textarea id="txtPromptIndividual" placeholder="Escreva aqui sua instrução de análise..."></textarea>
+
+    <div id="instr" style="display:none">
+      <div class="card">
+        <h3>📝 Instrução — Análise Individual</h3>
+        <p>Aplicada a cada vendedor. Recebe automaticamente: o contexto da análise anterior dele + as conversas novas da semana.</p>
+        <div class="hint">JSON esperado: score_geral (0-10) · urgencia_score (0-10) · resumo · preco_mencionado (bool) · objecoes_contornadas (bool) · tecnicas_utilizadas[] · tecnicas_bem_aplicadas[] · objecoes_identificadas[] · pontos_de_melhoria[] · evolucao (texto) · metas_cumpridas[{meta,cumprida,evidencia}] · metas_proximas[]</div>
+        <textarea id="pIndiv" placeholder="Ainda vamos construir esta instrução juntos..."></textarea>
       </div>
-      <div class="prompt-section">
-        <h4>📊 Prompt — Análise Comparativa</h4>
-        <p>Enviado com as conversas de todos os vendedores da semana concatenadas. Peça JSON com <code>ranking</code> e <code>destaques</code>:</p>
-        <div class="hint">ranking: [{ nome, score_geral, destaque }] · destaques (texto) · melhor_pratica (texto)</div>
-        <textarea id="txtPromptComparativo" placeholder="Escreva aqui sua instrução comparativa..."></textarea>
-        <div class="prompt-section-footer">
-          <button class="btn btn-ghost" onclick="togglePromptEditor()">Cancelar</button>
-          <button class="btn btn-primary" onclick="salvarPrompt()">💾 Salvar Prompt</button>
+      <div class="card">
+        <h3>📊 Instrução — Análise Comparativa</h3>
+        <p>Aplicada ao conjunto de vendedores da semana, por etapa.</p>
+        <div class="hint">JSON esperado: ranking[{nome,score_geral,destaque}] · destaques (texto) · melhor_pratica (texto)</div>
+        <textarea id="pComp" placeholder="Ainda vamos construir esta instrução juntos..."></textarea>
+        <div class="card-actions">
+          <button class="btn btn-ghost" onclick="toggleInstr()">Fechar</button>
+          <button class="btn btn-primary" onclick="salvarInstr()">💾 Salvar instruções</button>
         </div>
       </div>
     </div>
 
-    <div id="p2Status" class="p2-status" style="display:none">
-      <div class="p2-status-info">
-        <div class="title" id="p2StatusTitle">—</div>
-        <div class="sub" id="p2StatusSub">—</div>
-      </div>
-      <div id="p2StatusActions"></div>
+    <div class="card" id="cardFila">
+      <h3>📦 Fila de análise</h3>
+      <p id="filaSub">—</p>
+      <div id="fila"></div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="log" id="log"><div class="dim">Selecione a semana e clique em "Analisar pendentes".</div></div>
     </div>
 
-    <div class="kpis" id="p2Kpis" style="display:none;padding:0 0 20px 0"></div>
-
-    <div id="p2Resultados">
-      <div class="empty">
-        <div class="empty-icon">🤖</div>
-        <div>Selecione uma semana e clique em <strong>Rodar Análise</strong>.</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Se não houver semanas na lista, clique em <strong>Gerar Lotes</strong> primeiro.</div>
-      </div>
-    </div>
+    <div class="kpis" id="p2Kpis" style="display:none;padding:0 0 16px 0"></div>
+    <div id="p2Chart"></div>
+    <div id="p2Res"></div>
   </div>
 </div>
 
 <!-- MODAIS -->
-<div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+<div class="modal-overlay" id="mConv" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-header">
-      <div><div class="modal-title" id="modalTitle">—</div><div class="modal-sub" id="modalSub">—</div></div>
-      <button class="modal-close" onclick="fecharModal()">✕</button>
+      <div><div class="modal-title" id="mConvT">—</div><div class="modal-sub" id="mConvS">—</div></div>
+      <button class="modal-close" onclick="document.getElementById('mConv').classList.remove('open')">✕</button>
     </div>
-    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-body" id="mConvB"></div>
   </div>
 </div>
 
-<div class="modal-overlay" id="errorModalOverlay" onclick="fecharModalErros(event)">
+<div class="modal-overlay" id="mErr" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="error-modal">
     <div class="error-modal-header">
       <div class="error-modal-title">⚠️ Erros nas transcrições</div>
-      <button class="modal-close" onclick="fecharModalErros()">✕</button>
+      <button class="modal-close" onclick="document.getElementById('mErr').classList.remove('open')">✕</button>
     </div>
-    <div class="error-modal-body" id="errorModalBody"></div>
+    <div class="modal-body" id="mErrB"></div>
   </div>
 </div>
 
-<div class="modal-overlay" id="modalRodar" onclick="if(event.target===this)fecharModalRodar()">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <div><div class="modal-title">🤖 Rodar Análise com IA</div><div class="modal-sub" id="modalRodarSub">—</div></div>
-      <button class="modal-close" onclick="fecharModalRodar()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="radio-group">
-        <div>
-          <label class="radio-option"><input type="radio" name="tipoAnalise" value="individual"> Individual</label>
-          <div class="radio-desc">Uma análise por vendedor</div>
-        </div>
-        <div>
-          <label class="radio-option"><input type="radio" name="tipoAnalise" value="comparativa"> Comparativa</label>
-          <div class="radio-desc">Ranking entre os vendedores da semana</div>
-        </div>
-        <div>
-          <label class="radio-option"><input type="radio" name="tipoAnalise" value="ambos" checked> Ambas</label>
-          <div class="radio-desc">Individual + Comparativa</div>
-        </div>
-      </div>
-      <div id="modalRodarStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModalRodar()">Cancelar</button>
-      <button class="btn btn-purple" onclick="confirmarAnalise()" id="btnConfirmar">▶ Executar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalDetalhe" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-overlay" id="mDet" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-header">
-      <div><div class="modal-title" id="modalDetalheTitle">Detalhes</div><div class="modal-sub" id="modalDetalheSub">—</div></div>
-      <button class="modal-close" onclick="document.getElementById('modalDetalhe').classList.remove('open')">✕</button>
+      <div><div class="modal-title" id="mDetT">Detalhes</div><div class="modal-sub" id="mDetS">—</div></div>
+      <button class="modal-close" onclick="document.getElementById('mDet').classList.remove('open')">✕</button>
     </div>
-    <div class="modal-body"><pre class="json-pre" id="modalDetalheBody"></pre></div>
+    <div class="modal-body"><pre class="json-pre" id="mDetB"></pre></div>
   </div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const SU = 'https://mwlxudtdvflygvewuwal.supabase.co';
-const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
-const WH_LOTES    = 'https://n8n-ai.grupoaspekto.com/webhook/sdr-gerar-lotes';
-const WH_ANALISAR = 'https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
+const SU='https://mwlxudtdvflygvewuwal.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
+const H={apikey:SK,Authorization:'Bearer '+SK,'Content-Type':'application/json'};
+const WH_LOTES='https://n8n-ai.grupoaspekto.com/webhook/sdr-gerar-lotes';
 
-const sbGet  = p => fetch(`${SU}/rest/v1/${p}`, { headers:{ apikey:SK, Authorization:`Bearer ${SK}` } }).then(r=>r.json());
-const sbPost = (p,b) => fetch(`${SU}/rest/v1/${p}`, { method:'POST', headers:{ apikey:SK, Authorization:`Bearer ${SK}`, 'Content-Type':'application/json', Prefer:'return=representation' }, body:JSON.stringify(b) }).then(r=>r.json());
-const fmtD    = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
-const fmtDT   = iso => iso ? new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-const cls10   = s => s >= 7 ? 'high' : s >= 5 ? 'mid' : 'low';
-const asArr   = v => Array.isArray(v) ? v : (v ? [v] : []);
+const get=p=>fetch(`${SU}/rest/v1/${p}`,{headers:H}).then(r=>r.json());
+const fmtD=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
+const fmtDT=d=>d?new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+const c10=s=>s>=7?'high':s>=5?'mid':'low';
+const arr=v=>Array.isArray(v)?v:(v?[v]:[]);
+const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 
-let p2Init = false;
-function trocarPagina(n, el) {
+let p2Init=false;
+function tab(n,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page'+n).classList.add('active');
-  el.classList.add('active');
-  if (n===2 && !p2Init) { p2Init = true; initP2(); }
+  document.getElementById('page'+n).classList.add('active'); el.classList.add('active');
+  if(n===2&&!p2Init){p2Init=true;initP2();}
 }
 
-/* ================= PÁGINA 1 ================= */
-let dados=[], filtrados=[], convAtiva=null, todosErros=[];
+/* ================= TAB 1 ================= */
+let dados=[],filt=[],convAtiva=null,erros=[];
 
-async function carregar() {
-  document.getElementById('convList').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
-  try {
-    const raw = await sbGet('conversations?select=*&order=conversation_date.desc&limit=200');
-    const m = {}; for (const r of raw) m[r.deal_id] = r;
-    dados = Object.values(m);
-    preencherVendedores(); aplicarFiltros();
-    document.getElementById('lastUpdate').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  } catch(e) { document.getElementById('convList').innerHTML = '<div class="empty">⚠️ Erro ao carregar dados</div>'; }
+async function carregar(){
+  document.getElementById('convList').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
+  try{
+    const raw=await get('conversations?select=*&order=conversation_date.desc&limit=200');
+    const m={}; for(const r of raw)m[r.deal_id]=r; dados=Object.values(m);
+    vendedoresP1(); aplicarFiltros();
+    document.getElementById('lastUpdate').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){document.getElementById('convList').innerHTML='<div class="empty">⚠️ Erro ao carregar</div>';}
 }
-
-function preencherVendedores() {
-  const sel = document.getElementById('filtVendedor'), a = sel.value;
-  const nomes = [...new Set(dados.map(d=>d.seller_name).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">Todos vendedores</option>' + nomes.map(n=>`<option value="${n}">${n}</option>`).join('');
-  sel.value = a;
+function vendedoresP1(){
+  const s=document.getElementById('filtVendedor'),a=s.value;
+  const n=[...new Set(dados.map(d=>d.seller_name).filter(Boolean))].sort();
+  s.innerHTML='<option value="">Todos vendedores</option>'+n.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); s.value=a;
 }
-
-function aplicarFiltros() {
-  const dias = parseInt(document.getElementById('filtPeriodo').value);
-  const etapa = document.getElementById('filtEtapa').value;
-  const vend = document.getElementById('filtVendedor').value;
-  const corte = new Date(Date.now()-dias*86400000).toISOString().split('T')[0];
-  filtrados = dados.filter(d => {
-    if (d.conversation_date < corte) return false;
-    if (etapa && d.origin_name) {
-      const o = d.origin_name.toLowerCase();
-      if (etapa==='aval' && !o.includes('avalia')) return false;
-      if (etapa==='closer' && !o.includes('closer')) return false;
-    }
-    if (vend && d.seller_name !== vend) return false;
-    return true;
-  });
-  renderKpis(); renderConversas(); renderRanking(); renderErrorBanner();
+function aplicarFiltros(){
+  const dias=+document.getElementById('filtPeriodo').value,et=document.getElementById('filtEtapa').value,vd=document.getElementById('filtVendedor').value;
+  const corte=new Date(Date.now()-dias*86400000).toISOString().split('T')[0];
+  filt=dados.filter(d=>{
+    if(d.conversation_date<corte)return false;
+    if(et&&d.origin_name){const o=d.origin_name.toLowerCase();
+      if(et==='aval'&&!o.includes('avalia'))return false;
+      if(et==='closer'&&!o.includes('closer'))return false;}
+    if(vd&&d.seller_name!==vd)return false; return true;});
+  kpis1();lista1();rank1();banner1();
 }
-
-function statusAudios(msgs) {
-  const a = (msgs||[]).filter(m=>m.content_type==='AUDIO' && m.content_url);
-  return {
-    total: a.length,
-    transcritos: a.filter(m=>m.transcricao && !String(m.transcricao).startsWith('[')).length,
-    erros: a.filter(m=>m.transcricao && String(m.transcricao).startsWith('[erro')).length,
-    naoSuportados: a.filter(m=>m.transcricao && String(m.transcricao).startsWith('[formato-nao-suportado')).length,
-    pendentes: a.filter(m=>!m.transcricao).length
-  };
+function stA(msgs){const a=(msgs||[]).filter(m=>m.content_type==='AUDIO'&&m.content_url);return{
+  total:a.length,
+  tr:a.filter(m=>m.transcricao&&!String(m.transcricao).startsWith('[')).length,
+  er:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[erro')).length,
+  ns:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[formato-nao-suportado')).length,
+  pe:a.filter(m=>!m.transcricao).length};}
+function kpis1(){
+  let A=0,T=0,P=0,E=0,N=0;
+  for(const d of filt){const s=stA(d.raw_messages);A+=s.total;T+=s.tr;P+=s.pe;E+=s.er;N+=s.ns;}
+  document.getElementById('kTotal').textContent=filt.length;
+  document.getElementById('kAval').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('avalia')).length;
+  document.getElementById('kCloser').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('closer')).length;
+  document.getElementById('kAudios').textContent=T+'/'+A;
+  document.getElementById('kPend').textContent=P;
+  document.getElementById('kNS').textContent=N;
+  const k=document.getElementById('kErr');k.textContent=E;k.style.color=E>0?'var(--red)':'var(--muted)';
+  erros=[];
+  for(const d of filt)for(const m of (d.raw_messages||[]))
+    if(m.transcricao&&String(m.transcricao).startsWith('[erro'))
+      erros.push({seller:d.seller_name,erro:m.transcricao,created_at:m.created_at});
 }
-
-function renderKpis() {
-  let tA=0,tT=0,tP=0,tE=0,tN=0;
-  for (const d of filtrados) { const s=statusAudios(d.raw_messages); tA+=s.total; tT+=s.transcritos; tP+=s.pendentes; tE+=s.erros; tN+=s.naoSuportados; }
-  document.getElementById('kTotal').textContent = filtrados.length;
-  document.getElementById('kAval').textContent = filtrados.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('avalia')).length;
-  document.getElementById('kCloser').textContent = filtrados.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('closer')).length;
-  document.getElementById('kAudios').textContent = `${tT}/${tA}`;
-  document.getElementById('kPendentes').textContent = tP;
-  document.getElementById('kNaoSuportados').textContent = tN;
-  const kE = document.getElementById('kErros');
-  kE.textContent = tE; kE.style.color = tE>0 ? 'var(--red)' : 'var(--text-muted)';
-  todosErros = [];
-  for (const d of filtrados)
-    for (const m of (d.raw_messages||[]))
-      if (m.transcricao && String(m.transcricao).startsWith('[erro'))
-        todosErros.push({ seller:d.seller_name, deal_id:d.deal_id, erro:m.transcricao, created_at:m.created_at });
-}
-
-function renderErrorBanner() {
-  const b = document.getElementById('errorBanner');
-  if (!todosErros.length) { b.classList.remove('visible'); return; }
+function banner1(){
+  const b=document.getElementById('errorBanner');
+  if(!erros.length){b.classList.remove('visible');return;}
   b.classList.add('visible');
-  document.getElementById('errorBannerTitle').textContent = `${todosErros.length} erro(s) detectado(s) nas transcrições — clique para ver detalhes`;
-  const g = {};
-  for (const e of todosErros) { const t = e.erro.replace(/\[erro[^:]*: /,'').replace(/\].*/,'').slice(0,60); g[t]=(g[t]||0)+1; }
-  document.getElementById('errorBannerList').innerHTML = Object.entries(g).map(([t,q])=>`<li onclick="abrirModalErros()"><span class="err-badge">${q}x</span> ${t}</li>`).join('');
+  document.getElementById('errorBannerTitle').textContent=erros.length+' erro(s) nas transcrições — clique para detalhar';
+  const g={};for(const e of erros){const t=e.erro.replace(/\[erro[^:]*: /,'').replace(/\].*/,'').slice(0,60);g[t]=(g[t]||0)+1;}
+  document.getElementById('errorBannerList').innerHTML=Object.entries(g).map(([t,q])=>`<li onclick="abrirErros()"><span class="err-badge">${q}x</span> ${esc(t)}</li>`).join('');
 }
-
-function abrirModalErros() {
-  document.getElementById('errorModalBody').innerHTML = !todosErros.length
-    ? '<div class="empty" style="padding:30px">Nenhum erro encontrado ✓</div>'
-    : todosErros.map(e=>`<div class="error-item"><div class="error-item-seller">${e.seller||'—'}</div><div class="error-item-msg">${e.erro}</div><div class="error-item-time">${e.created_at?new Date(e.created_at).toLocaleString('pt-BR'):'—'}</div></div>`).join('');
-  document.getElementById('errorModalOverlay').classList.add('open');
+function abrirErros(){
+  document.getElementById('mErrB').innerHTML=!erros.length?'<div class="empty">Nenhum erro ✓</div>':
+    erros.map(e=>`<div class="error-item"><div class="error-item-seller">${esc(e.seller)||'—'}</div><div class="error-item-msg">${esc(e.erro)}</div><div class="error-item-time">${e.created_at?new Date(e.created_at).toLocaleString('pt-BR'):'—'}</div></div>`).join('');
+  document.getElementById('mErr').classList.add('open');
 }
-function fecharModalErros(e){ if(e&&e.target!==document.getElementById('errorModalOverlay'))return; document.getElementById('errorModalOverlay').classList.remove('open'); }
-
-function renderConversas() {
-  const el = document.getElementById('convList');
-  document.getElementById('convCount').textContent = filtrados.length + ' conversas';
-  if (!filtrados.length) { el.innerHTML='<div class="empty">💬 Nenhuma conversa encontrada</div>'; return; }
-  el.innerHTML = filtrados.map(d=>{
-    const s = statusAudios(d.raw_messages);
-    let b,c;
-    if (!s.total) { b='sem áudios'; c='no-audio'; }
-    else if (s.erros) { b=`⚠️ ${s.erros} erro(s)`; c='has-error'; }
-    else if (s.pendentes) { b=`⏳ ${s.transcritos}/${s.total} áudios`; c='pending'; }
-    else { b=`✓ ${s.transcritos}/${s.total} áudios`; c='all-done'; }
-    if (s.naoSuportados) b += ` · ${s.naoSuportados}✗`;
-    const et = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval.' : 'Closer';
-    return `<div class="conv-card ${convAtiva===d.deal_id?'active':''}" onclick="abrirModal('${d.deal_id}')">
-      <div class="conv-info">
-        <div class="conv-name">${d.seller_name||'—'}<span class="etapa">· ${et}</span></div>
-        <div class="conv-meta"><span>📅 ${d.conversation_date||'—'}</span><span>📱 ${d.telefone||'—'}</span><span>💬 ${(d.raw_messages||[]).length} msgs</span></div>
-      </div>
-      <div style="text-align:right;flex-shrink:0"><div class="audio-badge ${c}">${b}</div></div>
-    </div>`;
-  }).join('');
+function lista1(){
+  const el=document.getElementById('convList');
+  document.getElementById('convCount').textContent=filt.length+' conversas';
+  if(!filt.length){el.innerHTML='<div class="empty">💬 Nenhuma conversa</div>';return;}
+  el.innerHTML=filt.map(d=>{const s=stA(d.raw_messages);let b,c;
+    if(!s.total){b='sem áudios';c='no-audio';}
+    else if(s.er){b='⚠️ '+s.er+' erro(s)';c='has-error';}
+    else if(s.pe){b='⏳ '+s.tr+'/'+s.total+' áudios';c='pending';}
+    else{b='✓ '+s.tr+'/'+s.total+' áudios';c='all-done';}
+    if(s.ns)b+=' · '+s.ns+'✗';
+    const et=d.origin_name&&d.origin_name.toLowerCase().includes('avalia')?'Aval.':'Closer';
+    return `<div class="conv-card ${convAtiva===d.deal_id?'active':''}" onclick="verConv('${d.deal_id}')">
+      <div class="conv-info"><div class="conv-name">${esc(d.seller_name)||'—'}<span class="etapa">· ${et}</span></div>
+      <div class="conv-meta"><span>📅 ${d.conversation_date||'—'}</span><span>📱 ${esc(d.telefone)||'—'}</span><span>💬 ${(d.raw_messages||[]).length}</span></div></div>
+      <div style="text-align:right;flex-shrink:0"><div class="audio-badge ${c}">${b}</div></div></div>`;}).join('');
 }
-
-function renderRanking() {
-  const m = {};
-  for (const d of filtrados) {
-    const n = d.seller_name||'—';
-    if (!m[n]) m[n] = { aval:0, closer:0, audios:0, transcritos:0 };
-    if (d.origin_name && d.origin_name.toLowerCase().includes('avalia')) m[n].aval++; else m[n].closer++;
-    const s = statusAudios(d.raw_messages); m[n].audios+=s.total; m[n].transcritos+=s.transcritos;
+function rank1(){
+  const m={};
+  for(const d of filt){const n=d.seller_name||'—';if(!m[n])m[n]={aval:0,closer:0,au:0,tr:0};
+    if(d.origin_name&&d.origin_name.toLowerCase().includes('avalia'))m[n].aval++;else m[n].closer++;
+    const s=stA(d.raw_messages);m[n].au+=s.total;m[n].tr+=s.tr;}
+  const l=Object.entries(m).map(([nome,v])=>({nome,...v,total:v.aval+v.closer})).sort((a,b)=>b.total-a.total);
+  const mx=Math.max(...l.map(x=>x.total),1);
+  document.getElementById('ranking').innerHTML=l.map((v,i)=>`
+    <div class="rank-item"><div class="rank-header"><span class="rank-name">${esc(v.nome)}</span><span class="rank-pos">#${i+1} · ${v.total} conv.</span></div>
+    <div class="rank-bars">
+      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--accent)">Aval</span><div class="rank-bar-track"><div class="rank-bar-fill aval" style="width:${(v.aval/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.aval}</span></div>
+      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--green)">Close</span><div class="rank-bar-track"><div class="rank-bar-fill closer" style="width:${(v.closer/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.closer}</span></div>
+      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--yellow)">Áudio</span><div class="rank-bar-track"><div class="rank-bar-fill audio" style="width:${(v.tr/Math.max(v.au,1)*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.tr}/${v.au}</span></div>
+    </div></div>`).join('');
+}
+function verConv(id){
+  convAtiva=id;const d=dados.find(x=>x.deal_id===id);if(!d)return;
+  const et=d.origin_name&&d.origin_name.toLowerCase().includes('avalia')?'Aval. Agendada':'Closer';
+  const s=stA(d.raw_messages);
+  document.getElementById('mConvT').textContent=(d.seller_name||'—')+' — '+et;
+  document.getElementById('mConvS').textContent=`${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${s.tr}/${s.total} áudios`;
+  const ms=d.raw_messages||[];
+  document.getElementById('mConvB').innerHTML=ms.length?ms.map(renderMsg).join(''):'<div class="empty">Sem mensagens</div>';
+  document.getElementById('mConv').classList.add('open');lista1();
+}
+function renderMsg(m){
+  const lado=m.type==='USER'?'user':'customer';let c='';
+  if(m.content_type==='AUDIO'){
+    const dur=m.seconds?Math.round(m.seconds)+'s':'';let t;
+    if(!m.transcricao)t=`<div class="msg-pending">🎵 Áudio pendente${dur?' · '+dur:''}</div>`;
+    else if(String(m.transcricao).startsWith('[formato-nao-suportado'))t=`<div class="msg-unsupported">🚫 Formato não suportado${dur?' · '+dur:''}</div>`;
+    else if(String(m.transcricao).startsWith('[erro'))t=`<div class="msg-error" onclick="erros=[{seller:'—',erro:'${esc(m.transcricao).replace(/'/g,'')}',created_at:null}];abrirErros()">⚠️ Erro — clique para ver</div>`;
+    else t=`<div>${esc(m.transcricao)}</div>`;
+    c=`<div style="display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px">🎙️</span><div style="flex:1"><div class="msg-audio-label">Áudio${dur?' · '+dur:''}</div>${t}</div></div>`;
   }
-  const l = Object.entries(m).map(([nome,v])=>({nome,...v,total:v.aval+v.closer})).sort((a,b)=>b.total-a.total);
-  const mx = Math.max(...l.map(x=>x.total),1);
-  document.getElementById('ranking').innerHTML = l.map((v,i)=>`
-    <div class="rank-item">
-      <div class="rank-header"><span class="rank-name">${v.nome}</span><span class="rank-pos">#${i+1} · ${v.total} conv.</span></div>
-      <div class="rank-bars">
-        <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--accent)">Aval</span><div class="rank-bar-track"><div class="rank-bar-fill aval" style="width:${(v.aval/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.aval}</span></div>
-        <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--green)">Close</span><div class="rank-bar-track"><div class="rank-bar-fill closer" style="width:${(v.closer/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.closer}</span></div>
-        <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--yellow)">Áudio</span><div class="rank-bar-track"><div class="rank-bar-fill audio" style="width:${(v.transcritos/Math.max(v.audios,1)*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.transcritos}/${v.audios}</span></div>
-      </div>
-    </div>`).join('');
-}
-
-function abrirModal(id) {
-  convAtiva = id;
-  const d = dados.find(x=>x.deal_id===id); if (!d) return;
-  const et = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval. Agendada' : 'Closer';
-  const s = statusAudios(d.raw_messages);
-  document.getElementById('modalTitle').textContent = `${d.seller_name||'—'} — ${et}`;
-  document.getElementById('modalSub').textContent = `${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${s.transcritos}/${s.total} áudios${s.erros?' · '+s.erros+' erro(s)':''}${s.naoSuportados?' · '+s.naoSuportados+' não sup.':''}`;
-  const msgs = d.raw_messages||[];
-  document.getElementById('modalBody').innerHTML = msgs.length ? msgs.map(renderMensagem).join('') : '<div class="empty">Sem mensagens</div>';
-  document.getElementById('modalOverlay').classList.add('open');
-  renderConversas();
-}
-
-function renderMensagem(m) {
-  const lado = m.type==='USER' ? 'user' : 'customer';
-  let c='';
-  if (m.content_type==='AUDIO') {
-    const dur = m.seconds ? `${Math.round(m.seconds)}s` : '';
-    let t;
-    if (!m.transcricao) t = `<div class="msg-pending">🎵 Áudio pendente${dur?' · '+dur:''}</div>`;
-    else if (String(m.transcricao).startsWith('[formato-nao-suportado')) t = `<div class="msg-unsupported">🚫 Formato não suportado${dur?' · '+dur:''}</div>`;
-    else if (String(m.transcricao).startsWith('[erro')) t = `<div class="msg-error" onclick="mostrarErroDetalhe('${m.transcricao.replace(/'/g,"\\'")}')">⚠️ Erro na transcrição — clique para ver</div>`;
-    else t = `<div>${m.transcricao}</div>`;
-    c = `<div style="display:flex;align-items:flex-start;gap:8px"><span class="msg-audio-icon">🎙️</span><div class="msg-audio-content"><div class="msg-audio-label">Áudio${dur?' · '+dur:''}</div>${t}</div></div>`;
-  }
-  else if (m.content_type==='IMAGE')    c = `<div class="msg-image">🖼️ Imagem</div>`;
-  else if (m.content_type==='TEMPLATE') c = `<div class="msg-template">📋 ${m.content||'Template'}</div>`;
-  else if (m.content)                   c = m.content;
-  else                                  c = `<span style="color:var(--text-muted);font-style:italic;font-size:12px">${m.content_type||'—'}</span>`;
+  else if(m.content_type==='IMAGE')c='<div class="msg-image">🖼️ Imagem</div>';
+  else if(m.content_type==='TEMPLATE')c=`<div class="msg-template">📋 ${esc(m.content)||'Template'}</div>`;
+  else if(m.content)c=esc(m.content);
+  else c=`<span style="color:var(--muted);font-style:italic;font-size:12px">${esc(m.content_type)||'—'}</span>`;
   return `<div class="msg ${lado}"><div class="msg-bubble">${c}</div><div class="msg-time">${fmtDT(m.created_at)}</div></div>`;
 }
 
-function mostrarErroDetalhe(e){ todosErros=[{seller:'—',erro:e,created_at:null}]; abrirModalErros(); }
-function fecharModal(e){ if(e&&e.target!==document.getElementById('modalOverlay'))return; document.getElementById('modalOverlay').classList.remove('open'); convAtiva=null; renderConversas(); }
+/* ================= TAB 2 ================= */
+let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null;
 
-/* ================= PÁGINA 2 ================= */
-let promptAtivo=null, analises=[], comparativas=[], lotes=[];
+const log=(m,c)=>{const d=document.createElement('div');if(c)d.className=c;d.textContent=m;
+  const el=document.getElementById('log');el.appendChild(d);el.scrollTop=el.scrollHeight;};
+const limpaLog=()=>document.getElementById('log').innerHTML='';
+const setBar=p=>document.getElementById('bar').style.width=p+'%';
 
-async function initP2() { await Promise.all([carregarSemanas(), carregarPrompt()]); }
+async function initP2(){
+  try{
+    lotes=await get('weekly_batches?select=*&order=week_label.desc,seller_name');
+    const sems=[...new Set(lotes.map(l=>l.week_label))].sort().reverse();
+    const s=document.getElementById('semana');
+    s.innerHTML=sems.length?sems.map(w=>{const l=lotes.find(x=>x.week_label===w);
+      return `<option value="${w}">${w} · ${fmtD(l.week_start)} a ${fmtD(l.week_end)}</option>`;}).join('')
+      :'<option value="">Nenhum lote — clique em Gerar Lotes</option>';
+    const vs=[...new Map(lotes.map(l=>[l.seller_email,l])).values()].sort((a,b)=>(a.seller_name||'').localeCompare(b.seller_name||''));
+    document.getElementById('vend2').innerHTML='<option value="">Todos vendedores</option>'+vs.map(v=>`<option value="${v.seller_email}">${esc(v.seller_name)}</option>`).join('');
+  }catch(e){log('Erro ao carregar lotes: '+e.message,'er');}
+  try{
+    const p=await get('analysis_prompts?select=*&ativo=eq.true&limit=1');
+    if(p&&p[0]){instrAtiva=p[0];
+      document.getElementById('pIndiv').value=p[0].prompt_individual||'';
+      document.getElementById('pComp').value=p[0].prompt_comparativo||'';}
+  }catch(e){}
+  try{hist=await get('seller_evolution?select=*');}catch(e){hist=[];}
+  onSemana();
+}
+function onSemana(){refreshP2();}
 
-async function carregarSemanas() {
-  try {
-    lotes = await sbGet('weekly_batches?select=week_label,week_start,week_end,seller_email,seller_name,etapa,total_conversas&order=week_label.desc');
-    const semanas = [...new Map(lotes.map(l=>[l.week_label,l])).values()];
-    const sel = document.getElementById('p2Semana'), cur = sel.value;
-    sel.innerHTML = '<option value="">Selecione a semana...</option>' + semanas.map(s=>
-      `<option value="${s.week_label}">${s.week_label} · ${fmtD(s.week_start)} a ${fmtD(s.week_end)}</option>`).join('');
-    if (cur && semanas.some(s=>s.week_label===cur)) sel.value = cur;
-    else if (semanas.length) sel.value = semanas[0].week_label;
+async function refreshP2(){
+  const wl=document.getElementById('semana').value;
+  const et=document.getElementById('etapa2').value;
+  const vd=document.getElementById('vend2').value;
+  if(!wl){document.getElementById('fila').innerHTML='<div class="empty">Nenhuma semana.</div>';return;}
 
-    const vends = [...new Map(lotes.map(l=>[l.seller_email,l])).values()].sort((a,b)=>(a.seller_name||'').localeCompare(b.seller_name||''));
-    const sv = document.getElementById('p2Vendedor'), cv = sv.value;
-    sv.innerHTML = '<option value="">Todos vendedores</option>' + vends.map(v=>`<option value="${v.seller_email}">${v.seller_name}</option>`).join('');
-    sv.value = cv;
-
-    if (sel.value) await carregarAnalises();
-  } catch(e) { console.error(e); }
+  let q=`ai_analyses?select=*&week_label=eq.${wl}&order=score_geral.desc.nullslast`;
+  if(et)q+=`&etapa=eq.${et}`; if(vd)q+=`&seller_email=eq.${encodeURIComponent(vd)}`;
+  let qc=`weekly_comparative_analyses?select=*&week_label=eq.${wl}&order=created_at.desc`;
+  if(et)qc+=`&etapa=eq.${et}`;
+  try{[analises,comps,hist]=await Promise.all([get(q),get(qc),get('seller_evolution?select=*')]);}catch(e){console.error(e);}
+  renderFila();renderKpis2();renderChart();renderRes();
 }
 
-async function carregarPrompt() {
-  try {
-    const d = await sbGet('analysis_prompts?select=*&ativo=eq.true&limit=1');
-    promptAtivo = d[0] || null;
-    if (promptAtivo) {
-      document.getElementById('txtPromptIndividual').value  = promptAtivo.prompt_individual  || '';
-      document.getElementById('txtPromptComparativo').value = promptAtivo.prompt_comparativo || '';
-    }
-  } catch(e) { console.error(e); }
+function lotesFiltrados(){
+  const wl=document.getElementById('semana').value;
+  const et=document.getElementById('etapa2').value;
+  const vd=document.getElementById('vend2').value;
+  return lotes.filter(l=>l.week_label===wl&&(!et||l.etapa===et)&&(!vd||l.seller_email===vd));
+}
+function jaAnalisado(l){return analises.some(a=>a.seller_email===l.seller_email&&a.etapa===l.etapa);}
+
+function renderFila(){
+  const ls=lotesFiltrados();
+  const pend=ls.filter(l=>!jaAnalisado(l));
+  const tok=Math.round(pend.reduce((s,l)=>s+(l.markdown_content||'').length,0)/4);
+  document.getElementById('filaSub').textContent=
+    ls.length? `${pend.length} pendente(s) de ${ls.length} lote(s) · ~${(tok/1000).toFixed(1)}k tokens a processar`
+             : 'Nenhum lote nesta semana. Clique em "Gerar Lotes".';
+  document.getElementById('fila').innerHTML=!ls.length?'':ls.map(l=>{
+    const feito=jaAnalisado(l);
+    return `<div class="lote-row">
+      <span>${esc(l.seller_name)}<span class="tag ${l.etapa==='closer'?'closer':'aval'}">${l.etapa==='closer'?'Closer':'Aval.'}</span>
+      <span class="tag ${feito?'feito':'novo'}">${feito?'✓ analisado':'novo'}</span></span>
+      <span class="dim">${l.total_conversas} lead(s) · ~${Math.round((l.markdown_content||'').length/4/1000)}k tok</span>
+    </div>`;}).join('');
 }
 
-async function carregarAnalises() {
-  const wl = document.getElementById('p2Semana').value;
-  if (!wl) { renderP2([], []); return; }
-  const etapa = document.getElementById('p2Etapa').value;
-  const vend  = document.getElementById('p2Vendedor').value;
-
-  let q = `ai_analyses?select=*&week_label=eq.${wl}&order=score_geral.desc.nullslast`;
-  if (etapa) q += `&etapa=eq.${etapa}`;
-  if (vend)  q += `&seller_email=eq.${encodeURIComponent(vend)}`;
-
-  let qc = `weekly_comparative_analyses?select=*&week_label=eq.${wl}&order=created_at.desc`;
-  if (etapa) qc += `&etapa=eq.${etapa}`;
-
-  try {
-    [analises, comparativas] = await Promise.all([sbGet(q), sbGet(qc)]);
-    renderStatus(wl); renderP2(analises, comparativas);
-  } catch(e) { console.error(e); }
+function renderKpis2(){
+  const k=document.getElementById('p2Kpis');
+  if(!analises.length){k.style.display='none';return;}
+  const sc=analises.map(a=>a.score_geral).filter(x=>x!=null);
+  const ur=analises.map(a=>a.urgencia_score).filter(x=>x!=null);
+  const dl=analises.map(a=>a.score_delta).filter(x=>x!=null);
+  const med=sc.length?(sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1):'—';
+  const medU=ur.length?(ur.reduce((a,b)=>a+b,0)/ur.length).toFixed(1):'—';
+  const evo=dl.length?(dl.reduce((a,b)=>a+b,0)/dl.length):null;
+  const best=analises.filter(a=>a.score_geral!=null).sort((a,b)=>b.score_geral-a.score_geral)[0];
+  const leads=analises.reduce((s,a)=>s+(a.total_conversas||0),0);
+  k.style.display='grid';
+  k.innerHTML=`
+    <div class="kpi"><div class="kpi-label">Score médio</div><div class="kpi-value ${med>=7?'green':med>=5?'yellow':'red'}">${med}</div><div class="kpi-sub">de 10</div></div>
+    <div class="kpi"><div class="kpi-label">Evolução média</div><div class="kpi-value ${evo==null?'':evo>0?'green':evo<0?'red':''}">${evo==null?'—':(evo>0?'+':'')+evo.toFixed(1)}</div><div class="kpi-sub">vs. análise anterior</div></div>
+    <div class="kpi"><div class="kpi-label">Urgência média</div><div class="kpi-value purple">${medU}</div></div>
+    <div class="kpi"><div class="kpi-label">Melhor</div><div class="kpi-value green">${best?best.score_geral:'—'}</div><div class="kpi-sub">${best?esc(best.seller_name):''}</div></div>
+    <div class="kpi"><div class="kpi-label">Leads analisados</div><div class="kpi-value yellow">${leads}</div></div>`;
 }
 
-function renderStatus(wl) {
-  const el = document.getElementById('p2Status');
-  const lotesSemana = lotes.filter(l => l.week_label === wl);
-  el.style.display = 'flex';
-  document.getElementById('p2StatusTitle').textContent = `Semana ${wl}`;
-  const ultima = analises.length ? analises.map(a=>a.created_at).sort().pop() : null;
-  document.getElementById('p2StatusSub').textContent =
-    `${lotesSemana.length} lote(s) · ${analises.length} análise(s) individual · ${comparativas.length} comparativa(s)` + (ultima ? ` · última em ${fmtDT(ultima)}` : '');
-  document.getElementById('p2StatusActions').innerHTML = analises.length
-    ? '<span class="chip ok">✓ Analisado</span>'
-    : '<span class="chip warn">⏳ Não analisado</span>';
-
-  // KPIs agregados
-  const kp = document.getElementById('p2Kpis');
-  if (!analises.length) { kp.style.display='none'; return; }
-  const scores = analises.map(a=>a.score_geral).filter(s=>s!=null);
-  const urg    = analises.map(a=>a.urgencia_score).filter(s=>s!=null);
-  const media  = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
-  const mediaU = urg.length ? (urg.reduce((a,b)=>a+b,0)/urg.length).toFixed(1) : '—';
-  const melhor = analises.filter(a=>a.score_geral!=null).sort((a,b)=>b.score_geral-a.score_geral)[0];
-  const totalConv = analises.reduce((s,a)=>s+(a.total_conversas||0),0);
-  kp.style.display = 'grid';
-  kp.innerHTML = `
-    <div class="kpi"><div class="kpi-label">Score médio</div><div class="kpi-value ${media>=7?'green':media>=5?'yellow':'red'}">${media}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">de 10</div></div>
-    <div class="kpi"><div class="kpi-label">Urgência média</div><div class="kpi-value purple">${mediaU}</div></div>
-    <div class="kpi"><div class="kpi-label">Melhor score</div><div class="kpi-value green">${melhor?melhor.score_geral:'—'}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">${melhor?melhor.seller_name:''}</div></div>
-    <div class="kpi"><div class="kpi-label">Vendedores</div><div class="kpi-value accent">${analises.length}</div></div>
-    <div class="kpi"><div class="kpi-label">Conversas analisadas</div><div class="kpi-value yellow">${totalConv}</div></div>`;
-}
-
-function renderP2(as, comps) {
-  const el = document.getElementById('p2Resultados');
-  if (!as.length && !comps.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">🤖</div><div>Nenhuma análise para os filtros selecionados.</div><div style="font-size:12px;color:var(--text-muted);margin-top:6px">Clique em <strong>Rodar Análise</strong> para gerar.</div></div>`;
-    return;
+function renderChart(){
+  const el=document.getElementById('p2Chart');
+  const et=document.getElementById('etapa2').value;
+  const h=hist.filter(r=>r.score_geral!=null&&(!et||r.etapa===et));
+  const sems=[...new Set(h.map(r=>r.week_label))].sort();
+  if(sems.length<2){el.innerHTML='';return;}
+  const byS={};
+  for(const r of h){const k=r.seller_name+' · '+(r.etapa==='closer'?'Cl':'Av');(byS[k]=byS[k]||[]).push(r);}
+  const cores=['#4f7cff','#2dd67c','#ffd166','#a78bfa','#ff8c42','#ff4d6a','#38bdf8','#f472b6'];
+  const W=760,Hh=200,pad=34;
+  const x=i=>pad+i*((W-pad*2)/Math.max(sems.length-1,1));
+  const y=v=>Hh-pad-(v/10)*(Hh-pad*2);
+  let paths='',leg='',ci=0;
+  for(const [nome,rs] of Object.entries(byS)){
+    const cor=cores[ci++%cores.length];
+    const pts=rs.filter(r=>sems.includes(r.week_label)).sort((a,b)=>a.week_label.localeCompare(b.week_label))
+      .map(r=>({x:x(sems.indexOf(r.week_label)),y:y(r.score_geral),v:r.score_geral}));
+    if(pts.length<2)continue;
+    paths+=`<polyline fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round" points="${pts.map(p=>p.x+','+p.y).join(' ')}"/>`;
+    paths+=pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="3" fill="${cor}"><title>${esc(nome)}: ${p.v}</title></circle>`).join('');
+    leg+=`<span><i style="background:${cor}"></i>${esc(nome)}</span>`;
   }
-  let h = '';
-  if (comps.length) h += comps.map(renderComp).join('');
-  if (as.length) {
-    h += `<div class="analysis-section-title">📋 Análises Individuais</div><div class="analysis-grid">${as.map(renderCard).join('')}</div>`;
-  }
-  el.innerHTML = h;
+  if(!paths){el.innerHTML='';return;}
+  let grid='';
+  for(let v=0;v<=10;v+=5)grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#2a3045" stroke-width="1"/><text x="6" y="${y(v)+4}" fill="#7b8299" font-size="10">${v}</text>`;
+  const lbls=sems.map((s,i)=>`<text x="${x(i)}" y="${Hh-12}" fill="#7b8299" font-size="10" text-anchor="middle">${s}</text>`).join('');
+  el.innerHTML=`<div class="chart"><h3>📈 Evolução do score por vendedor</h3>
+    <svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto">${grid}${lbls}${paths}</svg>
+    <div class="legend">${leg}</div></div>`;
 }
 
-function renderCard(a) {
-  const et = a.etapa === 'closer'
-    ? '<span class="ac-etapa closer">Closer</span>'
-    : '<span class="ac-etapa aval">Aval.</span>';
-  const tec  = asArr(a.tecnicas_utilizadas);
-  const bem  = asArr(a.tecnicas_bem_aplicadas);
-  const obj  = asArr(a.objecoes_identificadas);
-  const mel  = asArr(a.pontos_de_melhoria);
-  const key  = 'k' + Math.random().toString(36).slice(2);
-  window['__' + key] = a;
-  const erro = a.analise_cruzada && a.analise_cruzada.includes('erro');
+function renderRes(){
+  const el=document.getElementById('p2Res');
+  if(!analises.length&&!comps.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🧠</div><div>Nenhuma análise nesta semana ainda.</div></div>';return;}
+  let h='';
+  if(comps.length)h+=comps.map(renderComp).join('');
+  if(analises.length)h+=`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px">📋 Por vendedor</div><div class="grid">${analises.map(renderCard).join('')}</div>`;
+  el.innerHTML=h;
+}
+
+function renderCard(a){
+  const et=a.etapa==='closer'?'<span class="tag closer">Closer</span>':'<span class="tag aval">Aval.</span>';
+  const bem=arr(a.tecnicas_bem_aplicadas),tec=arr(a.tecnicas_utilizadas),
+        obj=arr(a.objecoes_identificadas),mel=arr(a.pontos_de_melhoria),
+        mc=arr(a.metas_cumpridas),mp=arr(a.metas_proximas);
+  const k='k'+Math.random().toString(36).slice(2);window['__'+k]=a;
+  const d=a.score_delta;
+  const dHtml=d==null?'':`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':'= '}${Math.abs(d).toFixed(1)}</span>`;
   return `<div class="ac">
-    <div class="ac-head">
-      <div>
-        <div class="ac-name">${a.seller_name || a.seller_email || '—'}</div>
-        <div class="ac-sub">${a.total_conversas||0} conversa(s) · ${fmtD(a.created_at)}</div>
-      </div>${et}
-    </div>
-    ${erro ? '<div class="ac-tag neg" style="margin-bottom:10px">⚠️ Erro na análise — ver detalhes</div>' : ''}
+    <div class="ac-head"><div><div class="ac-name">${esc(a.seller_name)||'—'}</div>
+      <div class="ac-sub">${a.total_conversas||0} lead(s) · ${fmtD(a.created_at)}${a.previous_week_label?' · vs '+a.previous_week_label:''}</div></div>${et}</div>
     <div class="ac-scores">
-      <div class="ac-score-item">
-        <span class="ac-score-num ${cls10(a.score_geral)}">${a.score_geral != null ? a.score_geral : '—'}</span>
-        <span class="ac-score-cap">Score geral</span>
-      </div>
-      ${a.urgencia_score != null ? `<div class="ac-score-item">
-        <span class="ac-score-num sm ${cls10(a.urgencia_score)}">${a.urgencia_score}</span>
-        <span class="ac-score-cap">Urgência</span>
-      </div>` : ''}
+      <div><div class="ac-num ${c10(a.score_geral)}">${a.score_geral!=null?a.score_geral:'—'}</div><div class="ac-cap">Score</div></div>
+      ${a.urgencia_score!=null?`<div><div class="ac-num sm ${c10(a.urgencia_score)}">${a.urgencia_score}</div><div class="ac-cap">Urgência</div></div>`:''}
+      ${dHtml?`<div style="margin-left:auto">${dHtml}<div class="ac-cap" style="text-align:right">evolução</div></div>`:''}
     </div>
-    <div class="ac-flags">
-      <span class="flag ${a.preco_mencionado?'on':'off'}">${a.preco_mencionado?'✓':'✕'} Preço</span>
-      <span class="flag ${a.objecoes_contornadas?'on':'off'}">${a.objecoes_contornadas?'✓':'✕'} Objeções contornadas</span>
-    </div>
-    ${a.resumo_conversa ? `<div class="ac-block"><div class="ac-block-label">Resumo</div><div class="ac-resumo">${a.resumo_conversa.slice(0,180)}${a.resumo_conversa.length>180?'…':''}</div></div>` : ''}
-    ${bem.length ? `<div class="ac-block"><div class="ac-block-label">Bem aplicadas</div><div class="ac-tags">${bem.slice(0,4).map(t=>`<span class="ac-tag pos">${t}</span>`).join('')}</div></div>` : ''}
-    ${tec.length && !bem.length ? `<div class="ac-block"><div class="ac-block-label">Técnicas</div><div class="ac-tags">${tec.slice(0,4).map(t=>`<span class="ac-tag">${t}</span>`).join('')}</div></div>` : ''}
-    ${obj.length ? `<div class="ac-block"><div class="ac-block-label">Objeções</div><div class="ac-tags">${obj.slice(0,3).map(o=>`<span class="ac-tag warn">${o}</span>`).join('')}</div></div>` : ''}
-    ${mel.length ? `<div class="ac-block"><div class="ac-block-label">Melhorias</div><div class="ac-tags">${mel.slice(0,2).map(m=>`<span class="ac-tag neg">${String(m).slice(0,50)}</span>`).join('')}</div></div>` : ''}
-    <span class="ac-link" onclick="verDetalhe('${key}','${(a.seller_name||'').replace(/'/g,'')}')">Ver análise completa →</span>
-  </div>`;
+    ${a.evolucao?`<div class="ac-block"><div class="ac-lbl">Evolução</div><div class="evo">${esc(a.evolucao)}</div></div>`:''}
+    ${mc.length?`<div class="ac-block"><div class="ac-lbl">Metas anteriores</div>${mc.slice(0,4).map(m=>{
+      const ok=m&&m.cumprida;const txt=typeof m==='string'?m:(m.meta||'');
+      return `<div class="meta-row"><span class="meta-ic" style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span class="txt">${esc(txt)}</span></div>`;}).join('')}</div>`:''}
+    ${a.resumo_conversa?`<div class="ac-block"><div class="ac-lbl">Resumo</div><div class="txt">${esc(a.resumo_conversa).slice(0,170)}${a.resumo_conversa.length>170?'…':''}</div></div>`:''}
+    ${bem.length?`<div class="ac-block"><div class="ac-lbl">Bem aplicadas</div><div class="tags">${bem.slice(0,4).map(t=>`<span class="t pos">${esc(t)}</span>`).join('')}</div></div>`:
+      tec.length?`<div class="ac-block"><div class="ac-lbl">Técnicas</div><div class="tags">${tec.slice(0,4).map(t=>`<span class="t">${esc(t)}</span>`).join('')}</div></div>`:''}
+    ${obj.length?`<div class="ac-block"><div class="ac-lbl">Objeções</div><div class="tags">${obj.slice(0,3).map(t=>`<span class="t warn">${esc(t)}</span>`).join('')}</div></div>`:''}
+    ${mp.length?`<div class="ac-block"><div class="ac-lbl">Metas p/ próxima</div><div class="tags">${mp.slice(0,3).map(t=>`<span class="t neg">${esc(typeof t==='string'?t:(t.meta||'')).slice(0,50)}</span>`).join('')}</div></div>`:
+      mel.length?`<div class="ac-block"><div class="ac-lbl">Melhorias</div><div class="tags">${mel.slice(0,2).map(t=>`<span class="t neg">${esc(t).slice(0,50)}</span>`).join('')}</div></div>`:''}
+    <span class="lnk" onclick="verDet('${k}')">Ver análise completa →</span></div>`;
 }
 
-function renderComp(c) {
-  const r = c.resultado || {};
-  const rank = asArr(r.ranking || r.classificacao);
-  const dest = r.destaques || r.analise_geral || r.analise || '';
-  const best = r.melhor_pratica || '';
-  const key = 'c' + Math.random().toString(36).slice(2);
-  window['__' + key] = c;
-  const etLabel = c.etapa === 'closer' ? 'Closer' : c.etapa === 'avaliacao' ? 'Aval. Agendada' : c.etapa;
-  return `<div class="comparative">
-    <h3>📊 Comparativo — ${etLabel}</h3>
-    <div class="csub">Semana ${c.week_label} · gerado em ${fmtDT(c.created_at)}</div>
-    ${rank.map((v,i)=>{
-      const sc = typeof v==='object' ? (v.score_geral ?? v.score ?? 0) : 0;
-      const nm = typeof v==='object' ? (v.nome || v.vendedor || v.seller || '—') : v;
-      const dq = typeof v==='object' ? (v.destaque || '') : '';
-      return `<div class="comp-row">
-        <span class="comp-pos">${i+1}</span>
-        <div style="flex:1;min-width:0">
-          <div class="comp-name">${nm}</div>
-          ${dq?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${dq}</div>`:''}
-        </div>
-        <div class="comp-bar-wrap"><div class="comp-bar-track"><div class="comp-bar-fill" style="width:${Math.min(sc*10,100)}%"></div></div></div>
-        <span class="comp-score ${cls10(sc)}">${sc}</span>
-      </div>`;
-    }).join('')}
-    ${dest ? `<div class="comp-resumo">${typeof dest==='string'?dest:JSON.stringify(dest,null,2)}</div>` : ''}
-    ${best ? `<div class="comp-resumo"><strong style="color:var(--green)">Melhor prática:</strong> ${best}</div>` : ''}
-    <span class="ac-link" style="margin-top:12px" onclick="verDetalhe('${key}','Comparativo ${etLabel}')">Ver JSON completo →</span>
-  </div>`;
+function renderComp(c){
+  const r=c.resultado||{},rk=arr(r.ranking||r.classificacao),
+        dz=r.destaques||r.analise_geral||'',bp=r.melhor_pratica||'';
+  const k='c'+Math.random().toString(36).slice(2);window['__'+k]=c;
+  const etl=c.etapa==='closer'?'Closer':c.etapa==='avaliacao'?'Aval. Agendada':c.etapa;
+  return `<div class="comp"><h3>📊 Comparativo — ${etl}</h3>
+    <div class="csub">Semana ${c.week_label} · ${fmtDT(c.created_at)}</div>
+    ${rk.map((v,i)=>{const sc=typeof v==='object'?(v.score_geral??v.score??0):0;
+      const nm=typeof v==='object'?(v.nome||v.vendedor||'—'):v;
+      const dq=typeof v==='object'?(v.destaque||''):'';
+      return `<div class="crow"><span class="cpos">${i+1}</span>
+        <div style="flex:1;min-width:0"><div class="cname">${esc(nm)}</div>${dq?`<div class="txt" style="font-size:11px;margin-top:2px">${esc(dq)}</div>`:''}</div>
+        <div style="flex:2"><div class="ctrack"><div class="cfill" style="width:${Math.min(sc*10,100)}%"></div></div></div>
+        <span class="cscore ${c10(sc)}" style="color:var(--${c10(sc)==='high'?'green':c10(sc)==='mid'?'yellow':'red'})">${sc}</span></div>`;}).join('')}
+    ${dz?`<div class="cresumo">${esc(typeof dz==='string'?dz:JSON.stringify(dz,null,2))}</div>`:''}
+    ${bp?`<div class="cresumo"><strong style="color:var(--green)">Melhor prática:</strong> ${esc(bp)}</div>`:''}
+    <span class="lnk" style="margin-top:12px" onclick="verDet('${k}')">Ver JSON →</span></div>`;
 }
 
-function verDetalhe(key, titulo) {
-  const o = window['__' + key]; if (!o) return;
-  document.getElementById('modalDetalheTitle').textContent = titulo || 'Detalhes';
-  document.getElementById('modalDetalheSub').textContent = `Semana ${o.week_label}${o.modelo ? ' · ' + o.modelo : ''}`;
-  document.getElementById('modalDetalheBody').textContent = JSON.stringify(o.resultado || o, null, 2);
-  document.getElementById('modalDetalhe').classList.add('open');
+function verDet(k){
+  const o=window['__'+k];if(!o)return;
+  document.getElementById('mDetT').textContent=o.seller_name?o.seller_name+' — '+(o.etapa||''):'Comparativo';
+  document.getElementById('mDetS').textContent='Semana '+o.week_label+(o.modelo?' · '+o.modelo:'');
+  document.getElementById('mDetB').textContent=JSON.stringify(o.resultado||o,null,2);
+  document.getElementById('mDet').classList.add('open');
 }
 
-/* --- Gerar Lotes --- */
-async function gerarLotes() {
-  const b = document.getElementById('btnLotes');
-  b.disabled = true; b.textContent = '⏳ Gerando...';
-  try {
-    const r = await fetch(WH_LOTES, { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
-    const d = await r.json().catch(()=>({}));
-    b.textContent = '✓ Lotes gerados';
-    await carregarSemanas();
-    setTimeout(()=>{ b.disabled=false; b.textContent='📦 Gerar Lotes'; }, 2000);
-  } catch(e) {
-    b.disabled=false; b.textContent='📦 Gerar Lotes';
-    alert('Erro ao gerar lotes: ' + e.message);
+/* ---- Claude: sem API key, usa a sessão ---- */
+async function claude(sys,txt,maxTok){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||1000,system:sys,messages:[{role:'user',content:txt}]})});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message||'erro na API');
+  const t=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+  return JSON.parse(t.replace(/```json|```/g,'').trim());
+}
+const SYS_I='Voce analisa performance de vendedores e mede evolucao ao longo do tempo. Responda APENAS com JSON valido, sem markdown, sem texto antes ou depois.';
+const SYS_C='Voce faz analise comparativa de performance de vendas. Responda APENAS com JSON valido, sem markdown.';
+
+/* ---- Gerar lotes ---- */
+async function gerarLotes(){
+  const b=document.getElementById('btnLotes');b.disabled=true;b.textContent='⏳ Gerando...';
+  limpaLog();log('Gerando lotes da semana (ignorando leads já analisados)...','dim');
+  try{
+    const r=await fetch(WH_LOTES,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json().catch(()=>({}));
+    log(`✓ ${d.lotes||0} lote(s) · ${d.conversas_novas||0} lead(s) novo(s) · ${d.ignorados_ja_analisados||0} já analisado(s) ignorado(s)`,'ok');
+    lotes=await get('weekly_batches?select=*&order=week_label.desc,seller_name');
+    const sems=[...new Set(lotes.map(l=>l.week_label))].sort().reverse();
+    const s=document.getElementById('semana'),cur=s.value;
+    s.innerHTML=sems.map(w=>{const l=lotes.find(x=>x.week_label===w);
+      return `<option value="${w}">${w} · ${fmtD(l.week_start)} a ${fmtD(l.week_end)}</option>`;}).join('');
+    s.value=sems.includes(cur)?cur:(sems[0]||'');
+    await refreshP2();
+  }catch(e){log('✕ '+e.message,'er');}
+  b.disabled=false;b.textContent='📦 Gerar Lotes';
+}
+
+/* ---- Salvar instruções ---- */
+async function salvarInstr(){
+  const pi=document.getElementById('pIndiv').value.trim(),pc=document.getElementById('pComp').value.trim();
+  if(!pi||!pc){alert('Preencha as duas instruções.');return;}
+  try{
+    await fetch(`${SU}/rest/v1/analysis_prompts?ativo=eq.true`,{method:'PATCH',headers:H,body:JSON.stringify({ativo:false})});
+    const r=await fetch(`${SU}/rest/v1/analysis_prompts`,{method:'POST',
+      headers:Object.assign({},H,{Prefer:'return=representation'}),
+      body:JSON.stringify({nome:'Prompt SDR '+new Date().toISOString().slice(0,10),descricao:'Instruções de análise SDR',
+        prompt_individual:pi,prompt_comparativo:pc,ativo:true})}).then(x=>x.json());
+    instrAtiva=Array.isArray(r)?r[0]:r;
+    toggleInstr();log('✓ Instruções salvas e ativadas.','ok');
+  }catch(e){alert('Erro ao salvar: '+e.message);}
+}
+function toggleInstr(){const el=document.getElementById('instr');el.style.display=el.style.display==='none'?'block':'none';}
+
+/* ---- ANALISAR (com encadeamento evolutivo) ---- */
+async function analisar(){
+  const pi=document.getElementById('pIndiv').value.trim(),pc=document.getElementById('pComp').value.trim();
+  const wl=document.getElementById('semana').value;
+  if(!wl){alert('Selecione uma semana.');return;}
+  if(!pi){alert('Escreva a instrução individual em ⚙️ Instruções.');return;}
+  const ls=lotesFiltrados().filter(l=>!jaAnalisado(l));
+  if(!ls.length){alert('Nenhum lote pendente — todos já foram analisados.');return;}
+
+  const b=document.getElementById('btnGo');b.disabled=true;b.textContent='⏳ Analisando...';
+  limpaLog();setBar(0);
+  const etapas=[...new Set(ls.map(l=>l.etapa))];
+  const total=ls.length+(pc?etapas.length:0);
+  let passo=0,falhas=0;
+
+  for(const l of ls){
+    log(`→ ${l.seller_name} (${l.etapa}) · ${l.total_conversas} lead(s)`,'dim');
+    try{
+      // 1. análise anterior deste vendedor+etapa
+      const prev=(await get(`ai_analyses?select=*&seller_email=eq.${encodeURIComponent(l.seller_email)}&etapa=eq.${l.etapa}&week_label=lt.${wl}&order=week_label.desc&limit=1`))[0];
+      let ctx='';
+      if(prev){
+        ctx=`\n\n## CONTEXTO — ANALISE ANTERIOR (${prev.previous_week_label?prev.week_label:prev.week_label})\n`
+          +`Score anterior: ${prev.score_geral}\n`
+          +`Pontos de melhoria apontados: ${JSON.stringify(prev.pontos_de_melhoria||[])}\n`
+          +`Metas definidas: ${JSON.stringify(prev.metas_proximas||[])}\n`
+          +`Resumo anterior: ${prev.resumo_conversa||''}\n\n`
+          +`Ao analisar as conversas NOVAS abaixo, avalie explicitamente se houve evolucao nesses pontos. `
+          +`Inclua no JSON os campos: evolucao (texto curto) e metas_cumpridas (array de {meta, cumprida, evidencia}).\n`;
+        log(`   ↳ comparando com ${prev.week_label} (score ${prev.score_geral})`,'dim');
+      } else { log('   ↳ primeira análise deste vendedor','dim'); }
+
+      const a=await claude(SYS_I,pi+ctx+'\n\n---\n\n'+l.markdown_content,1000);
+      const delta=(prev&&prev.score_geral!=null&&a.score_geral!=null)?+(a.score_geral-prev.score_geral).toFixed(2):null;
+
+      // 2. grava análise
+      const saved=await fetch(`${SU}/rest/v1/ai_analyses?on_conflict=week_label,seller_email,etapa`,{
+        method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),
+        body:JSON.stringify({
+          conversation_id:null,week_label:l.week_label,seller_email:l.seller_email,seller_name:l.seller_name,
+          etapa:l.etapa,total_conversas:l.total_conversas,deal_ids:l.deal_ids||[],
+          score_geral:a.score_geral??null,urgencia_score:a.urgencia_score??null,
+          preco_mencionado:a.preco_mencionado===true,objecoes_contornadas:a.objecoes_contornadas===true,
+          etapas_cumpridas:a.etapas_cumpridas||{},tecnicas_utilizadas:a.tecnicas_utilizadas||[],
+          tecnicas_bem_aplicadas:a.tecnicas_bem_aplicadas||[],objecoes_identificadas:a.objecoes_identificadas||[],
+          pontos_de_melhoria:a.pontos_de_melhoria||[],resumo_conversa:a.resumo||a.resumo_conversa||'',
+          evolucao:a.evolucao||null,metas_cumpridas:a.metas_cumpridas||[],metas_proximas:a.metas_proximas||a.pontos_de_melhoria||[],
+          previous_analysis_id:prev?prev.id:null,previous_week_label:prev?prev.week_label:null,score_delta:delta,
+          prompt_version:instrAtiva?instrAtiva.nome:'inline',modelo:'claude-sonnet-4-6',created_at:new Date().toISOString()})
+      }).then(r=>r.json());
+      const aid=Array.isArray(saved)?(saved[0]||{}).id:null;
+
+      // 3. marca leads como analisados (nunca mais entram)
+      const ids=l.deal_ids||[];
+      if(ids.length){
+        await fetch(`${SU}/rest/v1/analyzed_deals?on_conflict=deal_id`,{
+          method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
+          body:JSON.stringify(ids.map(id=>({deal_id:id,analysis_id:aid,seller_email:l.seller_email,
+            seller_name:l.seller_name,etapa:l.etapa,week_label:l.week_label,analyzed_at:new Date().toISOString()})))});
+      }
+      log(`   ✓ score ${a.score_geral??'—'}${delta!=null?(delta>0?'  ▲ +'+delta:delta<0?'  ▼ '+delta:'  = 0'):''} · ${ids.length} lead(s) marcados`,'ok');
+    }catch(e){falhas++;log('   ✕ '+e.message,'er');}
+    passo++;setBar(Math.round(passo/total*100));
   }
-}
 
-/* --- Rodar Análise --- */
-function abrirModalRodar() {
-  const wl = document.getElementById('p2Semana').value;
-  if (!wl) { alert('Selecione uma semana. Se a lista estiver vazia, clique em "Gerar Lotes" primeiro.'); return; }
-  if (!promptAtivo) { alert('Nenhum prompt ativo. Clique em ⚙️ Prompt para configurar antes de rodar.'); return; }
-  const et = document.getElementById('p2Etapa').value;
-  const vd = document.getElementById('p2Vendedor');
-  document.getElementById('modalRodarSub').textContent =
-    `Semana ${wl}` + (et ? ` · ${et}` : ' · todas as etapas') + (vd.value ? ` · ${vd.options[vd.selectedIndex].text}` : ' · todos vendedores');
-  document.getElementById('modalRodarStatus').textContent = '';
-  const bc = document.getElementById('btnConfirmar');
-  bc.disabled = false; bc.textContent = '▶ Executar';
-  document.getElementById('modalRodar').classList.add('open');
-}
-function fecharModalRodar(){ document.getElementById('modalRodar').classList.remove('open'); }
-
-async function confirmarAnalise() {
-  const wl    = document.getElementById('p2Semana').value;
-  const tipo  = document.querySelector('input[name="tipoAnalise"]:checked').value;
-  const etapa = document.getElementById('p2Etapa').value;
-  const vend  = document.getElementById('p2Vendedor').value;
-  const b = document.getElementById('btnConfirmar');
-  b.disabled = true; b.textContent = '⏳ Executando...';
-  document.getElementById('modalRodarStatus').textContent = 'Aguarde — cada vendedor leva ~20s. Não feche a janela.';
-  try {
-    const r = await fetch(WH_ANALISAR, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ week_label: wl, tipo, ...(etapa && {etapa}), ...(vend && {seller_email: vend}) })
-    });
-    const d = await r.json();
-    if (d.ok || d.success) {
-      document.getElementById('modalRodarStatus').textContent = `✅ Concluído — ${d.analisados||0} análise(s) gravada(s).`;
-      b.textContent = '✓ Concluído';
-      setTimeout(()=>{ fecharModalRodar(); carregarAnalises(); }, 1600);
-    } else {
-      throw new Error(d.erro || JSON.stringify(d));
+  // comparativas
+  if(pc){
+    for(const et of etapas){
+      const grupo=lotesFiltrados().filter(l=>l.etapa===et);
+      log(`→ Comparativo ${et} (${grupo.length} vendedores)`,'dim');
+      try{
+        const md=grupo.map(l=>l.markdown_content).join('\n\n===PROXIMO VENDEDOR===\n\n');
+        const a=await claude(SYS_C,pc+'\n\n---\n\n'+md,1000);
+        await fetch(`${SU}/rest/v1/weekly_comparative_analyses?on_conflict=week_label,etapa`,{
+          method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
+          body:JSON.stringify({week_label:wl,etapa:et,prompt_nome:instrAtiva?instrAtiva.nome:'inline',
+            resultado:a,created_at:new Date().toISOString()})});
+        log('   ✓ comparativo gravado','ok');
+      }catch(e){falhas++;log('   ✕ '+e.message,'er');}
+      passo++;setBar(Math.round(passo/total*100));
     }
-  } catch(e) {
-    document.getElementById('modalRodarStatus').textContent = '❌ ' + e.message;
-    b.disabled = false; b.textContent = '▶ Executar';
   }
+
+  setBar(100);log('');
+  log(falhas?`Concluído com ${falhas} falha(s).`:'✓ Concluído.',falhas?'wa':'ok');
+  b.disabled=false;b.textContent='▶ Analisar pendentes';
+  await refreshP2();
 }
 
-/* --- Prompt --- */
-function togglePromptEditor() {
-  const el = document.getElementById('promptEditor');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-async function salvarPrompt() {
-  const pi = document.getElementById('txtPromptIndividual').value.trim();
-  const pc = document.getElementById('txtPromptComparativo').value.trim();
-  if (!pi || !pc) { alert('Preencha os dois prompts antes de salvar.'); return; }
-  try {
-    await fetch(`${SU}/rest/v1/analysis_prompts?ativo=eq.true`, {
-      method:'PATCH', headers:{ apikey:SK, Authorization:`Bearer ${SK}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ ativo:false })
-    });
-    const r = await sbPost('analysis_prompts', {
-      nome: 'Prompt SDR ' + new Date().toISOString().slice(0,10),
-      descricao: 'Prompt de análise de conversas SDR',
-      prompt_individual: pi, prompt_comparativo: pc, ativo: true
-    });
-    promptAtivo = Array.isArray(r) ? r[0] : r;
-    togglePromptEditor();
-    alert('✅ Prompt salvo e ativado.');
-  } catch(e) { alert('Erro ao salvar: ' + e.message); }
-}
-
-/* ================= GLOBAL ================= */
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  ['modalOverlay','errorModalOverlay','modalRodar','modalDetalhe'].forEach(id=>document.getElementById(id).classList.remove('open'));
-  convAtiva = null; renderConversas();
-});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')
+  ['mConv','mErr','mDet'].forEach(i=>document.getElementById(i).classList.remove('open'));});
 
 carregar();
-setInterval(carregar, 5*60*1000);
+setInterval(carregar,5*60*1000);
 </script>
 </body>
 </html>
