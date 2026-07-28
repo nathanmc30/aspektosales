@@ -3,516 +3,569 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análise SDR — Aspekto</title>
+<title>SDR Aspekto — Análise de Conversas</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #181c27;
-    --surface2: #1e2333;
-    --border: #2a3045;
-    --text: #e8eaf0;
-    --text-muted: #7b8299;
-    --accent: #4f7cff;
-    --accent-dim: #1e2d5a;
-    --green: #2dd67c;
-    --green-dim: #0f3322;
-    --orange: #ff8c42;
-    --red: #ff4d6a;
-    --red-dim: #3a0f1a;
-    --yellow: #ffd166;
-    --seller: #a78bfa;
-    --radius: 10px;
-    --radius-sm: 6px;
+    --bg: #0d0f14; --surface: #161922; --border: #252a35; --border-light: #2e3545;
+    --text: #e8eaf0; --text-muted: #6b7591; --text-dim: #8e97b4;
+    --accent: #4f7fff; --accent-glow: rgba(79,127,255,0.15);
+    --green: #30d988; --green-bg: rgba(48,217,136,0.1);
+    --amber: #f0b429; --amber-bg: rgba(240,180,41,0.1);
+    --red: #f05c5c; --red-bg: rgba(240,92,92,0.1);
+    --purple: #a78bfa; --purple-bg: rgba(167,139,250,0.1);
+    --gray-bg: rgba(74,85,104,0.15);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --radius: 10px; --radius-sm: 6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
-
-  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-  .logo span { color: var(--accent); }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
-  .refresh-btn:hover { background: var(--accent); color: #fff; }
-  .last-update { color: var(--text-muted); font-size: 12px; }
-
-  /* ALERTA DE ERRO */
-  .error-banner { display: none; background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius); margin: 12px 24px 0; padding: 12px 16px; }
-  .error-banner.visible { display: flex; align-items: flex-start; gap: 12px; }
-  .error-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-  .error-banner-content { flex: 1; }
-  .error-banner-title { font-weight: 700; color: var(--red); font-size: 13px; margin-bottom: 4px; }
-  .error-banner-list { list-style: none; }
-  .error-banner-list li { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-  .error-banner-list li:hover { color: var(--text); }
-  .error-banner-list li .err-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
-
-  .filters { padding: 12px 24px; display: flex; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
-  select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; outline: none; }
-  select:focus { border-color: var(--accent); }
-
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 16px 24px; }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 6px; }
-  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; }
-  .kpi-value.accent { color: var(--accent); }
-  .kpi-value.green { color: var(--green); }
-  .kpi-value.orange { color: var(--orange); }
-  .kpi-value.yellow { color: var(--yellow); }
-  .kpi-value.red { color: var(--red); }
-
-  .content { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 220px); }
-  .conversations-panel { border-right: 1px solid var(--border); overflow-y: auto; }
-  .ranking-panel { overflow-y: auto; padding: 16px; }
-
-  .section-header { padding: 12px 20px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
-
-  .conv-card { padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .conv-card:hover { background: var(--surface); }
-  .conv-card.active { background: var(--accent-dim); border-left: 3px solid var(--accent); }
-  .conv-info { flex: 1; min-width: 0; }
-  .conv-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .conv-name .etapa { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 6px; }
-  .conv-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; }
-  .audio-badge { font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .audio-badge.all-done { color: var(--green); }
-  .audio-badge.pending { color: var(--orange); }
-  .audio-badge.has-error { color: var(--red); }
-  .audio-badge.no-audio { color: var(--text-muted); }
-
-  .rank-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
-  .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .rank-name { font-weight: 600; font-size: 13px; }
-  .rank-pos { font-size: 11px; color: var(--text-muted); font-weight: 700; }
-  .rank-bars { display: flex; flex-direction: column; gap: 4px; }
-  .rank-bar-row { display: flex; align-items: center; gap: 6px; }
-  .rank-bar-label { font-size: 11px; color: var(--text-muted); width: 36px; flex-shrink: 0; }
-  .rank-bar-track { flex: 1; background: var(--border); border-radius: 3px; height: 6px; overflow: hidden; }
-  .rank-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
-  .rank-bar-fill.aval { background: var(--accent); }
-  .rank-bar-fill.closer { background: var(--green); }
-  .rank-bar-fill.audio { background: var(--yellow); }
-  .rank-bar-val { font-size: 11px; color: var(--text-muted); width: 32px; text-align: right; flex-shrink: 0; }
-
-  /* MODAL */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: center; justify-content: center; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+  .nav { display: flex; align-items: center; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; margin-right: 28px; }
+  .nav-logo span { color: var(--accent); }
+  .nav-tab { display: flex; align-items: center; gap: 7px; height: 52px; padding: 0 16px; border: none; background: none; color: var(--text-muted); font-family: var(--font); font-size: 13.5px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-spacer { flex: 1; }
+  .nav-status { font-size: 12px; color: var(--text-muted); }
+  .nav-status span { color: var(--green); }
+  .page { display: none; padding: 28px 28px 60px; max-width: 1400px; margin: 0 auto; }
+  .page.active { display: block; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .section-title { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .section-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; align-items: center; }
+  .filter-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer; outline: none; }
+  .filter-select:focus { border-color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-outline { background: transparent; border-color: var(--border-light); color: var(--text-dim); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .kpi-label { font-size: 11.5px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .kpi.blue .kpi-value { color: var(--accent); } .kpi.green .kpi-value { color: var(--green); }
+  .kpi.amber .kpi-value { color: var(--amber); } .kpi.red .kpi-value { color: var(--red); }
+  .kpi.gray .kpi-value { color: var(--text-muted); }
+  .alert { background: var(--red-bg); border: 1px solid rgba(240,92,92,0.3); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; }
+  .alert-title { font-weight: 600; color: var(--red); margin-bottom: 8px; font-size: 13px; }
+  .alert-item { font-size: 12.5px; color: var(--text-dim); margin: 4px 0; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(79,127,255,0.04); }
+  td { padding: 11px 16px; font-size: 13px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+  .badge-blue { background: var(--accent-glow); color: var(--accent); } .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); } .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-gray { background: var(--gray-bg); color: var(--text-muted); }
+  .ranking-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .ranking-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .ranking-name { font-weight: 600; font-size: 14px; margin-bottom: 14px; }
+  .rank-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 12px; }
+  .rank-bar-label { color: var(--text-muted); width: 60px; }
+  .rank-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .rank-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .rank-bar-val { color: var(--text-dim); width: 28px; text-align: right; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500; backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 20px; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 680px; max-width: 95vw; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
-  .modal-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal { background: var(--surface); border: 1px solid var(--border-light); border-radius: 14px; max-width: 780px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+  .modal-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 24px 16px; border-bottom: 1px solid var(--border); }
   .modal-title { font-size: 16px; font-weight: 700; }
-  .modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-  .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 4px; }
-  .modal-close:hover { color: var(--text); }
-  .modal-body { overflow-y: auto; padding: 16px 20px; flex: 1; }
-
-  /* MODAL DE ERRO */
-  .error-modal { background: var(--surface); border: 1px solid var(--red); border-radius: 12px; width: 520px; max-width: 95vw; max-height: 70vh; display: flex; flex-direction: column; overflow: hidden; }
-  .error-modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .error-modal-title { font-size: 15px; font-weight: 700; color: var(--red); }
-  .error-modal-body { overflow-y: auto; padding: 16px 20px; }
-  .error-item { background: var(--red-dim); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
-  .error-item-seller { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-  .error-item-msg { font-size: 12px; color: var(--red); font-family: monospace; word-break: break-all; margin-bottom: 4px; }
-  .error-item-time { font-size: 11px; color: var(--text-muted); }
-
-  .msg { margin-bottom: 8px; display: flex; flex-direction: column; }
-  .msg.user { align-items: flex-end; }
-  .msg.customer { align-items: flex-start; }
-  .msg-bubble { max-width: 78%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
-  .msg.user .msg-bubble { background: var(--accent-dim); border: 1px solid var(--accent); border-bottom-right-radius: 3px; }
-  .msg.customer .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
-  .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-  .msg-audio-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
-  .msg-audio-content { flex: 1; }
-  .msg-audio-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; }
-  .msg-pending { color: var(--orange); font-style: italic; font-size: 12px; }
-  .msg-error { color: var(--red); font-style: italic; font-size: 12px; cursor: pointer; text-decoration: underline dotted; }
-  .msg-unsupported { color: var(--text-muted); font-style: italic; font-size: 12px; }
-  .msg-image { color: var(--seller); font-style: italic; font-size: 12px; }
-  .msg-template { color: var(--yellow); font-size: 12px; }
-
+  .modal-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; border-radius: 4px; }
+  .modal-close:hover { color: var(--text); background: var(--border); }
+  .modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+  .msg { display: flex; gap: 10px; margin-bottom: 12px; }
+  .msg.vendedor { flex-direction: row-reverse; }
+  .msg-bubble { max-width: 80%; padding: 9px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+  .msg.lead .msg-bubble { background: var(--border); color: var(--text-dim); border-radius: 4px 12px 12px 12px; }
+  .msg.vendedor .msg-bubble { background: var(--accent-glow); border: 1px solid rgba(79,127,255,0.2); color: var(--text); border-radius: 12px 4px 12px 12px; }
+  .msg-hora { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
+  .msg-tag { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; color: var(--text-muted); }
+  .msg.vendedor .msg-tag { color: var(--accent); text-align: right; }
+  /* PAGE 2 */
+  .p2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .analise-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: border-color 0.15s; }
+  .analise-card:hover { border-color: var(--accent); }
+  .analise-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .analise-card-name { font-weight: 700; font-size: 15px; }
+  .analise-card-etapa { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .score-big { font-size: 36px; font-weight: 900; letter-spacing: -2px; }
+  .score-bar { height: 5px; background: var(--border); border-radius: 3px; margin: 8px 0 14px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.6s ease; }
+  .analise-section { margin-bottom: 12px; }
+  .analise-section-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
+  .etapas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .etapa-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  .etapa-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .etapa-dot.ok { background: var(--green); } .etapa-dot.nok { background: var(--border-light); }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-size: 11.5px; padding: 3px 9px; border-radius: 20px; }
+  .tag-melhoria { background: var(--amber-bg); color: var(--amber); }
+  .tag-tecnica { background: var(--purple-bg); color: var(--purple); }
+  .tag-objecao { background: var(--red-bg); color: var(--red); }
+  .resumo-text { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+  .comparativo-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 16px; }
+  .comparativo-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .ranking-table { width: 100%; }
+  .ranking-table td { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ranking-table tr:last-child td { border-bottom: none; }
+  .rank-pos { font-weight: 800; color: var(--accent); width: 30px; }
+  .prompt-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .prompt-box-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .prompt-box-title { font-weight: 600; font-size: 14px; }
+  textarea.prompt-area { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 12.5px; border-radius: var(--radius-sm); padding: 14px 16px; resize: vertical; min-height: 120px; line-height: 1.6; outline: none; }
+  textarea.prompt-area:focus { border-color: var(--accent); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
   .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-  .loading { text-align: center; padding: 40px; color: var(--text-muted); }
-  .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text-dim); }
+  .empty-sub { font-size: 13px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 13px 18px; font-size: 13px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.25s; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+  .text-muted { color: var(--text-muted); }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">Aspekto <span>SDR</span></div>
-  <div class="header-right">
-    <span class="last-update" id="lastUpdate">—</span>
-    <button class="refresh-btn" onclick="carregar()">↻ Atualizar</button>
-  </div>
-</div>
+<nav class="nav">
+  <div class="nav-logo">SDR <span>Aspekto</span></div>
+  <button class="nav-tab active" onclick="showPage('p1',this)">💬 Conversas</button>
+  <button class="nav-tab" onclick="showPage('p2',this)">🤖 Análises IA</button>
+  <div class="nav-spacer"></div>
+  <div class="nav-status" id="nav-status">Carregando…</div>
+</nav>
 
-<!-- BANNER DE ERROS DO WHISPER -->
-<div class="error-banner" id="errorBanner">
-  <div class="error-banner-icon">⚠️</div>
-  <div class="error-banner-content">
-    <div class="error-banner-title" id="errorBannerTitle">Erros detectados nas transcrições</div>
-    <ul class="error-banner-list" id="errorBannerList"></ul>
-  </div>
-</div>
-
-<div class="filters">
-  <select id="filtPeriodo" onchange="aplicarFiltros()">
-    <option value="7">Últimos 7 dias</option>
-    <option value="30" selected>Últimos 30 dias</option>
-    <option value="90">Últimos 90 dias</option>
-  </select>
-  <select id="filtEtapa" onchange="aplicarFiltros()">
-    <option value="">Todas as etapas</option>
-    <option value="aval">Aval. Agendada</option>
-    <option value="closer">Closer</option>
-  </select>
-  <select id="filtVendedor" onchange="aplicarFiltros()">
-    <option value="">Todos vendedores</option>
-  </select>
-</div>
-
-<div class="kpis" id="kpis">
-  <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value accent" id="kTotal">—</div></div>
-  <div class="kpi"><div class="kpi-label">Aval. Agendada</div><div class="kpi-value accent" id="kAval">—</div></div>
-  <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
-  <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
-  <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPendentes">—</div></div>
-  <div class="kpi"><div class="kpi-label">Não suportados</div><div class="kpi-value" id="kNaoSuportados" style="color:var(--text-muted)">—</div></div>
-  <div class="kpi" style="cursor:pointer" onclick="abrirModalErros()"><div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErros">—</div><div style="font-size:10px;color:var(--text-muted);margin-top:4px">clique para detalhar</div></div>
-</div>
-
-<div class="content">
-  <div class="conversations-panel">
-    <div class="section-header">
-      <span>Últimas conversas</span>
-      <span id="convCount" style="font-weight:400;color:var(--text-muted)"></span>
+<!-- PÁGINA 1 -->
+<div class="page active" id="p1">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Conversas</div>
+      <div class="section-sub">Áudios transcritos e status por vendedor</div>
     </div>
-    <div id="convList"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
+    <button class="btn btn-outline btn-sm" onclick="loadP1()">↻ Atualizar</button>
   </div>
-  <div class="ranking-panel">
-    <div class="section-header"><span>Ranking vendedores</span></div>
-    <div id="ranking" style="padding-top:12px"></div>
+  <div class="filters">
+    <select class="filter-select" id="f1-periodo" onchange="loadP1()">
+      <option value="7">7 dias</option>
+      <option value="30" selected>30 dias</option>
+      <option value="90">90 dias</option>
+    </select>
+    <select class="filter-select" id="f1-etapa" onchange="loadP1()">
+      <option value="">Todas as etapas</option>
+      <option value="closer">Closer</option>
+      <option value="avaliacao">Avaliação Agendada</option>
+    </select>
+    <select class="filter-select" id="f1-seller" onchange="loadP1()">
+      <option value="">Todos os vendedores</option>
+    </select>
   </div>
+  <div class="kpi-grid" id="p1-kpis"></div>
+  <div id="p1-alert"></div>
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Ranking por Vendedor</div>
+  <div class="ranking-grid" id="p1-ranking"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <div style="font-size:15px;font-weight:700">Conversas</div>
+    <span id="p1-count" class="text-muted" style="font-size:13px"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Vendedor</th><th>Etapa</th><th>Data</th><th>Msgs</th><th>Áudios</th><th>Status</th></tr></thead>
+      <tbody id="p1-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PÁGINA 2 -->
+<div class="page" id="p2">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Análises IA</div>
+      <div class="section-sub">Análise por vendedor e comparativo semanal via Claude</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="loadP2()">↻ Atualizar</button>
+  </div>
+
+  <div class="filters">
+    <select class="filter-select" id="f2-week" onchange="loadP2()">
+      <option value="">Todas as semanas</option>
+    </select>
+    <select class="filter-select" id="f2-etapa" onchange="loadP2()">
+      <option value="">Todas as etapas</option>
+      <option value="closer">Closer</option>
+      <option value="avaliacao">Avaliação Agendada</option>
+    </select>
+    <button class="btn btn-primary" id="btn-analisar" onclick="dispararAnalise()">▶ Rodar Análise Agora</button>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="prompt-box">
+    <div class="prompt-box-header">
+      <div>
+        <div class="prompt-box-title">⚙️ Prompt de Análise</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Instruções enviadas ao Claude para cada análise. Salve para ativar.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="prompt-status" style="font-size:12px;color:var(--text-muted)"></span>
+        <button class="btn btn-outline btn-sm" onclick="salvarPrompt()">Salvar e Ativar</button>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Análise Individual</div>
+        <textarea class="prompt-area" id="prompt-individual" placeholder="Instruções para analisar as conversas de 1 vendedor. Retorne JSON com: score_geral (0-10), pontos_de_melhoria, tecnicas_bem_aplicadas, objecoes_identificadas, etapas_cumpridas, resumo..."></textarea>
+      </div>
+      <div>
+        <div style="font-size:11.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Análise Comparativa</div>
+        <textarea class="prompt-area" id="prompt-comparativo" placeholder="Instruções para comparar todos os vendedores. Retorne JSON com: ranking (array com nome e score_geral), recomendacoes_gerais, destaques por vendedor..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANÁLISES INDIVIDUAIS -->
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Análises Individuais</div>
+  <div id="p2-analises"></div>
+
+  <hr class="divider">
+  <div style="font-size:15px;font-weight:700;margin-bottom:14px">Análise Comparativa</div>
+  <div id="p2-comparativo"></div>
 </div>
 
 <!-- MODAL CONVERSA -->
-<div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+<div class="modal-overlay" id="modal-conv" onclick="if(event.target===this)closeModal('modal-conv')">
   <div class="modal">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modalTitle">—</div>
-        <div class="modal-sub" id="modalSub">—</div>
-      </div>
-      <button class="modal-close" onclick="fecharModal()">✕</button>
+    <div class="modal-head">
+      <div><div class="modal-title" id="mc-title"></div><div class="modal-sub" id="mc-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-conv')">✕</button>
     </div>
-    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-body" id="mc-body"></div>
   </div>
 </div>
 
-<!-- MODAL DE ERROS -->
-<div class="modal-overlay" id="errorModalOverlay" onclick="fecharModalErros(event)">
-  <div class="error-modal">
-    <div class="error-modal-header">
-      <div class="error-modal-title">⚠️ Erros nas transcrições</div>
-      <button class="modal-close" onclick="fecharModalErros()">✕</button>
+<!-- MODAL ANÁLISE -->
+<div class="modal-overlay" id="modal-an" onclick="if(event.target===this)closeModal('modal-an')">
+  <div class="modal">
+    <div class="modal-head">
+      <div><div class="modal-title" id="ma-title"></div><div class="modal-sub" id="ma-sub"></div></div>
+      <button class="modal-close" onclick="closeModal('modal-an')">✕</button>
     </div>
-    <div class="error-modal-body" id="errorModalBody"></div>
+    <div class="modal-body" id="ma-body"></div>
   </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-const SUPA_URL = 'https://mwlxudtdvflygvewuwal.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
+const SB = 'https://mwlxudtdvflygvewuwal.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
+const N8N_LOTES = 'https://n8n-ai.grupoaspekto.com/webhook/sdr-gerar-lotes';
+const N8N_ANALISAR = 'https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
+const SBH = { 'apikey': KEY, 'Authorization': 'Bearer ' + KEY };
 
-let dados = [];
-let filtrados = [];
-let convAtiva = null;
-let todosErros = [];
+let p1Rows = [];
+let p2Analises = [];
 
-async function carregar() {
-  document.getElementById('convList').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
-  try {
-    const resp = await fetch(`${SUPA_URL}/rest/v1/conversations?select=*&order=conversation_date.desc&limit=200`, {
-      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+const sbGet = p => fetch(SB+'/rest/v1/'+p, {headers: SBH}).then(r=>r.json());
+const sbPost = (p,b,extra={}) => fetch(SB+'/rest/v1/'+p, {method:'POST',headers:{...SBH,'Content-Type':'application/json','Prefer':'return=minimal',...extra},body:JSON.stringify(b)}).then(r=>r.ok);
+const sbPatch = (p,b) => fetch(SB+'/rest/v1/'+p, {method:'PATCH',headers:{...SBH,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)}).then(r=>r.ok);
+
+function showPage(id, tab) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  tab.classList.add('active');
+  if (id==='p2') loadP2();
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show '+type;
+  setTimeout(()=>t.className='toast', 3200);
+}
+
+function fmtDate(d) { if(!d) return '—'; return new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+function fmtScore(s) { return s!=null ? Number(s).toFixed(1) : '—'; }
+function scoreColor(s) {
+  if(s==null) return 'var(--text-muted)';
+  if(s>=8) return 'var(--green)';
+  if(s>=6) return 'var(--amber)';
+  return 'var(--red)';
+}
+function etapaLabel(s) { return (s||'').toLowerCase().includes('closer') ? 'Closer' : 'Avaliação'; }
+function etapaKey(s) { return (s||'').toLowerCase().includes('closer') ? 'closer' : 'avaliacao'; }
+
+// ── PÁGINA 1 ─────────────────────────────────────────────────────
+async function loadP1() {
+  const dias = +document.getElementById('f1-periodo').value;
+  const since = new Date(); since.setDate(since.getDate()-dias);
+  const sinceStr = since.toISOString().split('T')[0];
+  const raw = await sbGet(`conversations?select=deal_id,seller_name,origin_name,conversation_date,raw_messages&conversation_date=gte.${sinceStr}&order=conversation_date.desc&limit=200`);
+  p1Rows = (raw||[]).filter(c=>{const o=(c.origin_name||'').toLowerCase();return o.includes('closer')||o.includes('avalia');});
+
+  const sellers = [...new Set(p1Rows.map(c=>c.seller_name))].sort();
+  const sel = document.getElementById('f1-seller'), prev = sel.value;
+  sel.innerHTML = '<option value="">Todos os vendedores</option>' + sellers.map(s=>`<option value="${s}"${s===prev?' selected':''}>${s}</option>`).join('');
+
+  applyP1();
+  document.getElementById('nav-status').innerHTML = `<span>${p1Rows.length}</span> conversas`;
+}
+
+function applyP1() {
+  const etapaF = document.getElementById('f1-etapa').value;
+  const sellerF = document.getElementById('f1-seller').value;
+  let d = p1Rows;
+  if(etapaF) d = d.filter(c=>(c.origin_name||'').toLowerCase().includes(etapaF==='closer'?'closer':'avalia'));
+  if(sellerF) d = d.filter(c=>c.seller_name===sellerF);
+  renderP1KPIs(d); renderP1Alert(d); renderP1Ranking(d); renderP1Table(d);
+}
+
+function renderP1KPIs(d) {
+  let tot=0,tr=0,pe=0,er=0,ns=0,aval=0,closer=0;
+  d.forEach(c=>{
+    const o=(c.origin_name||'').toLowerCase();
+    if(o.includes('avalia')) aval++; else if(o.includes('closer')) closer++;
+    (c.raw_messages||[]).forEach(m=>{
+      if(m.content_type!=='AUDIO') return;
+      tot++;
+      const t=m.transcricao||'';
+      if(!t) pe++;
+      else if(t.startsWith('[formato-nao-suportado')) ns++;
+      else if(t.startsWith('[erro')) er++;
+      else tr++;
     });
-    const raw = await resp.json();
-    const mapa = {};
-    for (const r of raw) { mapa[r.deal_id] = r; }
-    dados = Object.values(mapa);
-    preencherVendedores();
-    aplicarFiltros();
-    document.getElementById('lastUpdate').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
-  } catch(e) {
-    document.getElementById('convList').innerHTML = '<div class="empty">⚠️ Erro ao carregar dados</div>';
-  }
-}
-
-function preencherVendedores() {
-  const sel = document.getElementById('filtVendedor');
-  const atual = sel.value;
-  const nomes = [...new Set(dados.map(d => d.seller_name).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">Todos vendedores</option>' + nomes.map(n => `<option value="${n}">${n}</option>`).join('');
-  sel.value = atual;
-}
-
-function aplicarFiltros() {
-  const dias = parseInt(document.getElementById('filtPeriodo').value);
-  const etapa = document.getElementById('filtEtapa').value;
-  const vendedor = document.getElementById('filtVendedor').value;
-  const corte = new Date(Date.now() - dias * 86400000).toISOString().split('T')[0];
-
-  filtrados = dados.filter(d => {
-    if (d.conversation_date < corte) return false;
-    if (etapa && d.origin_name) {
-      if (etapa === 'aval' && !d.origin_name.toLowerCase().includes('avalia')) return false;
-      if (etapa === 'closer' && !d.origin_name.toLowerCase().includes('closer')) return false;
-    }
-    if (vendedor && d.seller_name !== vendedor) return false;
-    return true;
   });
-
-  renderKpis();
-  renderConversas();
-  renderRanking();
-  renderErrorBanner();
+  document.getElementById('p1-kpis').innerHTML = `
+    <div class="kpi blue"><div class="kpi-label">Total</div><div class="kpi-value">${d.length}</div><div class="kpi-sub">conversas</div></div>
+    <div class="kpi blue"><div class="kpi-label">Avaliação</div><div class="kpi-value">${aval}</div></div>
+    <div class="kpi green"><div class="kpi-label">Closer</div><div class="kpi-value">${closer}</div></div>
+    <div class="kpi green"><div class="kpi-label">Transcritos</div><div class="kpi-value">${tr}</div><div class="kpi-sub">de ${tot} áudios</div></div>
+    <div class="kpi amber"><div class="kpi-label">Pendentes</div><div class="kpi-value">${pe}</div></div>
+    <div class="kpi gray"><div class="kpi-label">Não Suportados</div><div class="kpi-value">${ns}</div><div class="kpi-sub">AAC</div></div>
+    ${er?`<div class="kpi red"><div class="kpi-label">Erros</div><div class="kpi-value">${er}</div><div class="kpi-sub">Whisper</div></div>`:''}
+  `;
 }
 
-function statusAudios(msgs) {
-  const audios = (msgs||[]).filter(m => m.content_type === 'AUDIO' && m.content_url);
-  const transcritos = audios.filter(m => m.transcricao && !String(m.transcricao).startsWith('['));
-  const erros = audios.filter(m => m.transcricao && String(m.transcricao).startsWith('[erro'));
-  const naoSuportados = audios.filter(m => m.transcricao && String(m.transcricao).startsWith('[formato-nao-suportado'));
-  const pendentes = audios.filter(m => !m.transcricao);
-  return { total: audios.length, transcritos: transcritos.length, erros: erros.length, naoSuportados: naoSuportados.length, pendentes: pendentes.length };
+function renderP1Alert(d) {
+  const em={};
+  d.forEach(c=>(c.raw_messages||[]).forEach(m=>{const t=m.transcricao||'';if(t.startsWith('[erro')){em[t]=(em[t]||0)+1;}}));
+  const el=document.getElementById('p1-alert');
+  if(!Object.keys(em).length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="alert"><div class="alert-title">⚠️ Erros no Whisper</div>${Object.entries(em).map(([k,v])=>`<div class="alert-item">• ${k.slice(0,100)} — ${v}x</div>`).join('')}</div>`;
 }
 
-function renderKpis() {
-  const total = filtrados.length;
-  const aval = filtrados.filter(d => d.origin_name && d.origin_name.toLowerCase().includes('avalia')).length;
-  const closer = filtrados.filter(d => d.origin_name && d.origin_name.toLowerCase().includes('closer')).length;
-  let totAud=0, totTrans=0, totPend=0, totErr=0, totNaoSup=0;
-  for (const d of filtrados) {
-    const s = statusAudios(d.raw_messages);
-    totAud += s.total;
-    totTrans += s.transcritos;
-    totPend += s.pendentes;
-    totErr += s.erros;
-    totNaoSup += s.naoSuportados;
+function renderP1Ranking(d) {
+  const s={};
+  d.forEach(c=>{
+    if(!s[c.seller_name]) s[c.seller_name]={aval:0,closer:0,au:0,tr:0};
+    if((c.origin_name||'').toLowerCase().includes('avalia')) s[c.seller_name].aval++;
+    else s[c.seller_name].closer++;
+    (c.raw_messages||[]).forEach(m=>{if(m.content_type==='AUDIO'){s[c.seller_name].au++;const t=m.transcricao||'';if(t&&!t.startsWith('['))s[c.seller_name].tr++;}});
+  });
+  const ma=Math.max(...Object.values(s).map(x=>x.aval),1), mc=Math.max(...Object.values(s).map(x=>x.closer),1), mau=Math.max(...Object.values(s).map(x=>x.au),1);
+  document.getElementById('p1-ranking').innerHTML = Object.entries(s).sort((a,b)=>(b[1].aval+b[1].closer)-(a[1].aval+a[1].closer)).map(([n,v])=>`
+    <div class="ranking-card">
+      <div class="ranking-name">${n}</div>
+      <div class="rank-bar-row"><span class="rank-bar-label">Avaliação</span><div class="rank-bar-track"><div class="rank-bar-fill" style="width:${v.aval/ma*100}%;background:var(--accent)"></div></div><span class="rank-bar-val">${v.aval}</span></div>
+      <div class="rank-bar-row"><span class="rank-bar-label">Closer</span><div class="rank-bar-track"><div class="rank-bar-fill" style="width:${v.closer/mc*100}%;background:var(--green)"></div></div><span class="rank-bar-val">${v.closer}</span></div>
+      <div class="rank-bar-row"><span class="rank-bar-label">Áudios</span><div class="rank-bar-track"><div class="rank-bar-fill" style="width:${v.au/mau*100}%;background:var(--amber)"></div></div><span class="rank-bar-val">${v.tr}/${v.au}</span></div>
+    </div>`).join('');
+}
+
+function renderP1Table(d) {
+  document.getElementById('p1-count').textContent = `(${d.length})`;
+  if(!d.length){document.getElementById('p1-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Nenhuma conversa</td></tr>';return;}
+  document.getElementById('p1-tbody').innerHTML = d.map((c,i)=>{
+    const msgs=c.raw_messages||[], au=msgs.filter(m=>m.content_type==='AUDIO');
+    const tr=au.filter(m=>m.transcricao&&!m.transcricao.startsWith('[')).length;
+    const er=au.filter(m=>(m.transcricao||'').startsWith('[erro')).length;
+    const ns=au.filter(m=>(m.transcricao||'').startsWith('[formato-nao-suportado')).length;
+    const pe=au.filter(m=>!m.transcricao).length;
+    const e=etapaKey(c.origin_name);
+    return `<tr onclick="openConvModal(${i})">
+      <td><strong>${c.seller_name.split(' ')[0]}</strong> <span class="text-muted" style="font-size:11px">${c.seller_name.split(' ').slice(1).join(' ')}</span></td>
+      <td><span class="badge ${e==='closer'?'badge-green':'badge-blue'}">${e==='closer'?'Closer':'Avaliação'}</span></td>
+      <td>${fmtDate(c.conversation_date)}</td>
+      <td>${msgs.length}</td>
+      <td>${au.length}</td>
+      <td>${tr?`<span class="badge badge-green">✓ ${tr}</span> `:''}${er?`<span class="badge badge-red">⚠ ${er}</span> `:''}${ns?`<span class="badge badge-gray">🚫 ${ns}</span> `:''}${pe?`<span class="badge badge-amber">⏳ ${pe}</span>`:''}${!tr&&!er&&!ns&&!pe?'<span class="badge badge-gray">—</span>':''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openConvModal(i) {
+  const etapaF=document.getElementById('f1-etapa').value, sellerF=document.getElementById('f1-seller').value;
+  let d=p1Rows;
+  if(etapaF) d=d.filter(c=>(c.origin_name||'').toLowerCase().includes(etapaF==='closer'?'closer':'avalia'));
+  if(sellerF) d=d.filter(c=>c.seller_name===sellerF);
+  const c=d[i]; if(!c) return;
+  document.getElementById('mc-title').textContent=c.seller_name;
+  document.getElementById('mc-sub').textContent=`${c.origin_name} · ${fmtDate(c.conversation_date)} · ${c.deal_id.slice(0,8)}`;
+  const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
+  document.getElementById('mc-body').innerHTML = msgs.map(m=>{
+    const isV=m.type==='USER', hora=m.created_at?m.created_at.slice(11,16):'';
+    let cnt='';
+    if(m.content_type==='AUDIO'){
+      const t=m.transcricao||'';
+      if(!t) cnt=`<span style="color:var(--amber)">🎵 Áudio pendente${m.seconds?' · '+m.seconds+'s':''}</span>`;
+      else if(t.startsWith('[formato-nao-suportado')) cnt=`<span style="color:var(--text-muted)">🚫 Não suportado</span>`;
+      else if(t.startsWith('[erro')) cnt=`<span style="color:var(--red)">⚠️ Erro: ${t.slice(0,80)}</span>`;
+      else cnt=`<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">🎙️ ${m.seconds||'?'}s</div>${t}`;
+    } else if(m.content_type==='TEXT') cnt=m.content||'';
+    else if(m.content_type==='IMAGE') cnt='<span class="text-muted">[imagem]</span>';
+    else if(m.content_type==='TEMPLATE') cnt='<span class="text-muted">[template]</span>';
+    return `<div class="msg ${isV?'vendedor':'lead'}"><div><div class="msg-tag">${isV?'Vendedor':'Lead'}</div><div class="msg-bubble">${cnt}<div class="msg-hora">${hora}</div></div></div></div>`;
+  }).join('')||'<div style="text-align:center;padding:40px;color:var(--text-muted)">Sem mensagens</div>';
+  openModal('modal-conv');
+}
+
+// ── PÁGINA 2 ─────────────────────────────────────────────────────
+async function loadP2() {
+  loadPrompt();
+  const semanas = await sbGet('weekly_batches?select=week_label&order=week_label.desc&limit=100');
+  const su=[...new Set((semanas||[]).map(s=>s.week_label))];
+  const sw=document.getElementById('f2-week'), cv=sw.value;
+  sw.innerHTML='<option value="">Todas as semanas</option>'+su.map(s=>`<option value="${s}"${s===cv?' selected':''}>${s}</option>`).join('');
+  
+  const weekF=document.getElementById('f2-week').value, etapaF=document.getElementById('f2-etapa').value;
+  let qa='ai_analyses?select=*&order=created_at.desc&limit=100';
+  if(weekF) qa+='&week_label=eq.'+weekF;
+  const analises=await sbGet(qa);
+  p2Analises=analises||[];
+
+  let qc='weekly_comparative_analyses?select=*&order=created_at.desc&limit=20';
+  if(weekF) qc+='&week_label=eq.'+weekF;
+  if(etapaF) qc+='&etapa=eq.'+etapaF;
+  const comps=await sbGet(qc);
+  renderP2Analises(p2Analises, etapaF);
+  renderP2Comparativo(comps||[]);
+}
+
+async function loadPrompt() {
+  const d=await sbGet('analysis_prompts?ativo=eq.true&limit=1');
+  if(d&&d[0]){
+    document.getElementById('prompt-individual').value=d[0].prompt_individual||'';
+    document.getElementById('prompt-comparativo').value=d[0].prompt_comparativo||'';
+    document.getElementById('prompt-status').textContent='Ativo: "'+d[0].nome+'"';
   }
-  document.getElementById('kTotal').textContent = total;
-  document.getElementById('kAval').textContent = aval;
-  document.getElementById('kCloser').textContent = closer;
-  document.getElementById('kAudios').textContent = `${totTrans}/${totAud}`;
-  document.getElementById('kPendentes').textContent = totPend;
-  document.getElementById('kNaoSuportados').textContent = totNaoSup;
-  document.getElementById('kErros').textContent = totErr;
+}
 
-  // KPI erros: destaca se tiver erros
-  const kpiErr = document.getElementById('kErros');
-  kpiErr.style.color = totErr > 0 ? 'var(--red)' : 'var(--text-muted)';
+async function salvarPrompt() {
+  const pi=document.getElementById('prompt-individual').value.trim();
+  const pc=document.getElementById('prompt-comparativo').value.trim();
+  if(!pi||!pc){showToast('Preencha os dois campos','error');return;}
+  const nome='v'+new Date().toISOString().slice(0,16).replace(/[:\-T]/g,'');
+  await sbPatch('analysis_prompts?ativo=eq.true',{ativo:false});
+  await sbPost('analysis_prompts',{nome,descricao:'Dashboard',prompt_individual:pi,prompt_comparativo:pc,ativo:true});
+  showToast('Prompt salvo e ativado!');
+  document.getElementById('prompt-status').textContent='Ativo: "'+nome+'"';
+}
 
-  // Coleta todos os erros para o modal
-  todosErros = [];
-  for (const d of filtrados) {
-    for (const m of (d.raw_messages||[])) {
-      if (m.transcricao && String(m.transcricao).startsWith('[erro')) {
-        todosErros.push({ seller: d.seller_name, deal_id: d.deal_id, erro: m.transcricao, created_at: m.created_at });
-      }
-    }
+function renderP2Analises(data, etapaF) {
+  let d=data;
+  if(etapaF){
+    d=d.filter(a=>{try{const m=JSON.parse(a.analise_cruzada||'{}');return m.etapa===etapaF;}catch{return true;}});
   }
-}
-
-function renderErrorBanner() {
-  const banner = document.getElementById('errorBanner');
-  const list = document.getElementById('errorBannerList');
-  if (todosErros.length === 0) { banner.classList.remove('visible'); return; }
-  banner.classList.add('visible');
-  document.getElementById('errorBannerTitle').textContent = `${todosErros.length} erro(s) detectado(s) nas transcrições — clique para ver detalhes`;
-
-  // Agrupa por tipo de erro
-  const grupos = {};
-  for (const e of todosErros) {
-    const tipo = e.erro.replace(/\[erro[^:]*: /, '').replace(/\].*/, '').slice(0, 60);
-    if (!grupos[tipo]) grupos[tipo] = 0;
-    grupos[tipo]++;
+  if(!d.length){
+    document.getElementById('p2-analises').innerHTML=`<div class="empty"><div class="empty-icon">🤖</div><div class="empty-title">Nenhuma análise encontrada</div><div class="empty-sub">Clique em "Rodar Análise Agora" para gerar</div></div>`;
+    return;
   }
-  list.innerHTML = Object.entries(grupos).map(([tipo, qtd]) =>
-    `<li onclick="abrirModalErros()"><span class="err-badge">${qtd}x</span> ${tipo}</li>`
-  ).join('');
-}
-
-function abrirModalErros() {
-  const body = document.getElementById('errorModalBody');
-  if (todosErros.length === 0) {
-    body.innerHTML = '<div class="empty" style="padding:30px">Nenhum erro encontrado ✓</div>';
-  } else {
-    body.innerHTML = todosErros.map(e => `
-      <div class="error-item">
-        <div class="error-item-seller">${e.seller || '—'}</div>
-        <div class="error-item-msg">${e.erro}</div>
-        <div class="error-item-time">${e.created_at ? new Date(e.created_at).toLocaleString('pt-BR') : '—'}</div>
-      </div>`).join('');
-  }
-  document.getElementById('errorModalOverlay').classList.add('open');
-}
-
-function fecharModalErros(e) {
-  if (e && e.target !== document.getElementById('errorModalOverlay')) return;
-  document.getElementById('errorModalOverlay').classList.remove('open');
-}
-
-function renderConversas() {
-  const el = document.getElementById('convList');
-  document.getElementById('convCount').textContent = filtrados.length + ' conversas';
-  if (!filtrados.length) { el.innerHTML = '<div class="empty">💬 Nenhuma conversa encontrada</div>'; return; }
-
-  el.innerHTML = filtrados.map(d => {
-    const s = statusAudios(d.raw_messages);
-    let badge, badgeClass;
-    if (s.total === 0) { badge = 'sem áudios'; badgeClass = 'no-audio'; }
-    else if (s.erros > 0) { badge = `⚠️ ${s.erros} erro(s)`; badgeClass = 'has-error'; }
-    else if (s.pendentes > 0) { badge = `⏳ ${s.transcritos}/${s.total} áudios`; badgeClass = 'pending'; }
-    else { badge = `✓ ${s.transcritos}/${s.total} áudios`; badgeClass = 'all-done'; }
-    if (s.naoSuportados > 0) badge += ` · ${s.naoSuportados}✗`;
-
-    const etapa = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval.' : 'Closer';
-    const msgs = (d.raw_messages||[]).length;
-    const isActive = convAtiva === d.deal_id ? 'active' : '';
-    return `<div class="conv-card ${isActive}" onclick="abrirModal('${d.deal_id}')">
-      <div class="conv-info">
-        <div class="conv-name">${d.seller_name || '—'}<span class="etapa">· ${etapa}</span></div>
-        <div class="conv-meta">
-          <span>📅 ${d.conversation_date||'—'}</span>
-          <span>📱 ${d.telefone||'—'}</span>
-          <span>💬 ${msgs} msgs</span>
-        </div>
+  document.getElementById('p2-analises').innerHTML='<div class="p2-grid">'+d.map((a,i)=>{
+    let meta={};try{meta=JSON.parse(a.analise_cruzada||'{}');}catch{}
+    const sc=a.score_geral, etapas=a.etapas_cumpridas||{}, mel=a.pontos_de_melhoria||[];
+    return `<div class="analise-card" onclick="openAnModal(${i})">
+      <div class="analise-card-header">
+        <div><div class="analise-card-name">${meta.seller||'—'}</div><div class="analise-card-etapa">${meta.etapa==='closer'?'Closer':'Avaliação'} · ${a.week_label||'—'} · ${meta.total_conversas||'?'} conversas</div></div>
+        <div style="text-align:right"><div class="score-big" style="color:${scoreColor(sc)}">${fmtScore(sc)}</div><div style="font-size:13px;color:var(--text-muted)">/10</div></div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div class="audio-badge ${badgeClass}">${badge}</div>
-      </div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${sc!=null?sc*10:0}%"></div></div>
+      ${Object.keys(etapas).length?`<div class="analise-section"><div class="analise-section-label">Etapas</div><div class="etapas-grid">${Object.entries(etapas).map(([k,v])=>`<div class="etapa-item"><div class="etapa-dot ${v?'ok':'nok'}"></div>${k.replace(/_/g,' ')}</div>`).join('')}</div></div>`:''}
+      ${mel.length?`<div class="analise-section"><div class="analise-section-label">Melhorias</div><div class="tag-list">${mel.slice(0,3).map(m=>`<span class="tag tag-melhoria">${m}</span>`).join('')}${mel.length>3?`<span class="tag tag-melhoria">+${mel.length-3}</span>`:''}</div></div>`:''}
+      ${a.resumo_conversa?`<div class="resumo-text">${a.resumo_conversa.slice(0,110)}…</div>`:''}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function openAnModal(i) {
+  const etapaF=document.getElementById('f2-etapa').value;
+  let d=p2Analises;
+  if(etapaF) d=d.filter(a=>{try{const m=JSON.parse(a.analise_cruzada||'{}');return m.etapa===etapaF;}catch{return true;}});
+  const a=d[i]; if(!a) return;
+  let meta={};try{meta=JSON.parse(a.analise_cruzada||'{}');}catch{}
+  const sc=a.score_geral, mel=a.pontos_de_melhoria||[], tec=a.tecnicas_bem_aplicadas||[], obj=a.objecoes_identificadas||[], etapas=a.etapas_cumpridas||{};
+  document.getElementById('ma-title').textContent=(meta.seller||'—')+' — Análise Completa';
+  document.getElementById('ma-sub').textContent=`${a.week_label||'—'} · ${meta.etapa||'—'} · ${meta.total_conversas||'?'} conversas`;
+  document.getElementById('ma-body').innerHTML=`
+    <div style="text-align:center;padding:20px 0 22px">
+      <div style="font-size:52px;font-weight:900;color:${scoreColor(sc)};letter-spacing:-3px">${fmtScore(sc)}<span style="font-size:22px;color:var(--text-muted)">/10</span></div>
+      <div class="score-bar" style="max-width:280px;margin:10px auto"><div class="score-bar-fill" style="width:${sc!=null?sc*10:0}%"></div></div>
+      ${a.preco_mencionado!==undefined?`<div style="font-size:12px;color:${a.preco_mencionado?'var(--green)':'var(--red)'}">${a.preco_mencionado?'✓ Preço mencionado':'✗ Preço não mencionado'}</div>`:''}
+    </div>
+    ${Object.keys(etapas).length?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Etapas Cumpridas</div><div class="etapas-grid">${Object.entries(etapas).map(([k,v])=>`<div class="etapa-item"><div class="etapa-dot ${v?'ok':'nok'}"></div>${k.replace(/_/g,' ')}</div>`).join('')}</div></div>`:''}
+    ${a.resumo_conversa?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Resumo</div><div class="resumo-text">${a.resumo_conversa}</div></div>`:''}
+    ${mel.length?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Pontos de Melhoria</div><div class="tag-list">${mel.map(m=>`<span class="tag tag-melhoria">${m}</span>`).join('')}</div></div>`:''}
+    ${tec.length?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Técnicas Bem Aplicadas</div><div class="tag-list">${tec.map(t=>`<span class="tag tag-tecnica">${t}</span>`).join('')}</div></div>`:''}
+    ${obj.length?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Objeções Identificadas</div><div class="tag-list">${obj.map(o=>`<span class="tag tag-objecao">${o}</span>`).join('')}</div></div>`:''}
+    ${a.analise_comparativa?`<hr class="divider"><div class="analise-section"><div class="analise-section-label">Análise Comparativa</div><div class="resumo-text">${a.analise_comparativa}</div></div>`:''}
+  `;
+  openModal('modal-an');
+}
+
+function renderP2Comparativo(data) {
+  if(!data.length){
+    document.getElementById('p2-comparativo').innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Nenhum comparativo disponível</div><div class="empty-sub">Rode a análise para gerar o comparativo entre vendedores</div></div>`;
+    return;
+  }
+  document.getElementById('p2-comparativo').innerHTML=data.map(comp=>{
+    const r=comp.resultado||{}, ranking=r.ranking||[], rec=r.recomendacoes_gerais||r.recomendacoes||[];
+    return `<div class="comparativo-block">
+      <div class="comparativo-title"><span>${comp.etapa==='closer'?'🟢 Closer':'🔵 Avaliação'}</span><span style="font-size:12px;color:var(--text-muted);font-weight:400">Semana ${comp.week_label}</span></div>
+      ${ranking.length?`<table class="ranking-table">${ranking.map((v,i)=>`<tr><td><span class="rank-pos">#${i+1}</span></td><td>${v.nome||v.vendedor||v.seller||'—'}</td><td style="text-align:right;font-weight:700;color:${scoreColor(v.score_geral)}">${fmtScore(v.score_geral)}</td></tr>`).join('')}</table>`:
+      `<div class="resumo-text">${JSON.stringify(r).slice(0,300)}</div>`}
+      ${rec.length?`<hr class="divider"><div class="analise-section-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Recomendações</div><div class="tag-list">${rec.map(x=>`<span class="tag tag-melhoria">${x}</span>`).join('')}</div>`:''}
     </div>`;
   }).join('');
 }
 
-function renderRanking() {
-  const el = document.getElementById('ranking');
-  const mapa = {};
-  for (const d of filtrados) {
-    const n = d.seller_name || '—';
-    if (!mapa[n]) mapa[n] = { aval: 0, closer: 0, audios: 0, transcritos: 0 };
-    if (d.origin_name && d.origin_name.toLowerCase().includes('avalia')) mapa[n].aval++;
-    else mapa[n].closer++;
-    const s = statusAudios(d.raw_messages);
-    mapa[n].audios += s.total;
-    mapa[n].transcritos += s.transcritos;
+async function dispararAnalise() {
+  const btn=document.getElementById('btn-analisar');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spinner"></div> Analisando…';
+  try {
+    const weekF=document.getElementById('f2-week').value, etapaF=document.getElementById('f2-etapa').value;
+    const body={}; if(weekF)body.week_label=weekF; if(etapaF)body.etapa=etapaF;
+    const opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
+    await fetch(N8N_LOTES, opts);
+    const r=await fetch(N8N_ANALISAR, opts);
+    let d={}; try{d=await r.json();}catch{}
+    if(d.ok) { showToast(`✓ ${d.analisados} análises concluídas`); await loadP2(); }
+    else showToast(d.erro||'Erro na análise', 'error');
+  } catch(e) { showToast('Erro: '+e.message,'error'); }
+  finally {
+    btn.disabled=false;
+    btn.innerHTML='▶ Rodar Análise Agora';
   }
-  const lista = Object.entries(mapa).map(([nome, v]) => ({ nome, ...v, total: v.aval + v.closer })).sort((a,b) => b.total - a.total);
-  const maxTotal = Math.max(...lista.map(x => x.total), 1);
-  el.innerHTML = lista.map((v, i) => `
-    <div class="rank-item">
-      <div class="rank-header">
-        <span class="rank-name">${v.nome}</span>
-        <span class="rank-pos">#${i+1} · ${v.total} conv.</span>
-      </div>
-      <div class="rank-bars">
-        <div class="rank-bar-row">
-          <span class="rank-bar-label" style="color:var(--accent)">Aval</span>
-          <div class="rank-bar-track"><div class="rank-bar-fill aval" style="width:${(v.aval/maxTotal*100).toFixed(0)}%"></div></div>
-          <span class="rank-bar-val">${v.aval}</span>
-        </div>
-        <div class="rank-bar-row">
-          <span class="rank-bar-label" style="color:var(--green)">Close</span>
-          <div class="rank-bar-track"><div class="rank-bar-fill closer" style="width:${(v.closer/maxTotal*100).toFixed(0)}%"></div></div>
-          <span class="rank-bar-val">${v.closer}</span>
-        </div>
-        <div class="rank-bar-row">
-          <span class="rank-bar-label" style="color:var(--yellow)">Áudio</span>
-          <div class="rank-bar-track"><div class="rank-bar-fill audio" style="width:${(v.transcritos/Math.max(v.audios,1)*100).toFixed(0)}%"></div></div>
-          <span class="rank-bar-val">${v.transcritos}/${v.audios}</span>
-        </div>
-      </div>
-    </div>`).join('');
 }
 
-function abrirModal(dealId) {
-  convAtiva = dealId;
-  const d = dados.find(x => x.deal_id === dealId);
-  if (!d) return;
-  const etapa = d.origin_name && d.origin_name.toLowerCase().includes('avalia') ? 'Aval. Agendada' : 'Closer';
-  document.getElementById('modalTitle').textContent = `${d.seller_name || '—'} — ${etapa}`;
-  const s = statusAudios(d.raw_messages);
-  document.getElementById('modalSub').textContent = `${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${s.transcritos}/${s.total} áudios${s.erros>0?' · '+s.erros+' erro(s)':''}${s.naoSuportados>0?' · '+s.naoSuportados+' não suportado(s)':''}`;
-  const msgs = d.raw_messages || [];
-  document.getElementById('modalBody').innerHTML = msgs.length ? msgs.map(renderMensagem).join('') : '<div class="empty">Sem mensagens</div>';
-  document.getElementById('modalOverlay').classList.add('open');
-  renderConversas();
-}
-
-function renderMensagem(m) {
-  const lado = m.type === 'USER' ? 'user' : 'customer';
-  const hora = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-  let conteudo = '';
-
-  if (m.content_type === 'AUDIO') {
-    const dur = m.seconds ? `${Math.round(m.seconds)}s` : '';
-    let transcHTML = '';
-    if (!m.transcricao) {
-      transcHTML = `<div class="msg-pending">🎵 Áudio pendente${dur ? ' · '+dur : ''}</div>`;
-    } else if (String(m.transcricao).startsWith('[formato-nao-suportado')) {
-      transcHTML = `<div class="msg-unsupported">🚫 Formato não suportado${dur ? ' · '+dur : ''}</div>`;
-    } else if (String(m.transcricao).startsWith('[erro')) {
-      transcHTML = `<div class="msg-error" onclick="mostrarErroDetalhe('${m.transcricao.replace(/'/g,'\\')}')">⚠️ Erro na transcrição — clique para ver</div>`;
-    } else {
-      transcHTML = `<div>${m.transcricao}</div>`;
-    }
-    conteudo = `<div style="display:flex;align-items:flex-start;gap:8px">
-      <span class="msg-audio-icon">🎙️</span>
-      <div class="msg-audio-content">
-        <div class="msg-audio-label">Áudio${dur ? ' · '+dur : ''}</div>
-        ${transcHTML}
-      </div>
-    </div>`;
-  } else if (m.content_type === 'IMAGE') {
-    conteudo = `<div class="msg-image">🖼️ Imagem</div>`;
-  } else if (m.content_type === 'TEMPLATE') {
-    const txt = m.content || (m.content_object?.components?.[0]?.formatted_text) || 'Template';
-    conteudo = `<div class="msg-template">📋 ${txt}</div>`;
-  } else if (m.content) {
-    conteudo = m.content;
-  } else {
-    conteudo = `<span style="color:var(--text-muted);font-style:italic;font-size:12px">${m.content_type||'—'}</span>`;
-  }
-
-  return `<div class="msg ${lado}">
-    <div class="msg-bubble">${conteudo}</div>
-    <div class="msg-time">${hora}</div>
-  </div>`;
-}
-
-function mostrarErroDetalhe(erro) {
-  todosErros = [{ seller: '—', erro, created_at: null }];
-  abrirModalErros();
-}
-
-function fecharModal(e) {
-  if (e && e.target !== document.getElementById('modalOverlay')) return;
-  document.getElementById('modalOverlay').classList.remove('open');
-  convAtiva = null;
-  renderConversas();
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    fecharModal();
-    fecharModalErros();
-  }
-});
-
-carregar();
-setInterval(carregar, 5 * 60 * 1000);
+loadP1();
+setInterval(loadP1, 5*60*1000);
 </script>
 </body>
 </html>
