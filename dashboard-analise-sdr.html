@@ -7,7 +7,7 @@
 <style>
   :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3045;--text:#e8eaf0;--muted:#7b8299;
         --accent:#4f7cff;--accent-dim:#1e2d5a;--green:#2dd67c;--green-dim:#0f3322;--orange:#ff8c42;
-        --red:#ff4d6a;--red-dim:#3a0f1a;--yellow:#ffd166;--purple:#a78bfa;--purple-dim:#2a1a4a;
+        --orange-dim:#3a2410;--red:#ff4d6a;--red-dim:#3a0f1a;--yellow:#ffd166;--purple:#a78bfa;--purple-dim:#2a1a4a;
         --r:10px;--rs:6px;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;}
@@ -28,9 +28,12 @@
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-green{background:var(--green-dim);border:1px solid var(--green);color:var(--green);}
   .btn-green:hover{background:var(--green);color:#000;}
+  .btn-orange{background:var(--orange-dim);border:1px solid var(--orange);color:var(--orange);}
+  .btn-orange:hover{background:var(--orange);color:#000;}
   .btn-purple{background:var(--purple-dim);border:1px solid var(--purple);color:var(--purple);}
   .btn-purple:hover{background:var(--purple);color:#fff;}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn:disabled:hover{background:inherit;}
 
   .page{display:none;} .page.active{display:block;}
 
@@ -100,6 +103,19 @@
   .tag.closer{background:var(--green-dim);color:var(--green);}
   .tag.novo{background:var(--purple-dim);color:var(--purple);}
   .tag.feito{background:var(--green-dim);color:var(--green);}
+  .tag.pend{background:var(--orange-dim);color:var(--orange);}
+
+  /* fila agrupada por vendedor */
+  .fila-vend{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
+  .fila-vend:last-child{border-bottom:none;}
+  .fila-nome{font-weight:600;font-size:13.5px;}
+  .fila-tags{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin-top:5px;}
+  .fila-tags .tag:first-child{margin-left:0;}
+  .fila-right{text-align:right;flex-shrink:0;}
+  .fila-leads{font-size:17px;font-weight:700;line-height:1.2;}
+  .fila-leads small{font-size:11px;font-weight:400;color:var(--muted);margin-left:3px;}
+  .fila-status{font-size:11.5px;margin-top:3px;white-space:nowrap;}
+  .fila-total{display:flex;justify-content:space-between;align-items:center;padding-top:11px;margin-top:4px;border-top:1px solid var(--border);font-size:12.5px;font-weight:600;}
 
   .bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:12px 0 8px;}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0;transition:width .3s;}
@@ -271,6 +287,7 @@
     <div style="margin-left:auto;display:flex;gap:8px">
       <button class="btn btn-ghost"  onclick="toggleInstr()">⚙️ Instruções</button>
       <button class="btn btn-green"  onclick="gerarLotes()" id="btnLotes">📦 Gerar Lotes</button>
+      <button class="btn btn-orange" onclick="transcrever()" id="btnTr">🎙️ Transcrever áudios</button>
       <button class="btn btn-purple" onclick="analisar()"   id="btnGo">▶ Analisar pendentes</button>
     </div>
   </div>
@@ -358,6 +375,7 @@ const SU='https://mwlxudtdvflygvewuwal.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
 const H={apikey:SK,Authorization:'Bearer '+SK,'Content-Type':'application/json'};
 const WH_LOTES='https://n8n-ai.grupoaspekto.com/webhook/sdr-gerar-lotes';
+const WH_TRANSCREVER='https://n8n-ai.grupoaspekto.com/webhook/sdr-transcrever';
 
 const get=p=>fetch(`${SU}/rest/v1/${p}`,{headers:H}).then(r=>r.json());
 const fmtD=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
@@ -496,8 +514,9 @@ function renderMsg(m){
 }
 
 /* ================= TAB 2 ================= */
-let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null,metricas=[],volume=[],resultados=[];
+let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null,metricas=[],volume=[],resultados=[],prontos=[];
 let pesos={p:0.40,t:0.30,o:0.30};
+let trRodando=false,pollTr=null;
 
 const log=(m,c)=>{const d=document.createElement('div');if(c)d.className=c;d.textContent=m;
   const el=document.getElementById('log');el.appendChild(d);el.scrollTop=el.scrollHeight;};
@@ -513,7 +532,7 @@ async function initP2(){
       return `<option value="${w}">${w} · ${fmtD(l.week_start)} a ${fmtD(l.week_end)}</option>`;}).join('')
       :'<option value="">Nenhum lote — clique em Gerar Lotes</option>';
     const vs=[...new Map(lotes.map(l=>[l.seller_email,l])).values()].sort((a,b)=>(a.seller_name||'').localeCompare(b.seller_name||''));
-    document.getElementById('vend2').innerHTML='<option value="">Todos vendedores</option>'+vs.map(v=>`<option value="${v.seller_email}">${esc(v.seller_name)}</option>`).join('');
+    document.getElementById('vend2').innerHTML='<option value="">Todos vendedores</option>'+vs.map(v=>`<option value="${v.seller_email}">${esc((v.seller_name||'').trim())}</option>`).join('');
   }catch(e){log('Erro ao carregar lotes: '+e.message,'er');}
   try{
     const p=await get('analysis_prompts?select=*&ativo=eq.true&limit=1');
@@ -541,13 +560,15 @@ async function refreshP2(){
   let qc=`weekly_comparative_analyses?select=*&week_label=eq.${wl}&order=created_at.desc`;
   if(et)qc+=`&etapa=eq.${et}`;
   try{
-    [analises,comps,hist,metricas,volume,resultados]=await Promise.all([
+    [analises,comps,hist,metricas,volume,resultados,prontos]=await Promise.all([
       get(q), get(qc), get('seller_evolution?select=*'),
       get(`score_objetivo_calc?select=*&week_label=eq.${wl}`),
       get(`alerta_volume?select=*&week_label=eq.${wl}`),
-      get(`seller_results_calc?select=*&week_label=eq.${wl}`)
+      get(`seller_results_calc?select=*&week_label=eq.${wl}`),
+      get(`lotes_prontos?select=*&week_label=eq.${wl}`)
     ]);
   }catch(e){console.error(e);}
+  if(!Array.isArray(prontos))prontos=[];
   renderFila();renderVolume();renderKpis2();renderChart();renderRes();
 }
 
@@ -561,7 +582,7 @@ function renderVolume(){
     ${fora.map(v=>{
       const cor=v.situacao.indexOf('abaixo')>=0?'var(--red)':'var(--accent)';
       const lbl={muito_abaixo:'muito abaixo',abaixo:'abaixo',acima:'acima',muito_acima:'muito acima'}[v.situacao]||v.situacao;
-      return `<div class="lote-row"><span>${esc(v.seller_name)}</span>
+      return `<div class="lote-row"><span>${esc((v.seller_name||'').trim())}</span>
         <span style="color:${cor}">${v.leads} leads · ${lbl} (${v.desvio>0?'+':''}${v.desvio})</span></div>`;}).join('')}
   </div>`;
 }
@@ -574,20 +595,79 @@ function lotesFiltrados(){
 }
 function jaAnalisado(l){return analises.some(a=>a.seller_email===l.seller_email&&a.etapa===l.etapa);}
 
+/* status de transcrição do lote — vem da view lotes_prontos */
+function statusLote(l){
+  const p=(prontos||[]).find(x=>x.seller_email===l.seller_email&&x.etapa===l.etapa);
+  if(!p)return{pendentes:0,total:0,pronto:true,semDado:true};
+  return{pendentes:Number(p.audios_pendentes||0),total:Number(p.audios_total||0),pronto:p.pronto!==false,semDado:false};
+}
+
 function renderFila(){
   const ls=lotesFiltrados();
-  const pend=ls.filter(l=>!jaAnalisado(l));
-  const tok=Math.round(pend.reduce((s,l)=>s+(l.markdown_content||'').length,0)/4);
-  document.getElementById('filaSub').textContent=
-    ls.length? `${pend.length} pendente(s) de ${ls.length} lote(s) · ~${(tok/1000).toFixed(1)}k tokens a processar`
-             : 'Nenhum lote nesta semana. Clique em "Gerar Lotes".';
-  document.getElementById('fila').innerHTML=!ls.length?'':ls.map(l=>{
-    const feito=jaAnalisado(l);
-    return `<div class="lote-row">
-      <span>${esc(l.seller_name)}<span class="tag ${l.etapa==='closer'?'closer':'aval'}">${l.etapa==='closer'?'Closer':'Aval.'}</span>
-      <span class="tag ${feito?'feito':'novo'}">${feito?'✓ analisado':'novo'}</span></span>
-      <span class="dim">${l.total_conversas} lead(s) · ~${Math.round((l.markdown_content||'').length/4/1000)}k tok</span>
-    </div>`;}).join('');
+  const sub=document.getElementById('filaSub');
+  const el=document.getElementById('fila');
+  const btnGo=document.getElementById('btnGo');
+  const btnTr=document.getElementById('btnTr');
+
+  if(!ls.length){
+    sub.textContent='Nenhum lote nesta semana. Clique em "Gerar Lotes".';
+    el.innerHTML='';
+    btnGo.disabled=true;btnGo.textContent='▶ Analisar pendentes';
+    if(!trRodando){btnTr.disabled=true;btnTr.textContent='🎙️ Transcrever áudios';}
+    return;
+  }
+
+  // agrupa por VENDEDOR — cada um tem até 2 lotes (avaliação e closer)
+  const g={};
+  for(const l of ls){
+    const k=l.seller_email||l.seller_name;
+    if(!g[k])g[k]={nome:(l.seller_name||'—').trim(),aval:0,closer:0,leads:0,pend:0,lotes:0,feitos:0};
+    const s=statusLote(l),v=g[k];
+    v.leads+=l.total_conversas||0;
+    if(l.etapa==='closer')v.closer+=l.total_conversas||0;else v.aval+=l.total_conversas||0;
+    v.pend+=s.pendentes;v.lotes++;
+    if(jaAnalisado(l))v.feitos++;
+  }
+  const linhas=Object.values(g).sort((a,b)=>b.leads-a.leads);
+
+  const totLeads=linhas.reduce((s,v)=>s+v.leads,0);
+  const totPend=linhas.reduce((s,v)=>s+v.pend,0);
+  const porAnalisar=ls.filter(l=>!jaAnalisado(l));
+  const liberados=porAnalisar.filter(l=>statusLote(l).pronto);
+
+  sub.innerHTML=`${linhas.length} vendedor(es) · ${totLeads} lead(s) · ${porAnalisar.length} de ${ls.length} lote(s) por analisar`
+    +(totPend?` · <span style="color:var(--orange)">${totPend} áudio(s) sem transcrição</span>`
+             :` · <span style="color:var(--green)">áudios completos</span>`);
+
+  el.innerHTML=linhas.map(v=>{
+    let st,cor;
+    if(v.pend){st=`⏳ ${v.pend} áudio(s) sem transcrição`;cor='var(--orange)';}
+    else if(v.feitos===v.lotes){st='✓ analisado';cor='var(--green)';}
+    else{st='pronto para analisar';cor='var(--green)';}
+    return `<div class="fila-vend">
+      <div style="min-width:0">
+        <div class="fila-nome">${esc(v.nome)}</div>
+        <div class="fila-tags">
+          ${v.aval?`<span class="tag aval">${v.aval} aval.</span>`:''}
+          ${v.closer?`<span class="tag closer">${v.closer} closer</span>`:''}
+          ${v.feitos?`<span class="tag feito">${v.feitos}/${v.lotes} analisado</span>`:''}
+          ${v.pend?`<span class="tag pend">áudio pendente</span>`:''}
+        </div>
+      </div>
+      <div class="fila-right">
+        <div class="fila-leads">${v.leads}<small>lead(s)</small></div>
+        <div class="fila-status" style="color:${cor}">${st}</div>
+      </div>
+    </div>`;}).join('')
+    +`<div class="fila-total"><span>Total da semana</span><span>${totLeads} lead(s)</span></div>`;
+
+  if(!trRodando){
+    btnTr.disabled=!totPend;
+    btnTr.textContent=totPend?`🎙️ Transcrever áudios (${totPend})`:'🎙️ Áudios completos';
+  }
+  btnGo.disabled=!liberados.length;
+  btnGo.textContent=liberados.length?`▶ Analisar pendentes (${liberados.length})`
+    :(porAnalisar.length?'▶ Aguardando transcrição':'▶ Tudo analisado');
 }
 
 function renderKpis2(){
@@ -606,7 +686,7 @@ function renderKpis2(){
     <div class="kpi"><div class="kpi-label">Score médio</div><div class="kpi-value ${med>=7?'green':med>=5?'yellow':'red'}">${med}</div><div class="kpi-sub">de 10</div></div>
     <div class="kpi"><div class="kpi-label">Evolução média</div><div class="kpi-value ${evo==null?'':evo>0?'green':evo<0?'red':''}">${evo==null?'—':(evo>0?'+':'')+evo.toFixed(1)}</div><div class="kpi-sub">vs. análise anterior</div></div>
     <div class="kpi"><div class="kpi-label">Urgência média</div><div class="kpi-value purple">${medU}</div></div>
-    <div class="kpi"><div class="kpi-label">Melhor</div><div class="kpi-value green">${best?best.score_geral:'—'}</div><div class="kpi-sub">${best?esc(best.seller_name):''}</div></div>
+    <div class="kpi"><div class="kpi-label">Melhor</div><div class="kpi-value green">${best?best.score_geral:'—'}</div><div class="kpi-sub">${best?esc((best.seller_name||'').trim()):''}</div></div>
     <div class="kpi"><div class="kpi-label">Leads analisados</div><div class="kpi-value yellow">${leads}</div></div>`;
 }
 
@@ -617,7 +697,7 @@ function renderChart(){
   const sems=[...new Set(h.map(r=>r.week_label))].sort();
   if(sems.length<2){el.innerHTML='';return;}
   const byS={};
-  for(const r of h){const k=r.seller_name+' · '+(r.etapa==='closer'?'Cl':'Av');(byS[k]=byS[k]||[]).push(r);}
+  for(const r of h){const k=(r.seller_name||'').trim()+' · '+(r.etapa==='closer'?'Cl':'Av');(byS[k]=byS[k]||[]).push(r);}
   const cores=['#4f7cff','#2dd67c','#ffd166','#a78bfa','#ff8c42','#ff4d6a','#38bdf8','#f472b6'];
   const W=760,Hh=200,pad=34;
   const x=i=>pad+i*((W-pad*2)/Math.max(sems.length-1,1));
@@ -660,7 +740,7 @@ function renderCard(a){
   const d=a.score_delta;
   const dHtml=d==null?'':`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':'= '}${Math.abs(d).toFixed(1)}</span>`;
   return `<div class="ac">
-    <div class="ac-head"><div><div class="ac-name">${esc(a.seller_name)||'—'}</div>
+    <div class="ac-head"><div><div class="ac-name">${esc((a.seller_name||'').trim())||'—'}</div>
       <div class="ac-sub">${a.total_conversas||0} lead(s) · ${fmtD(a.created_at)}${a.previous_week_label?' · vs '+a.previous_week_label:''}</div></div>${et}</div>
     <div class="ac-scores">
       <div><div class="ac-num ${c10(a.score_geral)}">${a.score_geral!=null?a.score_geral:'—'}</div><div class="ac-cap">Score</div></div>
@@ -709,7 +789,7 @@ function verVendedor(email, etapa){
   const erg=arr(a.erros_graves);
   const mc=arr(a.metas_cumpridas), mp=arr(a.metas_proximas);
 
-  document.getElementById('mVendT').textContent=(a.seller_name||email)+' — '+(etapa==='closer'?'Closer':'Avaliação Agendada');
+  document.getElementById('mVendT').textContent=((a.seller_name||email)+'').trim()+' — '+(etapa==='closer'?'Closer':'Avaliação Agendada');
   document.getElementById('mVendS').textContent=`Semana ${wl} · ${a.total_conversas||0} lead(s) analisado(s)`;
   document.getElementById('mVendB').innerHTML=`
 
@@ -819,7 +899,7 @@ function renderComp(c){
 
 function verDet(k){
   const o=window['__'+k];if(!o)return;
-  document.getElementById('mDetT').textContent=o.seller_name?o.seller_name+' — '+(o.etapa||''):'Comparativo';
+  document.getElementById('mDetT').textContent=o.seller_name?o.seller_name.trim()+' — '+(o.etapa||''):'Comparativo';
   document.getElementById('mDetS').textContent='Semana '+o.week_label+(o.modelo?' · '+o.modelo:'');
   document.getElementById('mDetB').textContent=JSON.stringify(o.resultado||o,null,2);
   document.getElementById('mDet').classList.add('open');
@@ -857,6 +937,55 @@ async function gerarLotes(){
   b.disabled=false;b.textContent='📦 Gerar Lotes';
 }
 
+/* ---- Transcrever áudios (dispara o fluxo do n8n) ---- */
+async function transcrever(){
+  const b=document.getElementById('btnTr');
+  trRodando=true;b.disabled=true;b.textContent='⏳ Transcrevendo...';
+  limpaLog();
+  log('Acionando a transcrição no n8n...','dim');
+  try{
+    // body vazio e sem Content-Type: requisição simples, sem preflight de CORS
+    await fetch(WH_TRANSCREVER,{method:'POST',body:''});
+    log('✓ Fluxo acionado. Ele transcreve em segundo plano — pode levar alguns minutos.','ok');
+    log('  (o mesmo fluxo roda sozinho a cada 15 minutos)','dim');
+    acompanharTranscricao();
+  }catch(e){
+    log('✕ Não consegui acionar: '+e.message,'er');
+    log('  O fluxo ainda roda sozinho a cada 15 minutos.','dim');
+    trRodando=false;renderFila();
+  }
+}
+
+function acompanharTranscricao(){
+  clearInterval(pollTr);
+  let ticks=0;
+  const b=document.getElementById('btnTr');
+  pollTr=setInterval(async()=>{
+    ticks++;
+    const wl=document.getElementById('semana').value;
+    try{
+      const p=await get(`lotes_prontos?select=*&week_label=eq.${wl}`);
+      if(Array.isArray(p)){
+        prontos=p;
+        const falta=prontos.reduce((s,x)=>s+Number(x.audios_pendentes||0),0);
+        renderFila();
+        b.textContent=`⏳ Transcrevendo... (${falta})`;
+        log(`  ↳ faltam ${falta} áudio(s)`,'dim');
+        if(falta===0){
+          clearInterval(pollTr);trRodando=false;
+          log('✓ Todos os áudios transcritos. Pode analisar.','ok');
+          renderFila();
+        }
+      }
+    }catch(e){}
+    if(ticks>=45&&trRodando){
+      clearInterval(pollTr);trRodando=false;
+      log('Parei de acompanhar aqui. Clique em ↻ Atualizar para ver o status.','wa');
+      renderFila();
+    }
+  },20000);
+}
+
 /* ---- Salvar instruções ---- */
 async function salvarInstr(){
   const pi=document.getElementById('pIndiv').value.trim(),pc=document.getElementById('pComp').value.trim();
@@ -879,17 +1008,31 @@ async function analisar(){
   const wl=document.getElementById('semana').value;
   if(!wl){alert('Selecione uma semana.');return;}
   if(!pi){alert('Escreva a instrução individual em ⚙️ Instruções.');return;}
-  const ls=lotesFiltrados().filter(l=>!jaAnalisado(l));
-  if(!ls.length){alert('Nenhum lote pendente — todos já foram analisados.');return;}
+
+  const porAnalisar=lotesFiltrados().filter(l=>!jaAnalisado(l));
+  if(!porAnalisar.length){alert('Nenhum lote pendente — todos já foram analisados.');return;}
+
+  // TRAVA: lote com áudio sem transcrição fica de fora desta rodada
+  const bloqueados=porAnalisar.filter(l=>!statusLote(l).pronto);
+  const ls=porAnalisar.filter(l=>statusLote(l).pronto);
+  if(!ls.length){
+    alert('Nenhum lote pronto: ainda há áudios sem transcrição.\n\nClique em "Transcrever áudios" e espere terminar antes de analisar.');
+    return;
+  }
 
   const b=document.getElementById('btnGo');b.disabled=true;b.textContent='⏳ Analisando...';
   limpaLog();setBar(0);
+  if(bloqueados.length){
+    log(`⚠️ ${bloqueados.length} lote(s) fora desta rodada por ter áudio sem transcrição:`,'wa');
+    for(const l of bloqueados)log(`   · ${(l.seller_name||'').trim()} (${l.etapa}) — ${statusLote(l).pendentes} áudio(s)`,'wa');
+    log('','dim');
+  }
   const etapas=[...new Set(ls.map(l=>l.etapa))];
   const total=ls.length+(pc?etapas.length:0);
   let passo=0,falhas=0;
 
   for(const l of ls){
-    log(`→ ${l.seller_name} (${l.etapa}) · ${l.total_conversas} lead(s)`,'dim');
+    log(`→ ${(l.seller_name||'').trim()} (${l.etapa}) · ${l.total_conversas} lead(s)`,'dim');
     try{
       // 1. análise anterior deste vendedor+etapa
       const prev=(await get(`ai_analyses?select=*&seller_email=eq.${encodeURIComponent(l.seller_email)}&etapa=eq.${l.etapa}&week_label=lt.${wl}&order=week_label.desc&limit=1`))[0];
@@ -959,10 +1102,10 @@ async function analisar(){
     passo++;setBar(Math.round(passo/total*100));
   }
 
-  // comparativas
+  // comparativas — só com os lotes que entraram nesta rodada
   if(pc){
     for(const et of etapas){
-      const grupo=lotesFiltrados().filter(l=>l.etapa===et);
+      const grupo=ls.filter(l=>l.etapa===et);
       log(`→ Comparativo ${et} (${grupo.length} vendedores)`,'dim');
       try{
         const md=grupo.map(l=>l.markdown_content).join('\n\n===PROXIMO VENDEDOR===\n\n');
@@ -979,6 +1122,7 @@ async function analisar(){
 
   setBar(100);log('');
   log(falhas?`Concluído com ${falhas} falha(s).`:'✓ Concluído.',falhas?'wa':'ok');
+  if(bloqueados.length)log(`${bloqueados.length} lote(s) continuam esperando transcrição.`,'wa');
   b.disabled=false;b.textContent='▶ Analisar pendentes';
   await refreshP2();
 }
