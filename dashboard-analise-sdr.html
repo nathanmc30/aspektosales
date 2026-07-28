@@ -497,6 +497,7 @@ function renderMsg(m){
 
 /* ================= TAB 2 ================= */
 let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null,metricas=[],volume=[],resultados=[];
+let pesos={p:0.40,t:0.30,o:0.30};
 
 const log=(m,c)=>{const d=document.createElement('div');if(c)d.className=c;d.textContent=m;
   const el=document.getElementById('log');el.appendChild(d);el.scrollTop=el.scrollHeight;};
@@ -521,6 +522,10 @@ async function initP2(){
       document.getElementById('pComp').value=p[0].prompt_comparativo||'';}
   }catch(e){}
   try{hist=await get('seller_evolution?select=*');}catch(e){hist=[];}
+  try{
+    const w=await get('score_weights?select=*&order=vigente_desde.desc&limit=1');
+    if(w&&w[0])pesos={p:Number(w[0].peso_processo),t:Number(w[0].peso_tecnica),o:Number(w[0].peso_objetivo)};
+  }catch(e){}
   onSemana();
 }
 function onSemana(){refreshP2();}
@@ -684,10 +689,10 @@ function verVendedor(email, etapa){
   const r=(resultados||[]).find(x=>x.seller_email===email)||{};
   const serie=(hist||[]).filter(x=>x.seller_email===email&&x.etapa===etapa&&x.score_geral!=null)
                         .sort((x,y)=>x.week_label.localeCompare(y.week_label));
-  const pesos={p:0.40,t:0.30,o:0.30};
   const sp=a.score_processo, st=a.score_tecnica, so=a.score_objetivo!=null?a.score_objetivo:m.score_objetivo;
-  const comp=(sp!=null||st!=null||so!=null)
-    ? +( (sp||0)*pesos.p + (st||0)*pesos.t + (so||0)*pesos.o ).toFixed(2) : null;
+  const partes=[[sp,pesos.p],[st,pesos.t],[so,pesos.o]].filter(x=>x[0]!=null);
+  const sw=partes.reduce((s,x)=>s+x[1],0);
+  const comp=partes.length&&sw>0?+(partes.reduce((s,x)=>s+Number(x[0])*x[1],0)/sw).toFixed(2):null;
 
   const seg=v=>v==null?'—':(v<60?v+'s':v<3600?Math.round(v/60)+'min':(v/3600).toFixed(1)+'h');
   const linha=(lbl,val,extra)=>`<div class="lote-row"><span class="dim">${lbl}</span><span>${val}${extra?` <span class="dim">${extra}</span>`:''}</span></div>`;
@@ -901,7 +906,21 @@ async function analisar(){
       } else { log('   ↳ primeira análise deste vendedor','dim'); }
 
       const a=await claude(SYS_I,pi+ctx+'\n\n---\n\n'+l.markdown_content,1000);
-      const delta=(prev&&prev.score_geral!=null&&a.score_geral!=null)?+(a.score_geral-prev.score_geral).toFixed(2):null;
+
+      // score objetivo vem do cálculo (não da IA)
+      const mo=(metricas||[]).find(x=>x.seller_email===l.seller_email&&x.etapa===l.etapa);
+      const sObj=mo&&mo.score_objetivo!=null?Number(mo.score_objetivo):null;
+      const sPro=a.score_processo!=null?Number(a.score_processo):null;
+      const sTec=a.score_tecnica!=null?Number(a.score_tecnica):null;
+
+      // composição 40/30/30 com os pesos vigentes
+      const partes=[[sPro,pesos.p],[sTec,pesos.t],[sObj,pesos.o]].filter(x=>x[0]!=null);
+      const somaPesos=partes.reduce((s,x)=>s+x[1],0);
+      const geral=partes.length&&somaPesos>0
+        ? +(partes.reduce((s,x)=>s+x[0]*x[1],0)/somaPesos).toFixed(2)
+        : (a.score_geral!=null?Number(a.score_geral):null);
+
+      const delta=(prev&&prev.score_geral!=null&&geral!=null)?+(geral-prev.score_geral).toFixed(2):null;
 
       // 2. grava análise
       const saved=await fetch(`${SU}/rest/v1/ai_analyses?on_conflict=week_label,seller_email,etapa`,{
@@ -909,11 +928,13 @@ async function analisar(){
         body:JSON.stringify({
           conversation_id:null,week_label:l.week_label,seller_email:l.seller_email,seller_name:l.seller_name,
           etapa:l.etapa,total_conversas:l.total_conversas,deal_ids:l.deal_ids||[],
-          score_geral:a.score_geral??null,urgencia_score:a.urgencia_score??null,
+          score_geral:geral,score_processo:sPro,score_tecnica:sTec,score_objetivo:sObj,
+          urgencia_score:a.urgencia_score??null,
           preco_mencionado:a.preco_mencionado===true,objecoes_contornadas:a.objecoes_contornadas===true,
           etapas_cumpridas:a.etapas_cumpridas||{},tecnicas_utilizadas:a.tecnicas_utilizadas||[],
           tecnicas_bem_aplicadas:a.tecnicas_bem_aplicadas||[],objecoes_identificadas:a.objecoes_identificadas||[],
           pontos_de_melhoria:a.pontos_de_melhoria||[],resumo_conversa:a.resumo||a.resumo_conversa||'',
+          pontos_categorizados:a.pontos_categorizados||[],erros_graves:a.erros_graves||[],
           evolucao:a.evolucao||null,metas_cumpridas:a.metas_cumpridas||[],metas_proximas:a.metas_proximas||a.pontos_de_melhoria||[],
           previous_analysis_id:prev?prev.id:null,previous_week_label:prev?prev.week_label:null,score_delta:delta,
           prompt_version:instrAtiva?instrAtiva.nome:'inline',modelo:'claude-sonnet-4-6',created_at:new Date().toISOString()})
