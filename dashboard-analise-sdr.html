@@ -240,7 +240,6 @@
     <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
     <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
     <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPend">—</div></div>
-    <div class="kpi"><div class="kpi-label">Não suportados</div><div class="kpi-value" id="kNS" style="color:var(--muted)">—</div></div>
     <div class="kpi" style="cursor:pointer" onclick="abrirErros()">
       <div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErr">—</div>
       <div class="kpi-sub">clique para detalhar</div>
@@ -305,6 +304,7 @@
       <div class="log" id="log"><div class="dim">Selecione a semana e clique em "Analisar pendentes".</div></div>
     </div>
 
+    <div id="alertaVolume"></div>
     <div class="kpis" id="p2Kpis" style="display:none;padding:0 0 16px 0"></div>
     <div id="p2Chart"></div>
     <div id="p2Res"></div>
@@ -339,6 +339,17 @@
       <button class="modal-close" onclick="document.getElementById('mDet').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body"><pre class="json-pre" id="mDetB"></pre></div>
+  </div>
+</div>
+
+<!-- Detalhamento completo do vendedor -->
+<div class="modal-overlay" id="mVend" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:820px">
+    <div class="modal-header">
+      <div><div class="modal-title" id="mVendT">—</div><div class="modal-sub" id="mVendS">—</div></div>
+      <button class="modal-close" onclick="document.getElementById('mVend').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="mVendB"></div>
   </div>
 </div>
 
@@ -391,21 +402,23 @@ function aplicarFiltros(){
     if(vd&&d.seller_name!==vd)return false; return true;});
   kpis1();lista1();rank1();banner1();
 }
-function stA(msgs){const a=(msgs||[]).filter(m=>m.content_type==='AUDIO'&&m.content_url);return{
-  total:a.length,
-  tr:a.filter(m=>m.transcricao&&!String(m.transcricao).startsWith('[')).length,
-  er:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[erro')).length,
-  ns:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[formato-nao-suportado')).length,
-  pe:a.filter(m=>!m.transcricao).length};}
+const NSUP=t=>String(t||'').startsWith('[formato-nao-suportado');
+function stA(msgs){
+  // áudios não suportados são ignorados por completo (minoria irrelevante)
+  const a=(msgs||[]).filter(m=>m.content_type==='AUDIO'&&m.content_url&&!NSUP(m.transcricao));
+  return{
+    total:a.length,
+    tr:a.filter(m=>m.transcricao&&!String(m.transcricao).startsWith('[')).length,
+    er:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[erro')).length,
+    pe:a.filter(m=>!m.transcricao).length};}
 function kpis1(){
-  let A=0,T=0,P=0,E=0,N=0;
-  for(const d of filt){const s=stA(d.raw_messages);A+=s.total;T+=s.tr;P+=s.pe;E+=s.er;N+=s.ns;}
+  let A=0,T=0,P=0,E=0;
+  for(const d of filt){const s=stA(d.raw_messages);A+=s.total;T+=s.tr;P+=s.pe;E+=s.er;}
   document.getElementById('kTotal').textContent=filt.length;
   document.getElementById('kAval').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('avalia')).length;
   document.getElementById('kCloser').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('closer')).length;
   document.getElementById('kAudios').textContent=T+'/'+A;
   document.getElementById('kPend').textContent=P;
-  document.getElementById('kNS').textContent=N;
   const k=document.getElementById('kErr');k.textContent=E;k.style.color=E>0?'var(--red)':'var(--muted)';
   erros=[];
   for(const d of filt)for(const m of (d.raw_messages||[]))
@@ -434,7 +447,6 @@ function lista1(){
     else if(s.er){b='⚠️ '+s.er+' erro(s)';c='has-error';}
     else if(s.pe){b='⏳ '+s.tr+'/'+s.total+' áudios';c='pending';}
     else{b='✓ '+s.tr+'/'+s.total+' áudios';c='all-done';}
-    if(s.ns)b+=' · '+s.ns+'✗';
     const et=d.origin_name&&d.origin_name.toLowerCase().includes('avalia')?'Aval.':'Closer';
     return `<div class="conv-card ${convAtiva===d.deal_id?'active':''}" onclick="verConv('${d.deal_id}')">
       <div class="conv-info"><div class="conv-name">${esc(d.seller_name)||'—'}<span class="etapa">· ${et}</span></div>
@@ -484,7 +496,7 @@ function renderMsg(m){
 }
 
 /* ================= TAB 2 ================= */
-let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null;
+let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null,metricas=[],volume=[],resultados=[];
 
 const log=(m,c)=>{const d=document.createElement('div');if(c)d.className=c;d.textContent=m;
   const el=document.getElementById('log');el.appendChild(d);el.scrollTop=el.scrollHeight;};
@@ -523,8 +535,30 @@ async function refreshP2(){
   if(et)q+=`&etapa=eq.${et}`; if(vd)q+=`&seller_email=eq.${encodeURIComponent(vd)}`;
   let qc=`weekly_comparative_analyses?select=*&week_label=eq.${wl}&order=created_at.desc`;
   if(et)qc+=`&etapa=eq.${et}`;
-  try{[analises,comps,hist]=await Promise.all([get(q),get(qc),get('seller_evolution?select=*')]);}catch(e){console.error(e);}
-  renderFila();renderKpis2();renderChart();renderRes();
+  try{
+    [analises,comps,hist,metricas,volume,resultados]=await Promise.all([
+      get(q), get(qc), get('seller_evolution?select=*'),
+      get(`score_objetivo_calc?select=*&week_label=eq.${wl}`),
+      get(`alerta_volume?select=*&week_label=eq.${wl}`),
+      get(`seller_results_calc?select=*&week_label=eq.${wl}`)
+    ]);
+  }catch(e){console.error(e);}
+  renderFila();renderVolume();renderKpis2();renderChart();renderRes();
+}
+
+function renderVolume(){
+  const el=document.getElementById('alertaVolume');
+  const fora=(volume||[]).filter(v=>v.situacao!=='equilibrado');
+  if(!fora.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="card" style="border-color:var(--yellow)">
+    <h3 style="color:var(--yellow)">⚖️ Volume desequilibrado</h3>
+    <p>Média do time: ${(volume[0]||{}).media_time||'—'} leads nesta semana. Sinalização apenas — o rebalanceamento é seu.</p>
+    ${fora.map(v=>{
+      const cor=v.situacao.indexOf('abaixo')>=0?'var(--red)':'var(--accent)';
+      const lbl={muito_abaixo:'muito abaixo',abaixo:'abaixo',acima:'acima',muito_acima:'muito acima'}[v.situacao]||v.situacao;
+      return `<div class="lote-row"><span>${esc(v.seller_name)}</span>
+        <span style="color:${cor}">${v.leads} leads · ${lbl} (${v.desvio>0?'+':''}${v.desvio})</span></div>`;}).join('')}
+  </div>`;
 }
 
 function lotesFiltrados(){
@@ -638,7 +672,125 @@ function renderCard(a){
     ${obj.length?`<div class="ac-block"><div class="ac-lbl">Objeções</div><div class="tags">${obj.slice(0,3).map(t=>`<span class="t warn">${esc(t)}</span>`).join('')}</div></div>`:''}
     ${mp.length?`<div class="ac-block"><div class="ac-lbl">Metas p/ próxima</div><div class="tags">${mp.slice(0,3).map(t=>`<span class="t neg">${esc(typeof t==='string'?t:(t.meta||'')).slice(0,50)}</span>`).join('')}</div></div>`:
       mel.length?`<div class="ac-block"><div class="ac-lbl">Melhorias</div><div class="tags">${mel.slice(0,2).map(t=>`<span class="t neg">${esc(t).slice(0,50)}</span>`).join('')}</div></div>`:''}
-    <span class="lnk" onclick="verDet('${k}')">Ver análise completa →</span></div>`;
+    <span class="lnk" onclick="verVendedor('${esc(a.seller_email)}','${a.etapa}')">Ver detalhamento completo →</span></div>`;
+}
+
+/* ---- Detalhamento explícito do vendedor ---- */
+function verVendedor(email, etapa){
+  const wl=document.getElementById('semana').value;
+  const a=analises.find(x=>x.seller_email===email&&x.etapa===etapa);
+  if(!a)return;
+  const m=(metricas||[]).find(x=>x.seller_email===email&&x.etapa===etapa)||{};
+  const r=(resultados||[]).find(x=>x.seller_email===email)||{};
+  const serie=(hist||[]).filter(x=>x.seller_email===email&&x.etapa===etapa&&x.score_geral!=null)
+                        .sort((x,y)=>x.week_label.localeCompare(y.week_label));
+  const pesos={p:0.40,t:0.30,o:0.30};
+  const sp=a.score_processo, st=a.score_tecnica, so=a.score_objetivo!=null?a.score_objetivo:m.score_objetivo;
+  const comp=(sp!=null||st!=null||so!=null)
+    ? +( (sp||0)*pesos.p + (st||0)*pesos.t + (so||0)*pesos.o ).toFixed(2) : null;
+
+  const seg=v=>v==null?'—':(v<60?v+'s':v<3600?Math.round(v/60)+'min':(v/3600).toFixed(1)+'h');
+  const linha=(lbl,val,extra)=>`<div class="lote-row"><span class="dim">${lbl}</span><span>${val}${extra?` <span class="dim">${extra}</span>`:''}</span></div>`;
+  const barra=(lbl,v,peso)=>`
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span>${lbl} <span class="dim">· peso ${Math.round(peso*100)}%</span></span>
+        <strong class="ac-num sm ${c10(v)}" style="font-size:15px">${v!=null?v.toFixed(1):'—'}</strong>
+      </div>
+      <div class="ctrack"><div class="cfill" style="width:${v!=null?Math.min(v*10,100):0}%"></div></div>
+    </div>`;
+
+  const pcs=arr(a.pontos_categorizados);
+  const erg=arr(a.erros_graves);
+  const mc=arr(a.metas_cumpridas), mp=arr(a.metas_proximas);
+
+  document.getElementById('mVendT').textContent=(a.seller_name||email)+' — '+(etapa==='closer'?'Closer':'Avaliação Agendada');
+  document.getElementById('mVendS').textContent=`Semana ${wl} · ${a.total_conversas||0} lead(s) analisado(s)`;
+  document.getElementById('mVendB').innerHTML=`
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>🎯 Score composto</h3>
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
+        <span class="ac-num ${c10(comp!=null?comp:a.score_geral)}">${comp!=null?comp.toFixed(1):(a.score_geral!=null?a.score_geral:'—')}</span>
+        <span class="dim">de 10</span>
+        ${a.score_delta!=null?`<span class="delta ${a.score_delta>0?'up':a.score_delta<0?'down':'flat'}">${a.score_delta>0?'▲ +':a.score_delta<0?'▼ ':'= '}${Math.abs(a.score_delta).toFixed(1)} vs ${a.previous_week_label||'anterior'}</span>`:''}
+      </div>
+      ${barra('Processo',sp,pesos.p)}
+      ${barra('Técnica',st,pesos.t)}
+      ${barra('Objetivo (calculado)',so,pesos.o)}
+      ${comp==null?'<p class="dim" style="margin-top:8px">Sub-scores ainda não preenchidos — a instrução precisa devolvê-los para o composto aparecer.</p>':''}
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>⏱️ Métricas objetivas</h3>
+      <p>Calculadas do histórico de mensagens — sem IA, sempre iguais.</p>
+      ${linha('Tempo até 1ª resposta', seg(m.tempo_1a_resposta_seg))}
+      ${linha('Tempo médio de resposta', seg(m.tempo_medio_resposta_seg))}
+      ${linha('Abertura por áudio', m.pct_abertura_audio!=null?m.pct_abertura_audio+'%':'—','das conversas')}
+      ${linha('Uso de áudio', m.pct_audio!=null?m.pct_audio+'%':'—','das mensagens')}
+      ${linha('Duração média do áudio', m.duracao_media_audio!=null?m.duracao_media_audio+'s':'—')}
+      ${linha('Ratio vendedor/lead', m.ratio_vendedor_lead!=null?m.ratio_vendedor_lead:'—', m.ratio_vendedor_lead>1.3?'⚠️ fala demais':'')}
+      ${linha('Follow-ups realizados', m.followups!=null?m.followups:'—')}
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>✅ Obrigatórios e sinais</h3>
+      ${linha('Conversou sobre valores', a.preco_mencionado?'<span style="color:var(--green)">✓ sim</span>':'<span style="color:var(--red)">✕ não</span>')}
+      ${linha('Objeções contornadas', a.objecoes_contornadas?'<span style="color:var(--green)">✓ sim</span>':'<span style="color:var(--red)">✕ não</span>')}
+      ${linha('Urgência gerada', a.urgencia_score!=null?a.urgencia_score+'/10':'—')}
+      ${Object.entries(a.etapas_cumpridas||{}).map(([k2,v])=>
+        linha(k2.replace(/_/g,' '), v?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">✕</span>')).join('')}
+    </div>
+
+    ${r.faturamento!=null?`<div class="card" style="margin-bottom:14px">
+      <h3>💰 Resultado da semana</h3>
+      ${linha('Faturamento','R$ '+Number(r.faturamento).toLocaleString('pt-BR'))}
+      ${linha('Vendas fechadas', r.vendas_fechadas!=null?r.vendas_fechadas:'—')}
+      ${linha('Ticket médio', r.ticket_medio!=null?'R$ '+Number(r.ticket_medio).toLocaleString('pt-BR'):'—')}
+      ${linha('Taxa de presença', r.taxa_presenca!=null?r.taxa_presenca+'%':'—')}
+      ${linha('Taxa de fechamento', r.taxa_fechamento!=null?r.taxa_fechamento+'%':'—')}
+    </div>`:`<div class="card" style="margin-bottom:14px"><h3>💰 Resultado da semana</h3>
+      <p class="dim">Faturamento ainda não preenchido para esta semana. Sem ele, não dá para cruzar processo com resultado.</p></div>`}
+
+    ${a.evolucao?`<div class="card" style="margin-bottom:14px"><h3>📈 Evolução</h3><div class="evo">${esc(a.evolucao)}</div></div>`:''}
+
+    ${mc.length?`<div class="card" style="margin-bottom:14px"><h3>🎯 Metas da semana anterior</h3>
+      ${mc.map(x=>{const ok=x&&x.cumprida;const t=typeof x==='string'?x:(x.meta||'');const ev=typeof x==='object'?(x.evidencia||''):'';
+        return `<div style="padding:7px 0;border-bottom:1px solid var(--border)">
+          <div class="meta-row"><span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span>${esc(t)}</span></div>
+          ${ev?`<div class="dim" style="font-size:11px;margin-left:20px;margin-top:2px">${esc(ev)}</div>`:''}</div>`;}).join('')}
+    </div>`:''}
+
+    ${pcs.length?`<div class="card" style="margin-bottom:14px"><h3>🔧 Pontos de melhoria</h3>
+      ${pcs.map(p=>{const sev=(p.severidade||'medio');
+        const cor=sev==='critico'?'var(--red)':sev==='leve'?'var(--muted)':'var(--yellow)';
+        return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px">
+            <span class="t" style="border-color:${cor};color:${cor}">${esc(p.categoria||'—')}</span>
+            <span class="dim" style="font-size:11px">${sev}</span></div>
+          <div class="txt">${esc(p.descricao||'')}</div>
+          ${p.evidencia?`<div class="dim" style="font-size:11px;margin-top:4px;font-style:italic">"${esc(p.evidencia)}"</div>`:''}
+        </div>`;}).join('')}
+    </div>`:''}
+
+    ${erg.length?`<div class="card" style="margin-bottom:14px;border-color:var(--red)">
+      <h3 style="color:var(--red)">🚨 Erros graves</h3>
+      ${erg.map(x=>`<div class="meta-row"><span style="color:var(--red)">•</span><span>${esc(typeof x==='string'?x:(x.descricao||x.erro||''))}</span></div>`).join('')}
+    </div>`:''}
+
+    ${mp.length?`<div class="card" style="margin-bottom:14px"><h3>➡️ Metas para a próxima semana</h3>
+      ${mp.map(x=>`<div class="meta-row"><span style="color:var(--accent)">→</span><span>${esc(typeof x==='string'?x:(x.meta||''))}</span></div>`).join('')}
+    </div>`:''}
+
+    ${serie.length>1?`<div class="card" style="margin-bottom:14px"><h3>📊 Histórico</h3>
+      ${serie.map(x=>linha(x.week_label, (x.score_geral!=null?x.score_geral:'—')+'/10',
+        x.score_delta!=null?(x.score_delta>0?'▲ +'+x.score_delta:x.score_delta<0?'▼ '+x.score_delta:'='):'')).join('')}
+    </div>`:''}
+
+    <div class="card"><h3>🗂️ JSON completo</h3>
+      <pre class="json-pre" style="max-height:280px;overflow:auto">${esc(JSON.stringify(a,null,2))}</pre></div>
+  `;
+  document.getElementById('mVend').classList.add('open');
 }
 
 function renderComp(c){
@@ -806,7 +958,7 @@ async function analisar(){
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')
-  ['mConv','mErr','mDet'].forEach(i=>document.getElementById(i).classList.remove('open'));});
+  ['mConv','mErr','mDet','mVend'].forEach(i=>document.getElementById(i).classList.remove('open'));});
 
 carregar();
 setInterval(carregar,5*60*1000);
