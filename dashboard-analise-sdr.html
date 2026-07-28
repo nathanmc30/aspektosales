@@ -941,15 +941,20 @@ async function analisar(){
       }).then(r=>r.json());
       const aid=Array.isArray(saved)?(saved[0]||{}).id:null;
 
-      // 3. marca leads como analisados (nunca mais entram)
-      const ids=l.deal_ids||[];
-      if(ids.length){
-        await fetch(`${SU}/rest/v1/analyzed_deals?on_conflict=deal_id`,{
+      // 3. marca os LEADS como analisados pela chave contato+origem (nunca mais entram)
+      const cids = l.contact_ids || [];
+      const dids = l.deal_ids || [];
+      if (cids.length) {
+        await fetch(`${SU}/rest/v1/analyzed_deals?on_conflict=contact_id,origin_id`,{
           method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
-          body:JSON.stringify(ids.map(id=>({deal_id:id,analysis_id:aid,seller_email:l.seller_email,
-            seller_name:l.seller_name,etapa:l.etapa,week_label:l.week_label,analyzed_at:new Date().toISOString()})))});
+          body:JSON.stringify(cids.map((cid,i)=>({
+            contact_id:cid,
+            origin_id: l.etapa==='closer' ? '3eabab75-2aae-45ac-918c-017066f5cb86' : 'dce6a8ad-4895-475f-b120-27e210c24655',
+            deal_id: dids[i]||null, analysis_id:aid,
+            seller_email:l.seller_email, seller_name:l.seller_name,
+            etapa:l.etapa, week_label:l.week_label, analyzed_at:new Date().toISOString()})))});
       }
-      log(`   ✓ score ${a.score_geral??'—'}${delta!=null?(delta>0?'  ▲ +'+delta:delta<0?'  ▼ '+delta:'  = 0'):''} · ${ids.length} lead(s) marcados`,'ok');
+      log(`   ✓ score ${a.score_geral??'—'}${delta!=null?(delta>0?'  ▲ +'+delta:delta<0?'  ▼ '+delta:'  = 0'):''} · ${cids.length} lead(s) marcados`,'ok');
     }catch(e){falhas++;log('   ✕ '+e.message,'er');}
     passo++;setBar(Math.round(passo/total*100));
   }
