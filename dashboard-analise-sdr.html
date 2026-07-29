@@ -1023,14 +1023,17 @@ function verDet(k){
 }
 
 /* ---- Analise: passa pelo n8n, que chama a OpenAI com a chave do servidor ----
-   Chamada direta a api.anthropic.com do browser NAO funciona: a API nao manda
-   Access-Control-Allow-Origin, entao o CORS bloqueia de qualquer origem
-   (GitHub Pages, arquivo local, dominio proprio). Testado e confirmado 29/07. */
+   SEM Content-Type de propósito: assim a requisição é "simples" e o browser NÃO
+   dispara preflight OPTIONS. O proxy na frente do n8n responde o OPTIONS sem o
+   header Access-Control-Allow-Origin, e o preflight morre ali (confirmado no
+   console em 29/07). É o mesmo truque que já faz o botão de transcrição funcionar.
+   O n8n aceita o body como string e faz o JSON.parse do lado de lá. */
 const WH_ANALISAR='https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
 async function claude(sys,txt,maxTok){
   const r=await fetch(WH_ANALISAR,{
-    method:'POST',headers:{'Content-Type':'application/json'},
+    method:'POST',
     body:JSON.stringify({system:sys,prompt:txt,max_tokens:maxTok||8000})});
+  if(!r.ok)throw new Error('HTTP '+r.status+' no webhook de análise');
   const d=await r.json();
   if(!d||d.ok!==true)throw new Error((d&&d.erro)||'falha na analise');
   return d.json;
@@ -1043,7 +1046,8 @@ async function gerarLotes(){
   const b=document.getElementById('btnLotes');b.disabled=true;b.textContent='⏳ Gerando...';
   limpaLog();log('Gerando lotes da semana (ignorando leads já analisados)...','dim');
   try{
-    const r=await fetch(WH_LOTES,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    // sem Content-Type: requisição simples, sem preflight (o proxy do n8n derruba OPTIONS)
+    const r=await fetch(WH_LOTES,{method:'POST',body:''});
     const d=await r.json().catch(()=>({}));
     log(`✓ ${d.lotes||0} lote(s) · ${d.conversas_novas||0} lead(s) novo(s) · ${d.ignorados_ja_analisados||0} já analisado(s) ignorado(s)`,'ok');
     lotes=await get('weekly_batches?select=*&order=week_label.desc,seller_name');
