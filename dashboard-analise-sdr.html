@@ -2,1221 +2,636 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SDR — Aspekto</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Análise SDR · Grupo Aspekto</title>
 <style>
-  :root{--bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--border:#2a3045;--text:#e8eaf0;--muted:#7b8299;
-        --accent:#4f7cff;--accent-dim:#1e2d5a;--green:#2dd67c;--green-dim:#0f3322;--orange:#ff8c42;
-        --orange-dim:#3a2410;--red:#ff4d6a;--red-dim:#3a0f1a;--yellow:#ffd166;--purple:#a78bfa;--purple-dim:#2a1a4a;
-        --r:10px;--rs:6px;}
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;}
-
-  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;height:52px;}
-  .logo{font-size:16px;font-weight:700;letter-spacing:-.3px;}
-  .logo span{color:var(--accent);}
-  .header-right{display:flex;align-items:center;gap:12px;}
-  .last-update{color:var(--muted);font-size:12px;}
-  .tabs{display:flex;margin-left:28px;height:100%;}
-  .tab{padding:0 18px;height:100%;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
-  .tab:hover{color:var(--text);}
-  .tab.active{color:var(--text);border-bottom-color:var(--accent);}
-
-  .btn{padding:6px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;}
-  .btn-ghost{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);}
-  .btn-ghost:hover{background:var(--accent);color:#fff;}
-  .btn-primary{background:var(--accent);color:#fff;}
-  .btn-green{background:var(--green-dim);border:1px solid var(--green);color:var(--green);}
-  .btn-green:hover{background:var(--green);color:#000;}
-  .btn-orange{background:var(--orange-dim);border:1px solid var(--orange);color:var(--orange);}
-  .btn-orange:hover{background:var(--orange);color:#000;}
-  .btn-purple{background:var(--purple-dim);border:1px solid var(--purple);color:var(--purple);}
-  .btn-purple:hover{background:var(--purple);color:#fff;}
-  .btn:disabled{opacity:.45;cursor:not-allowed;}
-  .btn:disabled:hover{background:inherit;}
-
-  .page{display:none;} .page.active{display:block;}
-
-  .error-banner{display:none;background:var(--red-dim);border:1px solid var(--red);border-radius:var(--r);margin:12px 24px 0;padding:12px 16px;}
-  .error-banner.visible{display:flex;align-items:flex-start;gap:12px;}
-  .error-banner-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
-  .error-banner-title{font-weight:700;color:var(--red);font-size:13px;margin-bottom:4px;}
-  .error-banner-list{list-style:none;}
-  .error-banner-list li{font-size:12px;color:var(--muted);margin-bottom:2px;cursor:pointer;display:flex;align-items:center;gap:6px;}
-  .error-banner-list li:hover{color:var(--text);}
-  .err-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;}
-
-  .filters{padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);align-items:center;}
-  select,textarea,input[type=number]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:var(--rs);font-size:13px;outline:none;font-family:inherit;}
-  select{cursor:pointer;} select:focus,textarea:focus,input[type=number]:focus{border-color:var(--accent);}
-  input[type=number]{width:100%;padding:6px 9px;font-size:13px;}
-  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-  input[type=number]{-moz-appearance:textfield;}
-  .res-grid{display:grid;grid-template-columns:minmax(120px,1.4fr) repeat(4,minmax(78px,1fr)) minmax(150px,1.3fr);gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
-  .res-grid:last-of-type{border-bottom:none;}
-  .res-head{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:6px;}
-  .res-nome{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .res-calc{font-size:11px;color:var(--muted);line-height:1.4;}
-  .res-calc b{color:var(--text);font-weight:600;}
-
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:16px 24px;}
-  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
-  .kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;}
-  .kpi-value{font-size:26px;font-weight:700;line-height:1;}
-  .kpi-value.accent{color:var(--accent);} .kpi-value.green{color:var(--green);}
-  .kpi-value.orange{color:var(--orange);} .kpi-value.yellow{color:var(--yellow);}
-  .kpi-value.red{color:var(--red);} .kpi-value.purple{color:var(--purple);}
-  .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
-
-  .content{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 220px);}
-  .conversations-panel{border-right:1px solid var(--border);overflow-y:auto;}
-  .ranking-panel{overflow-y:auto;padding:16px;}
-  .section-header{padding:12px 20px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;justify-content:space-between;align-items:center;}
-
-  .conv-card{padding:12px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
-  .conv-card:hover{background:var(--surface);}
-  .conv-card.active{background:var(--accent-dim);border-left:3px solid var(--accent);}
-  .conv-info{flex:1;min-width:0;}
-  .conv-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .conv-name .etapa{font-size:11px;font-weight:500;color:var(--muted);margin-left:6px;}
-  .conv-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;}
-  .audio-badge{font-size:12px;font-weight:600;white-space:nowrap;}
-  .audio-badge.all-done{color:var(--green);} .audio-badge.pending{color:var(--orange);}
-  .audio-badge.has-error{color:var(--red);} .audio-badge.no-audio{color:var(--muted);}
-
-  .rank-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
-  .rank-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .rank-name{font-weight:600;font-size:13px;}
-  .rank-pos{font-size:11px;color:var(--muted);font-weight:700;}
-  .rank-bars{display:flex;flex-direction:column;gap:4px;}
-  .rank-bar-row{display:flex;align-items:center;gap:6px;}
-  .rank-bar-label{font-size:11px;color:var(--muted);width:36px;flex-shrink:0;}
-  .rank-bar-track{flex:1;background:var(--border);border-radius:3px;height:6px;overflow:hidden;}
-  .rank-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
-  .rank-bar-fill.aval{background:var(--accent);} .rank-bar-fill.closer{background:var(--green);} .rank-bar-fill.audio{background:var(--yellow);}
-  .rank-bar-val{font-size:11px;color:var(--muted);width:32px;text-align:right;flex-shrink:0;}
-
-  /* ---- TAB 2 ---- */
-  .p2-body{padding:20px 24px;overflow-y:auto;height:calc(100vh - 112px);}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
-  .card h3{font-size:13px;font-weight:700;margin-bottom:4px;}
-  .card p{font-size:12px;color:var(--muted);margin-bottom:10px;}
-  .card textarea{width:100%;line-height:1.6;resize:vertical;min-height:130px;padding:10px 12px;}
-  .card-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
-  .hint{background:var(--surface2);border-left:3px solid var(--accent);padding:9px 12px;border-radius:var(--rs);font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:10px;font-family:monospace;}
-
-  .lote-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
-  .lote-row:last-child{border-bottom:none;}
-  .tag{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;margin-left:6px;}
-  .tag.aval{background:var(--accent-dim);color:var(--accent);}
-  .tag.closer{background:var(--green-dim);color:var(--green);}
-  .tag.novo{background:var(--purple-dim);color:var(--purple);}
-  .tag.feito{background:var(--green-dim);color:var(--green);}
-  .tag.pend{background:var(--orange-dim);color:var(--orange);}
-
-  /* fila agrupada por vendedor */
-  .fila-vend{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
-  .fila-vend:last-child{border-bottom:none;}
-  .fila-nome{font-weight:600;font-size:13.5px;}
-  .fila-tags{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin-top:5px;}
-  .fila-tags .tag:first-child{margin-left:0;}
-  .fila-right{text-align:right;flex-shrink:0;}
-  .fila-leads{font-size:17px;font-weight:700;line-height:1.2;}
-  .fila-leads small{font-size:11px;font-weight:400;color:var(--muted);margin-left:3px;}
-  .fila-status{font-size:11.5px;margin-top:3px;white-space:nowrap;}
-  .fila-total{display:flex;justify-content:space-between;align-items:center;padding-top:11px;margin-top:4px;border-top:1px solid var(--border);font-size:12.5px;font-weight:600;}
-
-  .bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:12px 0 8px;}
-  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0;transition:width .3s;}
-  .log{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:12px;font-family:monospace;max-height:240px;overflow-y:auto;line-height:1.8;}
-  .log div{white-space:pre-wrap;word-break:break-word;}
-  .ok{color:var(--green);} .er{color:var(--red);} .wa{color:var(--yellow);} .dim{color:var(--muted);}
-
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:24px;}
-  .ac{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
-  .ac:hover{border-color:var(--accent);}
-  .ac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px;}
-  .ac-name{font-weight:700;font-size:14px;}
-  .ac-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-  .ac-scores{display:flex;gap:18px;align-items:flex-end;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
-  .ac-num{font-size:34px;font-weight:800;line-height:1;}
-  .ac-num.sm{font-size:20px;}
-  .ac-num.high{color:var(--green);} .ac-num.mid{color:var(--yellow);} .ac-num.low{color:var(--red);}
-  .ac-cap{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:4px;}
-  .delta{font-size:13px;font-weight:700;padding:2px 8px;border-radius:4px;}
-  .delta.up{background:var(--green-dim);color:var(--green);}
-  .delta.down{background:var(--red-dim);color:var(--red);}
-  .delta.flat{background:var(--surface2);color:var(--muted);}
-  .ac-block{margin-bottom:10px;}
-  .ac-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;}
-  .tags{display:flex;flex-wrap:wrap;gap:4px;}
-  .t{font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--muted);}
-  .t.pos{border-color:var(--green);color:var(--green);background:var(--green-dim);}
-  .t.neg{border-color:var(--red);color:var(--red);background:var(--red-dim);}
-  .t.warn{border-color:var(--yellow);color:var(--yellow);background:#2a2000;}
-  .txt{font-size:12px;color:var(--muted);line-height:1.6;}
-  .evo{font-size:12px;line-height:1.6;background:var(--surface2);border-left:3px solid var(--purple);padding:9px 11px;border-radius:var(--rs);color:var(--text);}
-  .lnk{font-size:12px;color:var(--accent);cursor:pointer;margin-top:8px;display:inline-block;}
-  .lnk:hover{text-decoration:underline;}
-  .meta-row{display:flex;align-items:flex-start;gap:6px;font-size:11.5px;padding:3px 0;}
-  .meta-ic{flex-shrink:0;}
-
-  .comp{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
-  .comp h3{font-size:15px;font-weight:700;margin-bottom:4px;}
-  .comp .csub{font-size:12px;color:var(--muted);margin-bottom:14px;}
-  .crow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
-  .crow:last-of-type{border-bottom:none;}
-  .cpos{font-size:18px;font-weight:800;color:var(--muted);width:22px;flex-shrink:0;}
-  .cname{font-size:13px;font-weight:600;}
-  .ctrack{height:6px;background:var(--border);border-radius:3px;}
-  .cfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .4s;}
-  .cscore{font-size:20px;font-weight:800;width:38px;text-align:right;flex-shrink:0;}
-  .cresumo{font-size:12px;color:var(--muted);line-height:1.7;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);white-space:pre-wrap;}
-
-  .chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px;}
-  .chart h3{font-size:13px;font-weight:700;margin-bottom:12px;}
-  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--muted);}
-  .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}
-
-  .empty{text-align:center;padding:50px 20px;color:var(--muted);}
-  .empty-icon{font-size:40px;margin-bottom:10px;}
-  .loading{text-align:center;padding:40px;color:var(--muted);}
-  .spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:680px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
-  .modal-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
-  .modal-title{font-size:16px;font-weight:700;}
-  .modal-sub{font-size:12px;color:var(--muted);margin-top:3px;}
-  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:2px 4px;}
-  .modal-close:hover{color:var(--text);}
-  .modal-body{overflow-y:auto;padding:16px 20px;flex:1;}
-  .error-modal{background:var(--surface);border:1px solid var(--red);border-radius:12px;width:520px;max-width:95vw;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;}
-  .error-modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-  .error-modal-title{font-size:15px;font-weight:700;color:var(--red);}
-  .error-item{background:var(--red-dim);border:1px solid var(--red);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;}
-  .error-item-seller{font-weight:600;font-size:13px;margin-bottom:4px;}
-  .error-item-msg{font-size:12px;color:var(--red);font-family:monospace;word-break:break-all;margin-bottom:4px;}
-  .error-item-time{font-size:11px;color:var(--muted);}
-
-  .msg{margin-bottom:8px;display:flex;flex-direction:column;}
-  .msg.user{align-items:flex-end;} .msg.customer{align-items:flex-start;}
-  .msg-bubble{max-width:78%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;}
-  .msg.user .msg-bubble{background:var(--accent-dim);border:1px solid var(--accent);border-bottom-right-radius:3px;}
-  .msg.customer .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:3px;}
-  .msg-time{font-size:10px;color:var(--muted);margin-top:3px;}
-  .msg-pending{color:var(--orange);font-style:italic;font-size:12px;}
-  .msg-error{color:var(--red);font-style:italic;font-size:12px;cursor:pointer;text-decoration:underline dotted;}
-  .msg-unsupported{color:var(--muted);font-style:italic;font-size:12px;}
-  .msg-image{color:var(--purple);font-style:italic;font-size:12px;}
-  .msg-template{color:var(--yellow);font-size:12px;}
-  .msg-audio-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px;}
-  .json-pre{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-word;color:var(--muted);}
-
-  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:transparent;}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+:root {
+  --bg:#0f1219; --panel:#161a24; --panel2:#1c2130; --border:#252a3a;
+  --text:#e6e9f2; --text-dim:#8b91a8; --text-mute:#5f6580;
+  --brand:#6d8fff; --brand-dim:#2d3556;
+  --green:#4ade80; --green-dim:#1e3a2b;
+  --yellow:#fbbf24; --yellow-dim:#3d3018;
+  --orange:#fb923c; --orange-dim:#3d2618;
+  --red:#f87171; --red-dim:#3d1c1c;
+  --purple:#c084fc; --purple-dim:#2d1e3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5}
+button{cursor:pointer;font-family:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--brand)}
+a{color:var(--brand);text-decoration:none}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+header h1{font-size:20px;font-weight:600}
+header .sub{color:var(--text-dim);font-size:13px;margin-top:2px}
+.tabs{display:flex;gap:4px;background:var(--panel);border-radius:8px;padding:4px;margin-bottom:20px}
+.tab{padding:8px 16px;border-radius:6px;border:none;background:none;color:var(--text-dim);font-weight:500}
+.tab.on{background:var(--brand-dim);color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card h2 .title{display:flex;align-items:center;gap:8px}
+.card h3{font-size:13px;font-weight:600;color:var(--text-dim);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+.grid{display:grid;gap:12px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+.grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.grid-6{grid-template-columns:repeat(6,1fr)}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4,.grid-6{grid-template-columns:1fr}}
+.kpi{background:var(--panel2);border-radius:8px;padding:12px}
+.kpi .label{color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.kpi .val{font-size:22px;font-weight:600;margin-top:4px}
+.kpi .sub{color:var(--text-mute);font-size:11px;margin-top:2px}
+.btn{background:var(--brand);color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:500}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{background:var(--panel2);color:var(--text-mute);cursor:not-allowed}
+.btn-2{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+.btn-2:hover{background:var(--border)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
+.chip-green{background:var(--green-dim);color:var(--green)}
+.chip-yellow{background:var(--yellow-dim);color:var(--yellow)}
+.chip-orange{background:var(--orange-dim);color:var(--orange)}
+.chip-red{background:var(--red-dim);color:var(--red)}
+.chip-purple{background:var(--purple-dim);color:var(--purple)}
+.chip-brand{background:var(--brand-dim);color:var(--brand)}
+.chip-aval{background:var(--purple-dim);color:var(--purple)}
+.chip-closer{background:var(--yellow-dim);color:var(--yellow)}
+.chip-combinado{background:var(--brand-dim);color:var(--brand)}
+.bar{width:100%;height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:4px}
+.bar>div{height:100%;background:var(--brand);transition:width .3s}
+.bar-good>div{background:var(--green)}
+.bar-mid>div{background:var(--yellow)}
+.bar-bad>div{background:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+tr:hover td{background:var(--panel2)}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hidden{display:none!important}
+.load{padding:40px;text-align:center;color:var(--text-dim)}
+.err{background:var(--red-dim);color:var(--red);padding:12px;border-radius:6px;margin:12px 0}
+.ok{background:var(--green-dim);color:var(--green);padding:12px;border-radius:6px;margin:12px 0}
+.warn{background:var(--yellow-dim);color:var(--yellow);padding:12px;border-radius:6px;margin:12px 0}
+.mono{font-family:"SF Mono",Monaco,Menlo,Consolas,monospace;font-size:12px}
+.small{font-size:12px;color:var(--text-dim)}
+.rank-cell{width:32px;color:var(--text-dim);font-weight:600}
+.score-big{font-size:28px;font-weight:600}
+.score-mid{font-size:16px;font-weight:600}
+.delta{font-size:12px;margin-left:8px}
+.delta-up{color:var(--green)}
+.delta-down{color:var(--red)}
+.delta-flat{color:var(--text-mute)}
+details{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-top:8px}
+details summary{cursor:pointer;color:var(--text-dim);font-size:13px}
+details[open] summary{margin-bottom:8px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;z-index:100}
+.modal.on{display:flex}
+.modal-content{background:var(--panel);border:1px solid var(--border);border-radius:8px;max-width:900px;width:100%;padding:20px;max-height:90vh;overflow-y:auto}
+.close{background:none;border:none;color:var(--text-dim);font-size:24px;line-height:1}
+.pill-count{display:inline-block;background:var(--panel2);padding:2px 8px;border-radius:10px;font-size:11px;color:var(--text-dim);margin-left:6px}
+.ref-card{background:var(--panel2);border-left:3px solid var(--brand);padding:12px;border-radius:6px;margin:8px 0}
+.ref-good{border-left-color:var(--green)}
+.ref-bad{border-left-color:var(--orange)}
+.ref-title{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.ref-text{font-style:italic;color:var(--text-dim);border-left:2px solid var(--border);padding-left:10px;margin:6px 0}
+.res-row{display:grid;grid-template-columns:180px 1fr 1fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-name{font-weight:500}
+.res-input{width:100%}
+.res-calc{color:var(--text-mute);font-size:12px}
+.sinal-row{display:grid;grid-template-columns:1fr 60px 100px;gap:8px;align-items:center;padding:4px 0}
+.sinal-name{color:var(--text-dim);font-size:13px}
+.sinal-count{font-family:"SF Mono",Monaco,Menlo,monospace;font-size:13px;text-align:right}
+.text-good{color:var(--green)}
+.text-mid{color:var(--yellow)}
+.text-bad{color:var(--red)}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div style="display:flex;align-items:center;height:100%">
-    <div class="logo">Aspekto <span>SDR</span></div>
-    <nav class="tabs">
-      <div class="tab active" onclick="tab(1,this)">Conversas</div>
-      <div class="tab" onclick="tab(2,this)">🧠 Inteligência</div>
-    </nav>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Análise SDR · Grupo Aspekto</h1>
+    <div class="sub">Semana: <span id="week-info">–</span> · <span id="last-update">–</span></div>
   </div>
-  <div class="header-right">
-    <span class="last-update" id="lastUpdate">—</span>
-    <button class="btn btn-ghost" onclick="carregar()">↻ Atualizar</button>
+  <div>
+    <select id="week-select" onchange="onWeekChange()"></select>
+    <button class="btn btn-2 btn-sm" onclick="refreshAll()">↻ Atualizar</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab on" data-tab="intel" onclick="switchTab('intel')">🧠 Inteligência</button>
+  <button class="tab" data-tab="conv" onclick="switchTab('conv')">Conversas</button>
+</div>
+
+<!-- ================= ABA INTELIGÊNCIA ================= -->
+<div id="tab-intel">
+
+<div class="card">
+  <h2><span class="title">💰 Resultado da semana</span></h2>
+  <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do mês; taxas são sobre agendadas/comparecimentos.</div>
+  <div id="res-body" class="load">Carregando…</div>
+  <div style="margin-top:12px;text-align:right">
+    <button class="btn btn-sm" onclick="salvarResultados()">💾 Salvar snapshot</button>
   </div>
 </div>
 
-<!-- ============== TAB 1 ============== -->
-<div id="page1" class="page active">
-  <div class="error-banner" id="errorBanner">
-    <div class="error-banner-icon">⚠️</div>
-    <div style="flex:1">
-      <div class="error-banner-title" id="errorBannerTitle">Erros nas transcrições</div>
-      <ul class="error-banner-list" id="errorBannerList"></ul>
-    </div>
-  </div>
+<div class="grid grid-4" id="kpis"></div>
 
-  <div class="filters">
-    <select id="filtPeriodo" onchange="aplicarFiltros()">
-      <option value="7">Últimos 7 dias</option>
-      <option value="30" selected>Últimos 30 dias</option>
-      <option value="90">Últimos 90 dias</option>
-    </select>
-    <select id="filtEtapa" onchange="aplicarFiltros()">
-      <option value="">Todas as etapas</option>
-      <option value="aval">Aval. Agendada</option>
-      <option value="closer">Closer</option>
-    </select>
-    <select id="filtVendedor" onchange="aplicarFiltros()"><option value="">Todos vendedores</option></select>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value accent" id="kTotal">—</div></div>
-    <div class="kpi"><div class="kpi-label">Aval. Agendada</div><div class="kpi-value accent" id="kAval">—</div></div>
-    <div class="kpi"><div class="kpi-label">Closer</div><div class="kpi-value green" id="kCloser">—</div></div>
-    <div class="kpi"><div class="kpi-label">Áudios transcritos</div><div class="kpi-value yellow" id="kAudios">—</div></div>
-    <div class="kpi"><div class="kpi-label">Áudios pendentes</div><div class="kpi-value orange" id="kPend">—</div></div>
-    <div class="kpi" style="cursor:pointer" onclick="abrirErros()">
-      <div class="kpi-label">Erros Whisper</div><div class="kpi-value red" id="kErr">—</div>
-      <div class="kpi-sub">clique para detalhar</div>
-    </div>
-  </div>
-
-  <div class="content">
-    <div class="conversations-panel">
-      <div class="section-header"><span>Últimas conversas</span><span id="convCount" style="font-weight:400;color:var(--muted)"></span></div>
-      <div id="convList"><div class="loading"><div class="spinner"></div><br>Carregando...</div></div>
-    </div>
-    <div class="ranking-panel">
-      <div class="section-header"><span>Ranking vendedores</span></div>
-      <div id="ranking" style="padding-top:12px"></div>
-    </div>
+<div class="card">
+  <h2><span class="title">🔍 Fila de análise</span></h2>
+  <div id="fila-body" class="load">Carregando…</div>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button id="btn-analisar" class="btn" onclick="disparaAnalise()" disabled>▶ Analisar</button>
+    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">🎤 Transcrever áudios</button>
+    <button class="btn btn-2 btn-sm" onclick="gerarLotes()">🔄 Gerar lotes</button>
   </div>
 </div>
 
-<!-- ============== TAB 2 ============== -->
-<div id="page2" class="page">
-  <div class="filters">
-    <select id="semana" onchange="onSemana()"><option value="">Carregando...</option></select>
-    <select id="etapa2" onchange="refreshP2()">
-      <option value="">Todas as etapas</option>
-      <option value="avaliacao">Aval. Agendada</option>
-      <option value="closer">Closer</option>
-    </select>
-    <select id="vend2" onchange="refreshP2()"><option value="">Todos vendedores</option></select>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <button class="btn btn-ghost"  onclick="toggleInstr()">⚙️ Instruções</button>
-      <button class="btn btn-green"  onclick="gerarLotes()" id="btnLotes">📦 Gerar Lotes</button>
-      <button class="btn btn-orange" onclick="transcrever()" id="btnTr">🎙️ Transcrever áudios</button>
-      <button class="btn btn-purple" onclick="analisar()"   id="btnGo">▶ Analisar pendentes</button>
-    </div>
-  </div>
-
-  <div class="p2-body">
-
-    <div id="instr" style="display:none">
-      <div class="card">
-        <h3>📝 Instrução — Análise Individual</h3>
-        <p>Aplicada a cada vendedor. Recebe automaticamente: o contexto da análise anterior dele + as conversas novas da semana.</p>
-        <div class="hint">JSON esperado: score_geral (0-10) · urgencia_score (0-10) · resumo · preco_mencionado (bool) · objecoes_contornadas (bool) · tecnicas_utilizadas[] · tecnicas_bem_aplicadas[] · objecoes_identificadas[] · pontos_de_melhoria[] · evolucao (texto) · metas_cumpridas[{meta,cumprida,evidencia}] · metas_proximas[]</div>
-        <textarea id="pIndiv" placeholder="Ainda vamos construir esta instrução juntos..."></textarea>
-      </div>
-      <div class="card">
-        <h3>📊 Instrução — Análise Comparativa</h3>
-        <p>Aplicada ao conjunto de vendedores da semana, por etapa.</p>
-        <div class="hint">JSON esperado: ranking[{nome,score_geral,destaque}] · destaques (texto) · melhor_pratica (texto)</div>
-        <textarea id="pComp" placeholder="Ainda vamos construir esta instrução juntos..."></textarea>
-        <div class="card-actions">
-          <button class="btn btn-ghost" onclick="toggleInstr()">Fechar</button>
-          <button class="btn btn-primary" onclick="salvarInstr()">💾 Salvar instruções</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="cardFila">
-      <h3>📦 Fila de análise</h3>
-      <p id="filaSub">—</p>
-      <div id="fila"></div>
-      <div class="bar"><i id="bar"></i></div>
-      <div class="log" id="log"><div class="dim">Selecione a semana e clique em "Analisar pendentes".</div></div>
-    </div>
-
-    <div id="alertaVolume"></div>
-
-    <div class="card" id="cardResultados">
-      <h3>💰 Resultado <span id="resSemana" style="color:var(--muted);font-weight:400"></span></h3>
-      <p>Faturamento e vendas são <b>acumulados do mês até hoje</b>. As taxas são as que você acompanha: comparecimento sobre agendadas, e conversão sobre quem compareceu. A data é registrada automaticamente — o número de agendadas o sistema já conta sozinho.</p>
-      <div id="resLista"></div>
-      <div class="card-actions">
-        <span id="resStatus" style="font-size:12px;color:var(--muted);margin-right:auto;align-self:center"></span>
-        <button class="btn btn-primary" onclick="salvarResultados()" id="btnRes">💾 Salvar resultados</button>
-      </div>
-    </div>
-    <div class="kpis" id="p2Kpis" style="display:none;padding:0 0 16px 0"></div>
-    <div id="p2Chart"></div>
-    <div id="p2Res"></div>
-  </div>
+<div class="card">
+  <h2><span class="title">📊 Comparativo semanal</span></h2>
+  <div id="comp-body" class="load">Carregando…</div>
 </div>
 
-<!-- MODAIS -->
-<div class="modal-overlay" id="mConv" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal">
-    <div class="modal-header">
-      <div><div class="modal-title" id="mConvT">—</div><div class="modal-sub" id="mConvS">—</div></div>
-      <button class="modal-close" onclick="document.getElementById('mConv').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body" id="mConvB"></div>
-  </div>
+<div id="cards-body"></div>
+
+<details>
+  <summary>⚙️ Editor do prompt ativo</summary>
+  <div id="prompt-body" class="load" style="margin-top:12px">Carregando…</div>
+</details>
+
 </div>
 
-<div class="modal-overlay" id="mErr" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="error-modal">
-    <div class="error-modal-header">
-      <div class="error-modal-title">⚠️ Erros nas transcrições</div>
-      <button class="modal-close" onclick="document.getElementById('mErr').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body" id="mErrB"></div>
+<!-- ================= ABA CONVERSAS ================= -->
+<div id="tab-conv" class="hidden">
+<div class="card">
+  <h2><span class="title">Conversas</span></h2>
+  <div class="controls" style="margin-bottom:12px">
+    <select id="conv-vend"><option value="">Todos vendedores</option></select>
+    <select id="conv-etapa"><option value="">Todas etapas</option><option value="avaliacao">Avaliação</option><option value="closer">Closer</option></select>
+    <input id="conv-search" placeholder="Buscar em mensagens…" style="flex:1;min-width:200px">
+    <button class="btn btn-2 btn-sm" onclick="loadConversas()">Filtrar</button>
   </div>
+  <div id="conv-body" class="load">Carregando…</div>
+</div>
 </div>
 
-<div class="modal-overlay" id="mDet" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal">
-    <div class="modal-header">
-      <div><div class="modal-title" id="mDetT">Detalhes</div><div class="modal-sub" id="mDetS">—</div></div>
-      <button class="modal-close" onclick="document.getElementById('mDet').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body"><pre class="json-pre" id="mDetB"></pre></div>
-  </div>
+<!-- MODAL -->
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content" id="modal-content"></div>
 </div>
 
-<!-- Detalhamento completo do vendedor -->
-<div class="modal-overlay" id="mVend" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" style="width:820px">
-    <div class="modal-header">
-      <div><div class="modal-title" id="mVendT">—</div><div class="modal-sub" id="mVendS">—</div></div>
-      <button class="modal-close" onclick="document.getElementById('mVend').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body" id="mVendB"></div>
-  </div>
 </div>
 
 <script>
 const SU='https://mwlxudtdvflygvewuwal.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';
-const H={apikey:SK,Authorization:'Bearer '+SK,'Content-Type':'application/json'};
+const WH_ANALISAR='https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
+const WH_TRANSCR='https://n8n-ai.grupoaspekto.com/webhook/sdr-transcrever';
 const WH_LOTES='https://n8n-ai.grupoaspekto.com/webhook/sdr-gerar-lotes';
-const WH_TRANSCREVER='https://n8n-ai.grupoaspekto.com/webhook/sdr-transcrever';
 
-const get=p=>fetch(`${SU}/rest/v1/${p}`,{headers:H}).then(r=>r.json());
-const fmtD=d=>d?new Date(d).toLocaleDateString('pt-BR'):'—';
-const fmtDT=d=>d?new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-const c10=s=>s>=7?'high':s>=5?'mid':'low';
-const arr=v=>Array.isArray(v)?v:(v?[v]:[]);
-const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-
-let p2Init=false;
-function tab(n,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page'+n).classList.add('active'); el.classList.add('active');
-  if(n===2&&!p2Init){p2Init=true;initP2();}
+const H={apikey:SK,Authorization:'Bearer '+SK};
+async function sb(path,opts={}){
+  const r=await fetch(SU+'/rest/v1/'+path,{...opts,headers:{...H,...(opts.headers||{})}});
+  if(!r.ok)throw new Error(r.status+' '+await r.text());
+  const t=await r.text();
+  return t?JSON.parse(t):[];
 }
 
-/* ================= TAB 1 ================= */
-let dados=[],filt=[],convAtiva=null,erros=[];
+let STATE={week:null,weeks:[],analises:[],lotes:[],prontos:[],comp:null,pesos:{p:0.4,t:0.3,o:0.3},resultados:[],vendedores:[]};
 
-async function carregar(){
-  document.getElementById('convList').innerHTML='<div class="loading"><div class="spinner"></div><br>Carregando...</div>';
+// ============ SEMANA ============
+function currentWeekLabel(){
+  const d=new Date();
+  const dow=d.getDay();
+  const s=new Date(d);s.setDate(d.getDate()+(dow===0?-6:1-dow));s.setHours(0,0,0,0);
+  const jan1=new Date(s.getFullYear(),0,1);
+  const wn=String(Math.ceil(((s-jan1)/86400000+jan1.getDay()+1)/7)).padStart(2,'0');
+  return s.getFullYear()+'-W'+wn;
+}
+async function loadWeeks(){
+  const rows=await sb('weekly_batches?select=week_label&order=week_label.desc&limit=500');
+  const uniq=[...new Set(rows.map(r=>r.week_label))];
+  STATE.weeks=uniq;
+  const sel=document.getElementById('week-select');
+  sel.innerHTML=uniq.map(w=>'<option>'+w+'</option>').join('');
+  STATE.week=STATE.week||uniq[0]||currentWeekLabel();
+  sel.value=STATE.week;
+  document.getElementById('week-info').textContent=STATE.week;
+}
+function onWeekChange(){STATE.week=document.getElementById('week-select').value;refreshAll();}
+
+// ============ FETCH ============
+async function refreshAll(){
+  document.getElementById('last-update').textContent='atualizando…';
   try{
-    const raw=await get('conversations?select=*&order=conversation_date.desc&limit=200');
-    const m={}; for(const r of raw)m[r.deal_id]=r; dados=Object.values(m);
-    vendedoresP1(); aplicarFiltros();
-    document.getElementById('lastUpdate').textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){document.getElementById('convList').innerHTML='<div class="empty">⚠️ Erro ao carregar</div>';}
-}
-function vendedoresP1(){
-  const s=document.getElementById('filtVendedor'),a=s.value;
-  const n=[...new Set(dados.map(d=>d.seller_name).filter(Boolean))].sort();
-  s.innerHTML='<option value="">Todos vendedores</option>'+n.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); s.value=a;
-}
-function aplicarFiltros(){
-  const dias=+document.getElementById('filtPeriodo').value,et=document.getElementById('filtEtapa').value,vd=document.getElementById('filtVendedor').value;
-  const corte=new Date(Date.now()-dias*86400000).toISOString().split('T')[0];
-  filt=dados.filter(d=>{
-    if(d.conversation_date<corte)return false;
-    if(et&&d.origin_name){const o=d.origin_name.toLowerCase();
-      if(et==='aval'&&!o.includes('avalia'))return false;
-      if(et==='closer'&&!o.includes('closer'))return false;}
-    if(vd&&d.seller_name!==vd)return false; return true;});
-  kpis1();lista1();rank1();banner1();
-}
-const NSUP=t=>String(t||'').startsWith('[formato-nao-suportado');
-function stA(msgs){
-  // áudios não suportados são ignorados por completo (minoria irrelevante)
-  const a=(msgs||[]).filter(m=>m.content_type==='AUDIO'&&m.content_url&&!NSUP(m.transcricao));
-  return{
-    total:a.length,
-    tr:a.filter(m=>m.transcricao&&!String(m.transcricao).startsWith('[')).length,
-    er:a.filter(m=>m.transcricao&&String(m.transcricao).startsWith('[erro')).length,
-    pe:a.filter(m=>!m.transcricao).length};}
-function kpis1(){
-  let A=0,T=0,P=0,E=0;
-  for(const d of filt){const s=stA(d.raw_messages);A+=s.total;T+=s.tr;P+=s.pe;E+=s.er;}
-  document.getElementById('kTotal').textContent=filt.length;
-  document.getElementById('kAval').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('avalia')).length;
-  document.getElementById('kCloser').textContent=filt.filter(d=>d.origin_name&&d.origin_name.toLowerCase().includes('closer')).length;
-  document.getElementById('kAudios').textContent=T+'/'+A;
-  document.getElementById('kPend').textContent=P;
-  const k=document.getElementById('kErr');k.textContent=E;k.style.color=E>0?'var(--red)':'var(--muted)';
-  erros=[];
-  for(const d of filt)for(const m of (d.raw_messages||[]))
-    if(m.transcricao&&String(m.transcricao).startsWith('[erro'))
-      erros.push({seller:d.seller_name,erro:m.transcricao,created_at:m.created_at});
-}
-function banner1(){
-  const b=document.getElementById('errorBanner');
-  if(!erros.length){b.classList.remove('visible');return;}
-  b.classList.add('visible');
-  document.getElementById('errorBannerTitle').textContent=erros.length+' erro(s) nas transcrições — clique para detalhar';
-  const g={};for(const e of erros){const t=e.erro.replace(/\[erro[^:]*: /,'').replace(/\].*/,'').slice(0,60);g[t]=(g[t]||0)+1;}
-  document.getElementById('errorBannerList').innerHTML=Object.entries(g).map(([t,q])=>`<li onclick="abrirErros()"><span class="err-badge">${q}x</span> ${esc(t)}</li>`).join('');
-}
-function abrirErros(){
-  document.getElementById('mErrB').innerHTML=!erros.length?'<div class="empty">Nenhum erro ✓</div>':
-    erros.map(e=>`<div class="error-item"><div class="error-item-seller">${esc(e.seller)||'—'}</div><div class="error-item-msg">${esc(e.erro)}</div><div class="error-item-time">${e.created_at?new Date(e.created_at).toLocaleString('pt-BR'):'—'}</div></div>`).join('');
-  document.getElementById('mErr').classList.add('open');
-}
-function lista1(){
-  const el=document.getElementById('convList');
-  document.getElementById('convCount').textContent=filt.length+' conversas';
-  if(!filt.length){el.innerHTML='<div class="empty">💬 Nenhuma conversa</div>';return;}
-  el.innerHTML=filt.map(d=>{const s=stA(d.raw_messages);let b,c;
-    if(!s.total){b='sem áudios';c='no-audio';}
-    else if(s.er){b='⚠️ '+s.er+' erro(s)';c='has-error';}
-    else if(s.pe){b='⏳ '+s.tr+'/'+s.total+' áudios';c='pending';}
-    else{b='✓ '+s.tr+'/'+s.total+' áudios';c='all-done';}
-    const et=d.origin_name&&d.origin_name.toLowerCase().includes('avalia')?'Aval.':'Closer';
-    return `<div class="conv-card ${convAtiva===d.deal_id?'active':''}" onclick="verConv('${d.deal_id}')">
-      <div class="conv-info"><div class="conv-name">${esc(d.seller_name)||'—'}<span class="etapa">· ${et}</span></div>
-      <div class="conv-meta"><span>📅 ${d.conversation_date||'—'}</span><span>📱 ${esc(d.telefone)||'—'}</span><span>💬 ${(d.raw_messages||[]).length}</span></div></div>
-      <div style="text-align:right;flex-shrink:0"><div class="audio-badge ${c}">${b}</div></div></div>`;}).join('');
-}
-function rank1(){
-  const m={};
-  for(const d of filt){const n=d.seller_name||'—';if(!m[n])m[n]={aval:0,closer:0,au:0,tr:0};
-    if(d.origin_name&&d.origin_name.toLowerCase().includes('avalia'))m[n].aval++;else m[n].closer++;
-    const s=stA(d.raw_messages);m[n].au+=s.total;m[n].tr+=s.tr;}
-  const l=Object.entries(m).map(([nome,v])=>({nome,...v,total:v.aval+v.closer})).sort((a,b)=>b.total-a.total);
-  const mx=Math.max(...l.map(x=>x.total),1);
-  document.getElementById('ranking').innerHTML=l.map((v,i)=>`
-    <div class="rank-item"><div class="rank-header"><span class="rank-name">${esc(v.nome)}</span><span class="rank-pos">#${i+1} · ${v.total} conv.</span></div>
-    <div class="rank-bars">
-      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--accent)">Aval</span><div class="rank-bar-track"><div class="rank-bar-fill aval" style="width:${(v.aval/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.aval}</span></div>
-      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--green)">Close</span><div class="rank-bar-track"><div class="rank-bar-fill closer" style="width:${(v.closer/mx*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.closer}</span></div>
-      <div class="rank-bar-row"><span class="rank-bar-label" style="color:var(--yellow)">Áudio</span><div class="rank-bar-track"><div class="rank-bar-fill audio" style="width:${(v.tr/Math.max(v.au,1)*100).toFixed(0)}%"></div></div><span class="rank-bar-val">${v.tr}/${v.au}</span></div>
-    </div></div>`).join('');
-}
-function verConv(id){
-  convAtiva=id;const d=dados.find(x=>x.deal_id===id);if(!d)return;
-  const et=d.origin_name&&d.origin_name.toLowerCase().includes('avalia')?'Aval. Agendada':'Closer';
-  const s=stA(d.raw_messages);
-  document.getElementById('mConvT').textContent=(d.seller_name||'—')+' — '+et;
-  document.getElementById('mConvS').textContent=`${d.conversation_date} · ${d.telefone||'—'} · ${(d.raw_messages||[]).length} msgs · ${s.tr}/${s.total} áudios`;
-  const ms=d.raw_messages||[];
-  document.getElementById('mConvB').innerHTML=ms.length?ms.map(renderMsg).join(''):'<div class="empty">Sem mensagens</div>';
-  document.getElementById('mConv').classList.add('open');lista1();
-}
-function renderMsg(m){
-  const lado=m.type==='USER'?'user':'customer';let c='';
-  if(m.content_type==='AUDIO'){
-    const dur=m.seconds?Math.round(m.seconds)+'s':'';let t;
-    if(!m.transcricao)t=`<div class="msg-pending">🎵 Áudio pendente${dur?' · '+dur:''}</div>`;
-    else if(String(m.transcricao).startsWith('[formato-nao-suportado'))t=`<div class="msg-unsupported">🚫 Formato não suportado${dur?' · '+dur:''}</div>`;
-    else if(String(m.transcricao).startsWith('[erro'))t=`<div class="msg-error" onclick="erros=[{seller:'—',erro:'${esc(m.transcricao).replace(/'/g,'')}',created_at:null}];abrirErros()">⚠️ Erro — clique para ver</div>`;
-    else t=`<div>${esc(m.transcricao)}</div>`;
-    c=`<div style="display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px">🎙️</span><div style="flex:1"><div class="msg-audio-label">Áudio${dur?' · '+dur:''}</div>${t}</div></div>`;
-  }
-  else if(m.content_type==='IMAGE')c='<div class="msg-image">🖼️ Imagem</div>';
-  else if(m.content_type==='TEMPLATE')c=`<div class="msg-template">📋 ${esc(m.content)||'Template'}</div>`;
-  else if(m.content)c=esc(m.content);
-  else c=`<span style="color:var(--muted);font-style:italic;font-size:12px">${esc(m.content_type)||'—'}</span>`;
-  return `<div class="msg ${lado}"><div class="msg-bubble">${c}</div><div class="msg-time">${fmtDT(m.created_at)}</div></div>`;
-}
-
-/* ================= TAB 2 ================= */
-let lotes=[],analises=[],comps=[],hist=[],instrAtiva=null,metricas=[],volume=[],resultados=[],prontos=[];
-let pesos={p:0.40,t:0.30,o:0.30};
-let trRodando=false,pollTr=null;
-
-const log=(m,c)=>{const d=document.createElement('div');if(c)d.className=c;d.textContent=m;
-  const el=document.getElementById('log');el.appendChild(d);el.scrollTop=el.scrollHeight;};
-const limpaLog=()=>document.getElementById('log').innerHTML='';
-const setBar=p=>document.getElementById('bar').style.width=p+'%';
-
-async function initP2(){
-  try{
-    lotes=await get('weekly_batches?select=*&order=week_label.desc,seller_name');
-    const sems=[...new Set(lotes.map(l=>l.week_label))].sort().reverse();
-    const s=document.getElementById('semana');
-    s.innerHTML=sems.length?sems.map(w=>{const l=lotes.find(x=>x.week_label===w);
-      return `<option value="${w}">${w} · ${fmtD(l.week_start)} a ${fmtD(l.week_end)}</option>`;}).join('')
-      :'<option value="">Nenhum lote — clique em Gerar Lotes</option>';
-    const vs=[...new Map(lotes.map(l=>[l.seller_email,l])).values()].sort((a,b)=>(a.seller_name||'').localeCompare(b.seller_name||''));
-    document.getElementById('vend2').innerHTML='<option value="">Todos vendedores</option>'+vs.map(v=>`<option value="${v.seller_email}">${esc((v.seller_name||'').trim())}</option>`).join('');
-  }catch(e){log('Erro ao carregar lotes: '+e.message,'er');}
-  try{
-    const p=await get('analysis_prompts?select=*&ativo=eq.true&limit=1');
-    if(p&&p[0]){instrAtiva=p[0];
-      document.getElementById('pIndiv').value=p[0].prompt_individual||'';
-      document.getElementById('pComp').value=p[0].prompt_comparativo||'';}
-  }catch(e){}
-  try{hist=await get('seller_evolution?select=*');}catch(e){hist=[];}
-  try{
-    const w=await get('score_weights?select=*&order=vigente_desde.desc&limit=1');
-    if(w&&w[0])pesos={p:Number(w[0].peso_processo),t:Number(w[0].peso_tecnica),o:Number(w[0].peso_objetivo)};
-  }catch(e){}
-  onSemana();
-}
-function onSemana(){refreshP2();}
-
-async function refreshP2(){
-  const wl=document.getElementById('semana').value;
-  const et=document.getElementById('etapa2').value;
-  const vd=document.getElementById('vend2').value;
-  if(!wl){document.getElementById('fila').innerHTML='<div class="empty">Nenhuma semana.</div>';return;}
-
-  let q=`ai_analyses?select=*&week_label=eq.${wl}&order=score_geral.desc.nullslast`;
-  if(et)q+=`&etapa=eq.${et}`; if(vd)q+=`&seller_email=eq.${encodeURIComponent(vd)}`;
-  let qc=`weekly_comparative_analyses?select=*&week_label=eq.${wl}&order=created_at.desc`;
-  if(et)qc+=`&etapa=eq.${et}`;
-  try{
-    [analises,comps,hist,metricas,volume,resultados,prontos]=await Promise.all([
-      get(q), get(qc), get('seller_evolution?select=*'),
-      get(`score_objetivo_calc?select=*&week_label=eq.${wl}`),
-      get(`alerta_volume?select=*&week_label=eq.${wl}`),
-      get(`seller_results_calc?select=*&data_medicao=eq.${hojeISO()}`),
-      get(`lotes_prontos?select=*&week_label=eq.${wl}`)
+    const wl=STATE.week;
+    const [an,lo,pr,cp,ps,rs]=await Promise.all([
+      sb('ai_analyses?select=*&week_label=eq.'+wl+'&order=score_geral.desc.nullslast'),
+      sb('weekly_batches?select=*&week_label=eq.'+wl),
+      sb('lotes_prontos?select=*&week_label=eq.'+wl),
+      sb('weekly_comparative_analyses?select=*&week_label=eq.'+wl+'&limit=1'),
+      sb('score_weights?select=*&order=vigente_desde.desc&limit=1'),
+      sb('seller_results?select=*&order=data_medicao.desc&limit=200')
     ]);
-  }catch(e){console.error(e);}
-  if(!Array.isArray(prontos))prontos=[];
-  renderFila();renderVolume();renderResultados();renderKpis2();renderChart();renderRes();
+    STATE.analises=an;STATE.lotes=lo;STATE.prontos=pr;STATE.comp=cp[0]||null;
+    if(ps.length)STATE.pesos={p:+ps[0].peso_processo,t:+ps[0].peso_tecnica,o:+ps[0].peso_objetivo};
+    STATE.resultados=rs;
+    // Vendedores unicos
+    const v=new Map();
+    lo.forEach(l=>v.set(l.seller_email,(l.seller_name||'').trim()));
+    an.forEach(a=>v.set(a.seller_email,(a.seller_name||'').trim()));
+    STATE.vendedores=[...v.entries()].map(([e,n])=>({email:e,name:n})).sort((a,b)=>a.name.localeCompare(b.name));
+
+    renderKpis();
+    renderResultados();
+    renderFila();
+    renderComp();
+    renderCards();
+    document.getElementById('last-update').textContent='atualizado '+new Date().toLocaleTimeString('pt-BR');
+  }catch(e){
+    document.getElementById('last-update').textContent='erro: '+e.message;
+  }
 }
 
-/* ---- Resultado: snapshot datado por vendedor ----
-   Modelo (29/07): o usuário informa o acumulado do MÊS na data de hoje + as duas
-   taxas que ele acompanha. A data entra sozinha e as agendadas vêm do sistema. */
-const nn=v=>(v===''||v==null||isNaN(Number(v)))?null:Number(v);
-const hojeISO=()=>new Date().toLocaleDateString('sv-SE');  // YYYY-MM-DD no fuso local
+// ============ KPIs ============
+function renderKpis(){
+  const an=STATE.analises;
+  const lo=STATE.lotes;
+  const totalLeads=lo.reduce((s,l)=>s+(l.total_conversas||0),0);
+  const analisados=an.length;
+  const pendentes=lo.length-analisados;
+  const avg=an.length?(an.reduce((s,a)=>s+(+a.score_geral||0),0)/an.length).toFixed(2):'–';
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="label">Vendedores</div><div class="val">${lo.length}</div><div class="sub">${analisados} analisados · ${pendentes} pendentes</div></div>
+    <div class="kpi"><div class="label">Leads na semana</div><div class="val">${totalLeads}</div><div class="sub">agrupados por vendedor</div></div>
+    <div class="kpi"><div class="label">Score médio</div><div class="val">${avg}</div><div class="sub">${STATE.pesos.p*100}p ${STATE.pesos.t*100}t ${STATE.pesos.o*100}o</div></div>
+    <div class="kpi"><div class="label">Comparativo</div><div class="val">${STATE.comp?'✓':'–'}</div><div class="sub">${STATE.comp?'gerado':'ainda não'}</div></div>
+  `;
+}
 
+// ============ FILA ============
+function renderFila(){
+  const analisados=new Set(STATE.analises.map(a=>a.seller_email));
+  const pend=STATE.lotes.filter(l=>!analisados.has(l.seller_email));
+  if(!pend.length){
+    document.getElementById('fila-body').innerHTML='<div class="ok">Todos os vendedores desta semana já foram analisados.</div>';
+    document.getElementById('btn-analisar').disabled=true;
+    document.getElementById('btn-analisar').textContent='▶ Tudo analisado';
+    return;
+  }
+  const rows=pend.map(l=>{
+    const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);
+    const pronto=ps.length===0||ps.every(p=>p.pronto!==false);
+    return `<tr><td>${(l.seller_name||'').trim()}</td><td>${l.total_conversas}</td><td>${pronto?'<span class="chip chip-green">pronto</span>':'<span class="chip chip-yellow">áudio pendente</span>'}</td></tr>`;
+  }).join('');
+  document.getElementById('fila-body').innerHTML=`<table><thead><tr><th>Vendedor</th><th>Conversas</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const liberados=pend.filter(l=>{const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);return ps.length===0||ps.every(p=>p.pronto!==false);});
+  const leads=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
+  const btn=document.getElementById('btn-analisar');
+  btn.disabled=liberados.length===0;
+  btn.textContent=liberados.length?`▶ Analisar ${liberados.length} vendedor(es) · ${leads} lead(s)`:'▶ Aguardando transcrição';
+}
+
+// ============ RESULTADOS (form) ============
 function renderResultados(){
-  const wl=document.getElementById('semana').value;
-  const hoje=hojeISO();
-  document.getElementById('resSemana').textContent=
-    '· registrando em '+new Date(hoje+'T12:00:00').toLocaleDateString('pt-BR')
-    +(wl?' · semana '+wl:'');
-  const el=document.getElementById('resLista');
-  const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
-      .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()]
-    .sort((a,b)=>a.nome.localeCompare(b.nome));
-  if(!vs.length){el.innerHTML='<div class="dim" style="font-size:12px">Nenhum vendedor nesta semana.</div>';return;}
-
-  el.innerHTML=`<div class="res-grid res-head">
-      <span>Vendedor</span><span>Faturamento do mês</span><span>Vendas no mês</span>
-      <span>Comparecimento %</span><span>Conversão %</span><span>Calculado</span>
-    </div>`
-    +vs.map(v=>{
-      // pega a medição de HOJE se já existir; senão a mais recente, só para referência
-      const doDia=(resultados||[]).find(x=>x.seller_email===v.email&&x.data_medicao===hoje);
-      const r=doDia||{};
-      const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
-      return `<div class="res-grid">
-        <span class="res-nome" title="${esc(v.email)}">${esc(v.nome)||esc(v.email)}</span>
-        <input type="number" id="${id}_fat" placeholder="R$ no mês" step="0.01" min="0" value="${r.faturamento!=null?r.faturamento:''}" oninput="calcRes('${id}')">
-        <input type="number" id="${id}_ven" placeholder="0" min="0" value="${r.vendas_fechadas!=null?r.vendas_fechadas:''}" oninput="calcRes('${id}')">
-        <input type="number" id="${id}_tcp" placeholder="%" min="0" max="100" step="0.1" value="${r.taxa_comparecimento!=null?r.taxa_comparecimento:''}" oninput="calcRes('${id}')">
-        <input type="number" id="${id}_tcv" placeholder="%" min="0" max="100" step="0.1" value="${r.taxa_conversao!=null?r.taxa_conversao:''}" oninput="calcRes('${id}')">
-        <span class="res-calc" id="${id}_calc"></span>
-      </div>`;}).join('');
-
-  vs.forEach(v=>calcRes('r_'+v.email.replace(/[^a-z0-9]/gi,'_')));
-  document.getElementById('resStatus').textContent='';
-}
-
-/* prévia ao vivo: ticket e taxa ponta a ponta */
-function calcRes(id){
-  const fat=nn(document.getElementById(id+'_fat').value);
-  const ven=nn(document.getElementById(id+'_ven').value);
-  const tcp=nn(document.getElementById(id+'_tcp').value);
-  const tcv=nn(document.getElementById(id+'_tcv').value);
-  const partes=[];
-  if(fat!=null&&ven)partes.push(`ticket <b>R$ ${(fat/ven).toLocaleString('pt-BR',{maximumFractionDigits:0})}</b>`);
-  if(tcp!=null&&tcv!=null)partes.push(`agendada→venda <b>${(tcp*tcv/100).toFixed(1)}%</b>`);
-  document.getElementById(id+'_calc').innerHTML=partes.length?partes.join(' · '):'<span class="dim">—</span>';
+  if(!STATE.lotes.length){
+    document.getElementById('res-body').innerHTML='<div class="warn">Sem lotes nesta semana. Rode "Gerar lotes" primeiro.</div>';
+    return;
+  }
+  const rows=STATE.lotes.map(l=>{
+    const eml=l.seller_email;const nm=(l.seller_name||'').trim();
+    const ult=STATE.resultados.find(r=>r.seller_email===eml);
+    const fat=ult?ult.faturamento||'':'';
+    const vd=ult?ult.vendas_fechadas||'':'';
+    const tc=ult?ult.taxa_comparecimento||'':'';
+    const tv=ult?ult.taxa_conversao||'':'';
+    return `<div class="res-row" data-email="${eml}" data-name="${nm}">
+      <div class="res-name">${nm}</div>
+      <div><input class="res-input res-fat" type="number" step="0.01" placeholder="R$" value="${fat}"></div>
+      <div><input class="res-input res-vd" type="number" placeholder="Vendas mês" value="${vd}"></div>
+      <div><input class="res-input res-tc" type="number" step="0.1" placeholder="% compar." value="${tc}"></div>
+      <div><input class="res-input res-tv" type="number" step="0.1" placeholder="% conversão" value="${tv}"></div>
+      <div class="res-calc">${ult?'último: '+ult.data_medicao:'—'}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('res-body').innerHTML=`
+    <div class="res-row" style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px">
+      <div>Vendedor</div><div>Faturamento mês</div><div>Vendas mês</div><div>Compar. (%)</div><div>Conversão (%)</div><div>Última</div>
+    </div>
+    ${rows}
+  `;
 }
 
 async function salvarResultados(){
-  const wl=document.getElementById('semana').value;
-  const hoje=hojeISO();
-  const b=document.getElementById('btnRes'),st=document.getElementById('resStatus');
-  const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
-    .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()];
-
-  const linhas=[];
-  for(const v of vs){
-    const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
-    const fat=nn(document.getElementById(id+'_fat').value);
-    const ven=nn(document.getElementById(id+'_ven').value);
-    const tcp=nn(document.getElementById(id+'_tcp').value);
-    const tcv=nn(document.getElementById(id+'_tcv').value);
-    if(fat==null&&ven==null&&tcp==null&&tcv==null)continue;
-    if(tcp!=null&&(tcp<0||tcp>100)){alert(`${v.nome}: taxa de comparecimento precisa estar entre 0 e 100.`);return;}
-    if(tcv!=null&&(tcv<0||tcv>100)){alert(`${v.nome}: taxa de conversão precisa estar entre 0 e 100.`);return;}
-    linhas.push({data_medicao:hoje,week_label:wl||null,
-      seller_email:v.email,seller_name:v.nome,
-      faturamento:fat,vendas_fechadas:ven,
-      taxa_comparecimento:tcp,taxa_conversao:tcv,
-      atualizado_em:new Date().toISOString()});
-  }
-  if(!linhas.length){alert('Nada preenchido para salvar.');return;}
-
-  b.disabled=true;b.textContent='⏳ Salvando...';st.textContent='';
+  const rows=document.querySelectorAll('.res-row[data-email]');
+  const nn=v=>(v===''||v==null||isNaN(+v))?null:+v;
+  const today=new Date().toLocaleDateString('sv-SE');
+  const body=[];
+  rows.forEach(r=>{
+    const fat=nn(r.querySelector('.res-fat').value);
+    const vd=nn(r.querySelector('.res-vd').value);
+    const tc=nn(r.querySelector('.res-tc').value);
+    const tv=nn(r.querySelector('.res-tv').value);
+    if(fat==null&&vd==null&&tc==null&&tv==null)return;
+    body.push({
+      seller_email:r.dataset.email,
+      seller_name:r.dataset.name,
+      week_label:STATE.week,
+      data_medicao:today,
+      faturamento:fat,
+      vendas_fechadas:vd,
+      taxa_comparecimento:tc,
+      taxa_conversao:tv
+    });
+  });
+  if(!body.length){alert('Nada para salvar');return;}
   try{
-    const r=await fetch(`${SU}/rest/v1/seller_results?on_conflict=seller_email,data_medicao`,{
-      method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
-      body:JSON.stringify(linhas)});
-    if(!r.ok)throw new Error('HTTP '+r.status+' — '+(await r.text()).slice(0,200));
-    resultados=await get(`seller_results_calc?select=*&data_medicao=eq.${hoje}`);
-    renderResultados();
-    st.textContent=`✓ ${linhas.length} vendedor(es) salvos em ${new Date(hoje+'T12:00:00').toLocaleDateString('pt-BR')}`;
-    st.style.color='var(--green)';
-  }catch(e){
-    st.textContent='✕ '+e.message;st.style.color='var(--red)';
-  }
-  b.disabled=false;b.textContent='💾 Salvar resultados';
+    await fetch(SU+'/rest/v1/seller_results?on_conflict=seller_email,data_medicao',{
+      method:'POST',
+      headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify(body)
+    });
+    alert('Salvo ('+body.length+' vendedores)');
+    refreshAll();
+  }catch(e){alert('Erro: '+e.message);}
 }
 
-function renderVolume(){
-  const el=document.getElementById('alertaVolume');
-  const fora=(volume||[]).filter(v=>v.situacao!=='equilibrado');
-  if(!fora.length){el.innerHTML='';return;}
-  el.innerHTML=`<div class="card" style="border-color:var(--yellow)">
-    <h3 style="color:var(--yellow)">⚖️ Volume desequilibrado</h3>
-    <p>Média do time: ${(volume[0]||{}).media_time||'—'} leads nesta semana. Sinalização apenas — o rebalanceamento é seu.</p>
-    ${fora.map(v=>{
-      const cor=v.situacao.indexOf('abaixo')>=0?'var(--red)':'var(--accent)';
-      const lbl={muito_abaixo:'muito abaixo',abaixo:'abaixo',acima:'acima',muito_acima:'muito acima'}[v.situacao]||v.situacao;
-      return `<div class="lote-row"><span>${esc((v.seller_name||'').trim())}</span>
-        <span style="color:${cor}">${v.leads} leads · ${lbl} (${v.desvio>0?'+':''}${v.desvio})</span></div>`;}).join('')}
+// ============ COMPARATIVO ============
+function renderComp(){
+  if(!STATE.comp){document.getElementById('comp-body').innerHTML='<div class="small">Comparativo ainda não foi gerado. Rode a análise dos vendedores pendentes.</div>';return;}
+  const r=STATE.comp.resultado||{};
+  const rk=(r.ranking||[]).map((v,i)=>`
+    <tr><td class="rank-cell">${i+1}º</td><td>${v.nome}${v.amostra_pequena?' <span class="chip chip-yellow">amostra pequena</span>':''}</td><td class="score-mid">${v.score_geral}</td><td class="small">${v.destaque||''}</td></tr>
+  `).join('');
+  document.getElementById('comp-body').innerHTML=`
+    <h3>Ranking</h3>
+    <table><tbody>${rk}</tbody></table>
+    ${r.melhor_pratica?`<h3>Melhor prática a copiar</h3><div class="ref-card ref-good">${r.melhor_pratica}</div>`:''}
+    ${r.padrao_coletivo?`<h3>Padrão coletivo</h3><div class="ref-card">${r.padrao_coletivo}</div>`:''}
+    ${r.destaques?`<h3>Destaques</h3><div class="small" style="line-height:1.6">${r.destaques}</div>`:''}
+  `;
+}
+
+// ============ CARDS INDIVIDUAIS ============
+function scoreColor(s){if(s==null)return'';if(s>=7)return'text-good';if(s>=5)return'text-mid';return'text-bad';}
+function scoreBar(s){if(s==null)return'';if(s>=7)return'bar-good';if(s>=5)return'bar-mid';return'bar-bad';}
+function pct(n,t){return t>0?Math.round(100*n/t):0;}
+
+function renderCards(){
+  if(!STATE.analises.length){document.getElementById('cards-body').innerHTML='<div class="card"><div class="small">Nenhuma análise nesta semana ainda.</div></div>';return;}
+  const html=STATE.analises.map((a,i)=>{
+    const nm=(a.seller_name||'').trim();
+    const del=a.score_delta;
+    const delTxt=del==null?'':(del>0?`<span class="delta delta-up">▲ ${del.toFixed(2)}</span>`:del<0?`<span class="delta delta-down">▼ ${Math.abs(del).toFixed(2)}</span>`:`<span class="delta delta-flat">= 0</span>`);
+    const lote=STATE.lotes.find(l=>l.seller_email===a.seller_email);
+    const totC=lote?lote.total_conversas:a.total_conversas;
+    // Contar Aval/Closer no markdown
+    let av=0,cl=0;
+    if(lote&&lote.markdown_content){
+      const m=lote.markdown_content;
+      av=(m.match(/\[Aval\]/g)||[]).length;
+      cl=(m.match(/\[Closer\]/g)||[]).length;
+    }
+    const subC=(av||cl)?` <span class="small">(${av} Aval + ${cl} Closer)</span>`:'';
+    return `<div class="card">
+      <h2>
+        <span class="title">
+          <span class="rank-cell">${i+1}º</span>
+          <span>${nm}</span>
+          ${delTxt}
+          <span class="chip chip-brand">${totC} leads${subC.replace(/<[^>]+>/g,'')}</span>
+        </span>
+        <button class="btn btn-2 btn-sm" onclick="showDetail('${a.seller_email}')">Ver detalhes</button>
+      </h2>
+      <div class="grid grid-4">
+        <div class="kpi"><div class="label">Score geral</div><div class="val ${scoreColor(a.score_geral)}">${a.score_geral??'–'}</div><div class="bar ${scoreBar(a.score_geral)}"><div style="width:${(a.score_geral||0)*10}%"></div></div></div>
+        <div class="kpi"><div class="label">Processo</div><div class="val ${scoreColor(a.score_processo)}">${a.score_processo??'–'}</div></div>
+        <div class="kpi"><div class="label">Técnica</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div></div>
+        <div class="kpi"><div class="label">Urgência</div><div class="val ${scoreColor(a.urgencia_score)}">${a.urgencia_score??'–'}</div></div>
+      </div>
+      ${renderObrigatoriosMini(a)}
+      ${a.resumo_conversa?`<h3>Padrão da semana</h3><div class="small" style="line-height:1.6">${a.resumo_conversa}</div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('cards-body').innerHTML=html;
+}
+
+function renderObrigatoriosMini(a){
+  const o=a.obrigatorios||{};
+  const rows=[
+    ['Conversou sobre valores',o.conversou_sobre_valores],
+    ['Entendeu a dor',o.entendeu_a_dor],
+    ['Resolveu a dor',o.resolveu_a_dor]
+  ].map(([nm,x])=>{
+    if(!x||typeof x!=='object')return `<div class="sinal-row"><div class="sinal-name">${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
+    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
+    const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
+    return `<div class="sinal-row"><div class="sinal-name">${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>`;
+  }).join('');
+  return `<h3>Obrigatórios</h3>${rows}`;
+}
+
+// ============ MODAL DETALHE ============
+function showDetail(email){
+  const a=STATE.analises.find(x=>x.seller_email===email);
+  if(!a)return;
+  const nm=(a.seller_name||'').trim();
+  const lote=STATE.lotes.find(l=>l.seller_email===email);
+  let av=0,cl=0;
+  if(lote&&lote.markdown_content){av=(lote.markdown_content.match(/\[Aval\]/g)||[]).length;cl=(lote.markdown_content.match(/\[Closer\]/g)||[]).length;}
+  // Metricas objetivas
+  const html=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div><h2 style="font-size:22px">${nm}</h2><div class="small">${STATE.week} · ${a.total_conversas} leads (${av} Aval + ${cl} Closer)</div></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:16px">
+      <div class="kpi"><div class="label">Score geral</div><div class="val ${scoreColor(a.score_geral)}">${a.score_geral??'–'}</div></div>
+      <div class="kpi"><div class="label">Processo</div><div class="val ${scoreColor(a.score_processo)}">${a.score_processo??'–'}</div></div>
+      <div class="kpi"><div class="label">Técnica</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div></div>
+      <div class="kpi"><div class="label">Objetivo</div><div class="val ${scoreColor(a.score_objetivo)}">${a.score_objetivo??'–'}</div></div>
+    </div>
+    ${a.resumo_conversa?`<h3>Padrão</h3><div style="line-height:1.7;margin-bottom:12px">${a.resumo_conversa}</div>`:''}
+    <h3>Obrigatórios (contagens)</h3>
+    ${renderObrigatoriosCompleto(a.obrigatorios)}
+    <h3>Sinais do fluxo</h3>
+    ${renderSinaisCompleto(a.etapas_cumpridas)}
+    ${a.referencia_qualidade?renderRef('good','✓ Referência de qualidade',a.referencia_qualidade):''}
+    ${a.referencia_melhoria?renderRef('bad','⚠ Referência de melhoria',a.referencia_melhoria):''}
+    ${(a.pontos_categorizados||[]).length?`<h3>Pontos categorizados</h3>${a.pontos_categorizados.map(p=>`<div class="ref-card"><div class="ref-title"><span class="chip chip-${p.severidade==='critico'?'red':p.severidade==='medio'?'orange':'yellow'}">${p.severidade}</span> <span class="chip chip-brand">${p.categoria}</span></div><div>${p.descricao}</div>${p.evidencia?`<div class="ref-text">${p.evidencia}</div>`:''}</div>`).join('')}`:''}
+    ${(a.erros_graves||[]).length?`<h3>Erros graves</h3>${a.erros_graves.map(e=>`<div class="ref-card ref-bad"><div>${e.descricao}</div>${e.evidencia?`<div class="ref-text">${e.evidencia}</div>`:''}</div>`).join('')}`:''}
+    ${(a.metas_proximas||[]).length?`<h3>Metas para próxima semana</h3><ul style="padding-left:20px;line-height:1.7">${a.metas_proximas.map(m=>`<li>${m}</li>`).join('')}</ul>`:''}
+    ${a.evolucao?`<h3>Evolução</h3><div style="line-height:1.6">${a.evolucao}</div>`:''}
+  `;
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal').classList.add('on');
+}
+function renderObrigatoriosCompleto(o){
+  if(!o||typeof o!=='object')return'<div class="small">Sem dados.</div>';
+  const nomes={conversou_sobre_valores:'Conversou sobre valores',entendeu_a_dor:'Entendeu a dor',resolveu_a_dor:'Resolveu a dor'};
+  return Object.entries(nomes).map(([k,nm])=>{
+    const x=o[k];
+    if(!x||typeof x!=='object')return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
+    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
+    const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
+    const aus=Array.isArray(x.conversas_ausentes)&&x.conversas_ausentes.length?`<details><summary>${x.conversas_ausentes.length} conversas ausentes</summary><div class="mono small">${x.conversas_ausentes.join(', ')}</div></details>`:'';
+    return `<div style="margin-bottom:12px"><div class="sinal-row"><div>${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>${aus}</div>`;
+  }).join('');
+}
+function renderSinaisCompleto(o){
+  if(!o||typeof o!=='object')return'<div class="small">Sem dados.</div>';
+  const nomes={abordagem_audio:'Abordagem por áudio',dor_investigada:'Dor investigada',dor_resolvida:'Dor resolvida',valor_gerado:'Valor gerado',chamada_avaliacao:'Chamada para avaliação',compromisso_gerado:'Compromisso gerado',confirmacao:'Confirmação'};
+  return Object.entries(nomes).map(([k,nm])=>{
+    const x=o[k];
+    if(!x||typeof x!=='object'){
+      // Se ainda vier como boolean (v2 antigo), mostrar assim
+      const b=o[k];
+      if(typeof b==='boolean')return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count ${b?'text-good':'text-bad'}">${b?'✓':'✗'}</div><div></div></div>`;
+      return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
+    }
+    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
+    const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
+    return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>`;
+  }).join('');
+}
+function renderRef(kind,title,r){
+  const et=r.etapa?`<span class="chip chip-${r.etapa==='Closer'?'closer':'aval'}">${r.etapa}</span>`:'';
+  return `<h3>${title}</h3><div class="ref-card ref-${kind==='good'?'good':'bad'}">
+    <div class="ref-title">Conversa ${r.conversa} ${et}</div>
+    <div>${r.o_que_fez_bem||r.o_que_errou||''}</div>
+    ${r.trecho?`<div class="ref-text">"${r.trecho}"</div>`:''}
+    ${r.como_deveria?`<div style="margin-top:6px"><strong>Como deveria:</strong> ${r.como_deveria}</div>`:''}
   </div>`;
 }
+function closeModal(){document.getElementById('modal').classList.remove('on');}
 
-function lotesFiltrados(){
-  const wl=document.getElementById('semana').value;
-  const et=document.getElementById('etapa2').value;
-  const vd=document.getElementById('vend2').value;
-  return lotes.filter(l=>l.week_label===wl&&(!et||l.etapa===et)&&(!vd||l.seller_email===vd));
-}
-function jaAnalisado(l){return analises.some(a=>a.seller_email===l.seller_email&&a.etapa===l.etapa);}
-
-/* status de transcrição do lote — vem da view lotes_prontos */
-function statusLote(l){
-  const p=(prontos||[]).find(x=>x.seller_email===l.seller_email&&x.etapa===l.etapa);
-  if(!p)return{pendentes:0,total:0,pronto:true,semDado:true};
-  return{pendentes:Number(p.audios_pendentes||0),total:Number(p.audios_total||0),pronto:p.pronto!==false,semDado:false};
-}
-
-function renderFila(){
-  const ls=lotesFiltrados();
-  const sub=document.getElementById('filaSub');
-  const el=document.getElementById('fila');
-  const btnGo=document.getElementById('btnGo');
-  const btnTr=document.getElementById('btnTr');
-
-  if(!ls.length){
-    sub.textContent='Nenhum lote nesta semana. Clique em "Gerar Lotes".';
-    el.innerHTML='';
-    btnGo.disabled=true;btnGo.textContent='▶ Analisar pendentes';
-    if(!trRodando){btnTr.disabled=true;btnTr.textContent='🎙️ Transcrever áudios';}
-    return;
-  }
-
-  // agrupa por VENDEDOR — cada um tem até 2 lotes (avaliação e closer)
-  const g={};
-  for(const l of ls){
-    const k=l.seller_email||l.seller_name;
-    if(!g[k])g[k]={nome:(l.seller_name||'—').trim(),aval:0,closer:0,leads:0,pend:0,lotes:0,feitos:0};
-    const s=statusLote(l),v=g[k];
-    v.leads+=l.total_conversas||0;
-    if(l.etapa==='closer')v.closer+=l.total_conversas||0;else v.aval+=l.total_conversas||0;
-    v.pend+=s.pendentes;v.lotes++;
-    if(jaAnalisado(l))v.feitos++;
-  }
-  const linhas=Object.values(g).sort((a,b)=>b.leads-a.leads);
-
-  const totLeads=linhas.reduce((s,v)=>s+v.leads,0);
-  const totPend=linhas.reduce((s,v)=>s+v.pend,0);
-  const porAnalisar=ls.filter(l=>!jaAnalisado(l));
-  const liberados=porAnalisar.filter(l=>statusLote(l).pronto);
-
-  sub.innerHTML=`${linhas.length} vendedor(es) · ${totLeads} lead(s) · ${porAnalisar.length} de ${ls.length} lote(s) por analisar`
-    +(totPend?` · <span style="color:var(--orange)">${totPend} áudio(s) sem transcrição</span>`
-             :` · <span style="color:var(--green)">áudios completos</span>`);
-
-  el.innerHTML=linhas.map(v=>{
-    let st,cor;
-    if(v.pend){st=`⏳ ${v.pend} áudio(s) sem transcrição`;cor='var(--orange)';}
-    else if(v.feitos===v.lotes){st='✓ analisado';cor='var(--green)';}
-    else{st='pronto para analisar';cor='var(--green)';}
-    return `<div class="fila-vend">
-      <div style="min-width:0">
-        <div class="fila-nome">${esc(v.nome)}</div>
-        <div class="fila-tags">
-          ${v.aval?`<span class="tag aval">${v.aval} aval.</span>`:''}
-          ${v.closer?`<span class="tag closer">${v.closer} closer</span>`:''}
-          ${v.feitos?`<span class="tag feito">${v.feitos}/${v.lotes} analisado</span>`:''}
-          ${v.pend?`<span class="tag pend">áudio pendente</span>`:''}
-        </div>
-      </div>
-      <div class="fila-right">
-        <div class="fila-leads">${v.leads}<small>lead(s)</small></div>
-        <div class="fila-status" style="color:${cor}">${st}</div>
-      </div>
-    </div>`;}).join('')
-    +`<div class="fila-total"><span>Total da semana</span><span>${totLeads} lead(s)</span></div>`;
-
-  if(!trRodando){
-    btnTr.disabled=!totPend;
-    btnTr.textContent=totPend?`🎙️ Transcrever áudios (${totPend})`:'🎙️ Áudios completos';
-  }
-  // rotulo mostra LOTE e LEAD: a analise roda por vendedor+etapa, nao lead a lead
-  const leadsLib=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
-  btnGo.disabled=!liberados.length;
-  btnGo.textContent=liberados.length?`▶ Analisar ${liberados.length} lote(s) · ${leadsLib} lead(s)`
-    :(porAnalisar.length?'▶ Aguardando transcrição':'▶ Tudo analisado');
-}
-
-function renderKpis2(){
-  const k=document.getElementById('p2Kpis');
-  if(!analises.length){k.style.display='none';return;}
-  const sc=analises.map(a=>a.score_geral).filter(x=>x!=null);
-  const ur=analises.map(a=>a.urgencia_score).filter(x=>x!=null);
-  const dl=analises.map(a=>a.score_delta).filter(x=>x!=null);
-  const med=sc.length?(sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1):'—';
-  const medU=ur.length?(ur.reduce((a,b)=>a+b,0)/ur.length).toFixed(1):'—';
-  const evo=dl.length?(dl.reduce((a,b)=>a+b,0)/dl.length):null;
-  const best=analises.filter(a=>a.score_geral!=null).sort((a,b)=>b.score_geral-a.score_geral)[0];
-  const leads=analises.reduce((s,a)=>s+(a.total_conversas||0),0);
-  k.style.display='grid';
-  k.innerHTML=`
-    <div class="kpi"><div class="kpi-label">Score médio</div><div class="kpi-value ${med>=7?'green':med>=5?'yellow':'red'}">${med}</div><div class="kpi-sub">de 10</div></div>
-    <div class="kpi"><div class="kpi-label">Evolução média</div><div class="kpi-value ${evo==null?'':evo>0?'green':evo<0?'red':''}">${evo==null?'—':(evo>0?'+':'')+evo.toFixed(1)}</div><div class="kpi-sub">vs. análise anterior</div></div>
-    <div class="kpi"><div class="kpi-label">Urgência média</div><div class="kpi-value purple">${medU}</div></div>
-    <div class="kpi"><div class="kpi-label">Melhor</div><div class="kpi-value green">${best?best.score_geral:'—'}</div><div class="kpi-sub">${best?esc((best.seller_name||'').trim()):''}</div></div>
-    <div class="kpi"><div class="kpi-label">Leads analisados</div><div class="kpi-value yellow">${leads}</div></div>`;
-}
-
-function renderChart(){
-  const el=document.getElementById('p2Chart');
-  const et=document.getElementById('etapa2').value;
-  const h=hist.filter(r=>r.score_geral!=null&&(!et||r.etapa===et));
-  const sems=[...new Set(h.map(r=>r.week_label))].sort();
-  if(sems.length<2){el.innerHTML='';return;}
-  const byS={};
-  for(const r of h){const k=(r.seller_name||'').trim()+' · '+(r.etapa==='closer'?'Cl':'Av');(byS[k]=byS[k]||[]).push(r);}
-  const cores=['#4f7cff','#2dd67c','#ffd166','#a78bfa','#ff8c42','#ff4d6a','#38bdf8','#f472b6'];
-  const W=760,Hh=200,pad=34;
-  const x=i=>pad+i*((W-pad*2)/Math.max(sems.length-1,1));
-  const y=v=>Hh-pad-(v/10)*(Hh-pad*2);
-  let paths='',leg='',ci=0;
-  for(const [nome,rs] of Object.entries(byS)){
-    const cor=cores[ci++%cores.length];
-    const pts=rs.filter(r=>sems.includes(r.week_label)).sort((a,b)=>a.week_label.localeCompare(b.week_label))
-      .map(r=>({x:x(sems.indexOf(r.week_label)),y:y(r.score_geral),v:r.score_geral}));
-    if(pts.length<2)continue;
-    paths+=`<polyline fill="none" stroke="${cor}" stroke-width="2" stroke-linejoin="round" points="${pts.map(p=>p.x+','+p.y).join(' ')}"/>`;
-    paths+=pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="3" fill="${cor}"><title>${esc(nome)}: ${p.v}</title></circle>`).join('');
-    leg+=`<span><i style="background:${cor}"></i>${esc(nome)}</span>`;
-  }
-  if(!paths){el.innerHTML='';return;}
-  let grid='';
-  for(let v=0;v<=10;v+=5)grid+=`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#2a3045" stroke-width="1"/><text x="6" y="${y(v)+4}" fill="#7b8299" font-size="10">${v}</text>`;
-  const lbls=sems.map((s,i)=>`<text x="${x(i)}" y="${Hh-12}" fill="#7b8299" font-size="10" text-anchor="middle">${s}</text>`).join('');
-  el.innerHTML=`<div class="chart"><h3>📈 Evolução do score por vendedor</h3>
-    <svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto">${grid}${lbls}${paths}</svg>
-    <div class="legend">${leg}</div></div>`;
-}
-
-function renderRes(){
-  const el=document.getElementById('p2Res');
-  if(!analises.length&&!comps.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">🧠</div><div>Nenhuma análise nesta semana ainda.</div></div>';return;}
-  let h='';
-  if(comps.length)h+=comps.map(renderComp).join('');
-  if(analises.length)h+=`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px">📋 Por vendedor</div><div class="grid">${analises.map(renderCard).join('')}</div>`;
-  el.innerHTML=h;
-}
-
-function renderCard(a){
-  const et=a.etapa==='closer'?'<span class="tag closer">Closer</span>':'<span class="tag aval">Aval.</span>';
-  const bem=arr(a.tecnicas_bem_aplicadas),tec=arr(a.tecnicas_utilizadas),
-        obj=arr(a.objecoes_identificadas),mel=arr(a.pontos_de_melhoria),
-        mc=arr(a.metas_cumpridas),mp=arr(a.metas_proximas);
-  const k='k'+Math.random().toString(36).slice(2);window['__'+k]=a;
-  const d=a.score_delta;
-  const dHtml=d==null?'':`<span class="delta ${d>0?'up':d<0?'down':'flat'}">${d>0?'▲ +':d<0?'▼ ':'= '}${Math.abs(d).toFixed(1)}</span>`;
-  return `<div class="ac">
-    <div class="ac-head"><div><div class="ac-name">${esc((a.seller_name||'').trim())||'—'}</div>
-      <div class="ac-sub">${a.total_conversas||0} lead(s) · ${fmtD(a.created_at)}${a.previous_week_label?' · vs '+a.previous_week_label:''}</div></div>${et}</div>
-    <div class="ac-scores">
-      <div><div class="ac-num ${c10(a.score_geral)}">${a.score_geral!=null?a.score_geral:'—'}</div><div class="ac-cap">Score</div></div>
-      ${a.urgencia_score!=null?`<div><div class="ac-num sm ${c10(a.urgencia_score)}">${a.urgencia_score}</div><div class="ac-cap">Urgência</div></div>`:''}
-      ${dHtml?`<div style="margin-left:auto">${dHtml}<div class="ac-cap" style="text-align:right">evolução</div></div>`:''}
-    </div>
-    ${a.evolucao?`<div class="ac-block"><div class="ac-lbl">Evolução</div><div class="evo">${esc(a.evolucao)}</div></div>`:''}
-    ${mc.length?`<div class="ac-block"><div class="ac-lbl">Metas anteriores</div>${mc.slice(0,4).map(m=>{
-      const ok=m&&m.cumprida;const txt=typeof m==='string'?m:(m.meta||'');
-      return `<div class="meta-row"><span class="meta-ic" style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span class="txt">${esc(txt)}</span></div>`;}).join('')}</div>`:''}
-    ${a.resumo_conversa?`<div class="ac-block"><div class="ac-lbl">Resumo</div><div class="txt">${esc(a.resumo_conversa).slice(0,170)}${a.resumo_conversa.length>170?'…':''}</div></div>`:''}
-    ${bem.length?`<div class="ac-block"><div class="ac-lbl">Bem aplicadas</div><div class="tags">${bem.slice(0,4).map(t=>`<span class="t pos">${esc(t)}</span>`).join('')}</div></div>`:
-      tec.length?`<div class="ac-block"><div class="ac-lbl">Técnicas</div><div class="tags">${tec.slice(0,4).map(t=>`<span class="t">${esc(t)}</span>`).join('')}</div></div>`:''}
-    ${obj.length?`<div class="ac-block"><div class="ac-lbl">Objeções</div><div class="tags">${obj.slice(0,3).map(t=>`<span class="t warn">${esc(t)}</span>`).join('')}</div></div>`:''}
-    ${mp.length?`<div class="ac-block"><div class="ac-lbl">Metas p/ próxima</div><div class="tags">${mp.slice(0,3).map(t=>`<span class="t neg">${esc(typeof t==='string'?t:(t.meta||'')).slice(0,50)}</span>`).join('')}</div></div>`:
-      mel.length?`<div class="ac-block"><div class="ac-lbl">Melhorias</div><div class="tags">${mel.slice(0,2).map(t=>`<span class="t neg">${esc(t).slice(0,50)}</span>`).join('')}</div></div>`:''}
-    <span class="lnk" onclick="verVendedor('${esc(a.seller_email)}','${a.etapa}')">Ver detalhamento completo →</span></div>`;
-}
-
-/* ---- Detalhamento explícito do vendedor ---- */
-function verVendedor(email, etapa){
-  const wl=document.getElementById('semana').value;
-  const a=analises.find(x=>x.seller_email===email&&x.etapa===etapa);
-  if(!a)return;
-  const m=(metricas||[]).find(x=>x.seller_email===email&&x.etapa===etapa)||{};
-  const r=(resultados||[]).find(x=>x.seller_email===email)||{};
-  const serie=(hist||[]).filter(x=>x.seller_email===email&&x.etapa===etapa&&x.score_geral!=null)
-                        .sort((x,y)=>x.week_label.localeCompare(y.week_label));
-  const sp=a.score_processo, st=a.score_tecnica, so=a.score_objetivo!=null?a.score_objetivo:m.score_objetivo;
-  const partes=[[sp,pesos.p],[st,pesos.t],[so,pesos.o]].filter(x=>x[0]!=null);
-  const sw=partes.reduce((s,x)=>s+x[1],0);
-  const comp=partes.length&&sw>0?+(partes.reduce((s,x)=>s+Number(x[0])*x[1],0)/sw).toFixed(2):null;
-
-  const seg=v=>v==null?'—':(v<60?v+'s':v<3600?Math.round(v/60)+'min':(v/3600).toFixed(1)+'h');
-  const linha=(lbl,val,extra)=>`<div class="lote-row"><span class="dim">${lbl}</span><span>${val}${extra?` <span class="dim">${extra}</span>`:''}</span></div>`;
-  const barra=(lbl,v,peso)=>`
-    <div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-        <span>${lbl} <span class="dim">· peso ${Math.round(peso*100)}%</span></span>
-        <strong class="ac-num sm ${c10(v)}" style="font-size:15px">${v!=null?v.toFixed(1):'—'}</strong>
-      </div>
-      <div class="ctrack"><div class="cfill" style="width:${v!=null?Math.min(v*10,100):0}%"></div></div>
-    </div>`;
-
-  const pcs=arr(a.pontos_categorizados);
-  const erg=arr(a.erros_graves);
-  const mc=arr(a.metas_cumpridas), mp=arr(a.metas_proximas);
-
-  document.getElementById('mVendT').textContent=((a.seller_name||email)+'').trim()+' — '+(etapa==='closer'?'Closer':'Avaliação Agendada');
-  document.getElementById('mVendS').textContent=`Semana ${wl} · ${a.total_conversas||0} lead(s) analisado(s)`;
-  document.getElementById('mVendB').innerHTML=`
-
-    <div class="card" style="margin-bottom:14px">
-      <h3>🎯 Score composto</h3>
-      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
-        <span class="ac-num ${c10(comp!=null?comp:a.score_geral)}">${comp!=null?comp.toFixed(1):(a.score_geral!=null?a.score_geral:'—')}</span>
-        <span class="dim">de 10</span>
-        ${a.score_delta!=null?`<span class="delta ${a.score_delta>0?'up':a.score_delta<0?'down':'flat'}">${a.score_delta>0?'▲ +':a.score_delta<0?'▼ ':'= '}${Math.abs(a.score_delta).toFixed(1)} vs ${a.previous_week_label||'anterior'}</span>`:''}
-      </div>
-      ${barra('Processo',sp,pesos.p)}
-      ${barra('Técnica',st,pesos.t)}
-      ${barra('Objetivo (calculado)',so,pesos.o)}
-      ${comp==null?'<p class="dim" style="margin-top:8px">Sub-scores ainda não preenchidos — a instrução precisa devolvê-los para o composto aparecer.</p>':''}
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <h3>⏱️ Métricas objetivas</h3>
-      <p>Calculadas do histórico de mensagens — sem IA, sempre iguais.</p>
-      ${linha('Tempo até 1ª resposta', seg(m.tempo_1a_resposta_seg))}
-      ${linha('Tempo médio de resposta', seg(m.tempo_medio_resposta_seg))}
-      ${linha('Abertura por áudio', m.pct_abertura_audio!=null?m.pct_abertura_audio+'%':'—','das conversas')}
-      ${linha('Uso de áudio', m.pct_audio!=null?m.pct_audio+'%':'—','das mensagens')}
-      ${linha('Duração média do áudio', m.duracao_media_audio!=null?m.duracao_media_audio+'s':'—')}
-      ${linha('Ratio vendedor/lead', m.ratio_vendedor_lead!=null?m.ratio_vendedor_lead:'—', m.ratio_vendedor_lead>1.3?'⚠️ fala demais':'')}
-      ${linha('Follow-ups realizados', m.followups!=null?m.followups:'—')}
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <h3>✅ Obrigatórios e sinais</h3>
-      ${linha('Conversou sobre valores', a.preco_mencionado?'<span style="color:var(--green)">✓ sim</span>':'<span style="color:var(--red)">✕ não</span>')}
-      ${linha('Objeções contornadas', a.objecoes_contornadas?'<span style="color:var(--green)">✓ sim</span>':'<span style="color:var(--red)">✕ não</span>')}
-      ${linha('Urgência gerada', a.urgencia_score!=null?a.urgencia_score+'/10':'—')}
-      ${Object.entries(a.etapas_cumpridas||{}).map(([k2,v])=>
-        linha(k2.replace(/_/g,' '), v?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">✕</span>')).join('')}
-    </div>
-
-    ${r.faturamento!=null?`<div class="card" style="margin-bottom:14px">
-      <h3>💰 Resultado <span class="dim" style="font-weight:400">· medido em ${r.data_medicao?new Date(r.data_medicao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</span></h3>
-      ${linha('Faturamento no mês','R$ '+Number(r.faturamento).toLocaleString('pt-BR'))}
-      ${linha('Vendas no mês', r.vendas_fechadas!=null?r.vendas_fechadas:'—')}
-      ${linha('Ticket médio', r.ticket_medio!=null?'R$ '+Number(r.ticket_medio).toLocaleString('pt-BR'):'—')}
-      ${linha('Taxa de comparecimento', r.taxa_comparecimento!=null?r.taxa_comparecimento+'%':'—')}
-      ${linha('Taxa de conversão (sobre quem compareceu)', r.taxa_conversao!=null?r.taxa_conversao+'%':'—')}
-      ${linha('Agendada → venda', r.taxa_agendada_ate_venda!=null?r.taxa_agendada_ate_venda+'%':'—','ponta a ponta')}
-      ${linha('Agendadas no mês', r.agendadas_no_sistema!=null?r.agendadas_no_sistema:'—','contado pelo sistema')}
-      ${r.faturamento_desde_ultima_medicao!=null?linha('Desde a última medição','R$ '+Number(r.faturamento_desde_ultima_medicao).toLocaleString('pt-BR'), r.dias_desde_ultima_medicao?`em ${r.dias_desde_ultima_medicao} dia(s)`:''):''}
-    </div>`:`<div class="card" style="margin-bottom:14px"><h3>💰 Resultado</h3>
-      <p class="dim">Nada preenchido ainda. Sem faturamento, não dá para cruzar processo com resultado.</p></div>`}
-
-    ${a.evolucao?`<div class="card" style="margin-bottom:14px"><h3>📈 Evolução</h3><div class="evo">${esc(a.evolucao)}</div></div>`:''}
-
-    ${mc.length?`<div class="card" style="margin-bottom:14px"><h3>🎯 Metas da semana anterior</h3>
-      ${mc.map(x=>{const ok=x&&x.cumprida;const t=typeof x==='string'?x:(x.meta||'');const ev=typeof x==='object'?(x.evidencia||''):'';
-        return `<div style="padding:7px 0;border-bottom:1px solid var(--border)">
-          <div class="meta-row"><span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✕'}</span><span>${esc(t)}</span></div>
-          ${ev?`<div class="dim" style="font-size:11px;margin-left:20px;margin-top:2px">${esc(ev)}</div>`:''}</div>`;}).join('')}
-    </div>`:''}
-
-    ${a.referencia_qualidade?`<div class="card" style="margin-bottom:14px;border-color:var(--green)">
-      <h3 style="color:var(--green)">⭐ Conversa de referência — repetir isto</h3>
-      <p class="dim">Conversa ${esc(a.referencia_qualidade.conversa||'?')} do lote</p>
-      <div class="txt" style="margin-bottom:8px">${esc(a.referencia_qualidade.o_que_fez_bem||'')}</div>
-      ${a.referencia_qualidade.trecho?`<div class="evo" style="border-left-color:var(--green)">"${esc(a.referencia_qualidade.trecho)}"</div>`:''}
-    </div>`:''}
-
-    ${a.referencia_melhoria?`<div class="card" style="margin-bottom:14px;border-color:var(--orange)">
-      <h3 style="color:var(--orange)">🔧 Conversa de referência — corrigir isto</h3>
-      <p class="dim">Conversa ${esc(a.referencia_melhoria.conversa||'?')} do lote</p>
-      <div class="txt" style="margin-bottom:8px">${esc(a.referencia_melhoria.o_que_errou||'')}</div>
-      ${a.referencia_melhoria.trecho?`<div class="evo" style="border-left-color:var(--orange)">"${esc(a.referencia_melhoria.trecho)}"</div>`:''}
-      ${a.referencia_melhoria.como_deveria?`<div class="meta-row" style="margin-top:8px"><span style="color:var(--accent)">→</span><span class="txt"><b>Deveria ter feito:</b> ${esc(a.referencia_melhoria.como_deveria)}</span></div>`:''}
-    </div>`:''}
-
-    ${pcs.length?`<div class="card" style="margin-bottom:14px"><h3>🔧 Pontos de melhoria</h3>
-      ${pcs.map(p=>{const sev=(p.severidade||'medio');
-        const cor=sev==='critico'?'var(--red)':sev==='leve'?'var(--muted)':'var(--yellow)';
-        return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px">
-            <span class="t" style="border-color:${cor};color:${cor}">${esc(p.categoria||'—')}</span>
-            <span class="dim" style="font-size:11px">${sev}</span></div>
-          <div class="txt">${esc(p.descricao||'')}</div>
-          ${p.evidencia?`<div class="dim" style="font-size:11px;margin-top:4px;font-style:italic">"${esc(p.evidencia)}"</div>`:''}
-        </div>`;}).join('')}
-    </div>`:''}
-
-    ${erg.length?`<div class="card" style="margin-bottom:14px;border-color:var(--red)">
-      <h3 style="color:var(--red)">🚨 Erros graves</h3>
-      ${erg.map(x=>`<div class="meta-row"><span style="color:var(--red)">•</span><span>${esc(typeof x==='string'?x:(x.descricao||x.erro||''))}</span></div>`).join('')}
-    </div>`:''}
-
-    ${mp.length?`<div class="card" style="margin-bottom:14px"><h3>➡️ Metas para a próxima semana</h3>
-      ${mp.map(x=>`<div class="meta-row"><span style="color:var(--accent)">→</span><span>${esc(typeof x==='string'?x:(x.meta||''))}</span></div>`).join('')}
-    </div>`:''}
-
-    ${serie.length>1?`<div class="card" style="margin-bottom:14px"><h3>📊 Histórico</h3>
-      ${serie.map(x=>linha(x.week_label, (x.score_geral!=null?x.score_geral:'—')+'/10',
-        x.score_delta!=null?(x.score_delta>0?'▲ +'+x.score_delta:x.score_delta<0?'▼ '+x.score_delta:'='):'')).join('')}
-    </div>`:''}
-
-    <div class="card"><h3>🗂️ JSON completo</h3>
-      <pre class="json-pre" style="max-height:280px;overflow:auto">${esc(JSON.stringify(a,null,2))}</pre></div>
-  `;
-  document.getElementById('mVend').classList.add('open');
-}
-
-function renderComp(c){
-  const r=c.resultado||{},rk=arr(r.ranking||r.classificacao),
-        dz=r.destaques||r.analise_geral||'',bp=r.melhor_pratica||'';
-  const k='c'+Math.random().toString(36).slice(2);window['__'+k]=c;
-  const etl=c.etapa==='closer'?'Closer':c.etapa==='avaliacao'?'Aval. Agendada':c.etapa;
-  return `<div class="comp"><h3>📊 Comparativo — ${etl}</h3>
-    <div class="csub">Semana ${c.week_label} · ${fmtDT(c.created_at)}</div>
-    ${rk.map((v,i)=>{const sc=typeof v==='object'?(v.score_geral??v.score??0):0;
-      const nm=typeof v==='object'?(v.nome||v.vendedor||'—'):v;
-      const dq=typeof v==='object'?(v.destaque||''):'';
-      return `<div class="crow"><span class="cpos">${i+1}</span>
-        <div style="flex:1;min-width:0"><div class="cname">${esc(nm)}</div>${dq?`<div class="txt" style="font-size:11px;margin-top:2px">${esc(dq)}</div>`:''}</div>
-        <div style="flex:2"><div class="ctrack"><div class="cfill" style="width:${Math.min(sc*10,100)}%"></div></div></div>
-        <span class="cscore ${c10(sc)}" style="color:var(--${c10(sc)==='high'?'green':c10(sc)==='mid'?'yellow':'red'})">${sc}</span></div>`;}).join('')}
-    ${dz?`<div class="cresumo">${esc(typeof dz==='string'?dz:JSON.stringify(dz,null,2))}</div>`:''}
-    ${bp?`<div class="cresumo"><strong style="color:var(--green)">Melhor prática:</strong> ${esc(bp)}</div>`:''}
-    <span class="lnk" style="margin-top:12px" onclick="verDet('${k}')">Ver JSON →</span></div>`;
-}
-
-function verDet(k){
-  const o=window['__'+k];if(!o)return;
-  document.getElementById('mDetT').textContent=o.seller_name?o.seller_name.trim()+' — '+(o.etapa||''):'Comparativo';
-  document.getElementById('mDetS').textContent='Semana '+o.week_label+(o.modelo?' · '+o.modelo:'');
-  document.getElementById('mDetB').textContent=JSON.stringify(o.resultado||o,null,2);
-  document.getElementById('mDet').classList.add('open');
-}
-
-/* ---- Analise: passa pelo n8n, que chama a OpenAI com a chave do servidor ----
-   SEM Content-Type de propósito: assim a requisição é "simples" e o browser NÃO
-   dispara preflight OPTIONS. O proxy na frente do n8n responde o OPTIONS sem o
-   header Access-Control-Allow-Origin, e o preflight morre ali (confirmado no
-   console em 29/07). É o mesmo truque que já faz o botão de transcrição funcionar.
-   O n8n aceita o body como string e faz o JSON.parse do lado de lá. */
-/* A análise agora roda inteira no n8n (ver função analisar mais abaixo).
-   Os prompts de sistema e a chamada à OpenAI vivem lá — o dashboard não fala
-   com nenhuma API de IA diretamente. */
-const WH_ANALISAR='https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
-let pollAn=null;
-
-/* ---- Gerar lotes ---- */
-async function gerarLotes(){
-  const b=document.getElementById('btnLotes');b.disabled=true;b.textContent='⏳ Gerando...';
-  limpaLog();log('Gerando lotes da semana (ignorando leads já analisados)...','dim');
-  try{
-    // sem Content-Type: requisição simples, sem preflight (o proxy do n8n derruba OPTIONS)
-    const r=await fetch(WH_LOTES,{method:'POST',body:''});
-    const d=await r.json().catch(()=>({}));
-    log(`✓ ${d.lotes||0} lote(s) · ${d.conversas_novas||0} lead(s) novo(s) · ${d.ignorados_ja_analisados||0} já analisado(s) ignorado(s)`,'ok');
-    lotes=await get('weekly_batches?select=*&order=week_label.desc,seller_name');
-    const sems=[...new Set(lotes.map(l=>l.week_label))].sort().reverse();
-    const s=document.getElementById('semana'),cur=s.value;
-    s.innerHTML=sems.map(w=>{const l=lotes.find(x=>x.week_label===w);
-      return `<option value="${w}">${w} · ${fmtD(l.week_start)} a ${fmtD(l.week_end)}</option>`;}).join('');
-    s.value=sems.includes(cur)?cur:(sems[0]||'');
-    await refreshP2();
-  }catch(e){log('✕ '+e.message,'er');}
-  b.disabled=false;b.textContent='📦 Gerar Lotes';
-}
-
-/* ---- Transcrever áudios (dispara o fluxo do n8n) ---- */
-async function transcrever(){
-  const b=document.getElementById('btnTr');
-  trRodando=true;b.disabled=true;b.textContent='⏳ Transcrevendo...';
-  limpaLog();
-  log('Acionando a transcrição no n8n...','dim');
-  try{
-    // body vazio e sem Content-Type: requisição simples, sem preflight de CORS
-    await fetch(WH_TRANSCREVER,{method:'POST',body:''});
-    log('✓ Fluxo acionado. Ele transcreve em segundo plano — pode levar alguns minutos.','ok');
-    log('  (o mesmo fluxo roda sozinho a cada 15 minutos)','dim');
-    acompanharTranscricao();
-  }catch(e){
-    log('✕ Não consegui acionar: '+e.message,'er');
-    log('  O fluxo ainda roda sozinho a cada 15 minutos.','dim');
-    trRodando=false;renderFila();
-  }
-}
-
-function acompanharTranscricao(){
-  clearInterval(pollTr);
-  let ticks=0;
-  const b=document.getElementById('btnTr');
-  pollTr=setInterval(async()=>{
-    ticks++;
-    const wl=document.getElementById('semana').value;
-    try{
-      const p=await get(`lotes_prontos?select=*&week_label=eq.${wl}`);
-      if(Array.isArray(p)){
-        prontos=p;
-        const falta=prontos.reduce((s,x)=>s+Number(x.audios_pendentes||0),0);
-        renderFila();
-        b.textContent=`⏳ Transcrevendo... (${falta})`;
-        log(`  ↳ faltam ${falta} áudio(s)`,'dim');
-        if(falta===0){
-          clearInterval(pollTr);trRodando=false;
-          log('✓ Todos os áudios transcritos. Pode analisar.','ok');
-          renderFila();
-        }
-      }
-    }catch(e){}
-    if(ticks>=45&&trRodando){
-      clearInterval(pollTr);trRodando=false;
-      log('Parei de acompanhar aqui. Clique em ↻ Atualizar para ver o status.','wa');
-      renderFila();
-    }
-  },20000);
-}
-
-/* ---- Salvar instruções ---- */
-async function salvarInstr(){
-  const pi=document.getElementById('pIndiv').value.trim(),pc=document.getElementById('pComp').value.trim();
-  if(!pi||!pc){alert('Preencha as duas instruções.');return;}
-  try{
-    await fetch(`${SU}/rest/v1/analysis_prompts?ativo=eq.true`,{method:'PATCH',headers:H,body:JSON.stringify({ativo:false})});
-    const r=await fetch(`${SU}/rest/v1/analysis_prompts`,{method:'POST',
-      headers:Object.assign({},H,{Prefer:'return=representation'}),
-      body:JSON.stringify({nome:'Prompt SDR '+new Date().toISOString().slice(0,10),descricao:'Instruções de análise SDR',
-        prompt_individual:pi,prompt_comparativo:pc,ativo:true})}).then(x=>x.json());
-    instrAtiva=Array.isArray(r)?r[0]:r;
-    toggleInstr();log('✓ Instruções salvas e ativadas.','ok');
-  }catch(e){alert('Erro ao salvar: '+e.message);}
-}
-function toggleInstr(){const el=document.getElementById('instr');el.style.display=el.style.display==='none'?'block':'none';}
-
-/* ---- ANALISAR: dispara no servidor e acompanha pelo banco ----
-   O n8n faz TUDO (chama a OpenAI, calcula o score composto, grava em ai_analyses
-   e analyzed_deals). O dashboard só dispara e fica olhando o Supabase.
-   Por quê: existe um proxy na frente do n8n que derruba o preflight CORS, então o
-   browser NUNCA consegue ler a resposta do webhook. Com no-cors o disparo sempre
-   passa, e o resultado chega pelo Supabase — que tem CORS funcionando. */
-async function analisar(){
-  const wl=document.getElementById('semana').value;
-  const vd=document.getElementById('vend2').value;
-  if(!wl){alert('Selecione uma semana.');return;}
-
-  const porAnalisar=lotesFiltrados().filter(l=>!jaAnalisado(l));
-  if(!porAnalisar.length){alert('Nenhum lote pendente — todos já foram analisados.');return;}
-  const bloqueados=porAnalisar.filter(l=>!statusLote(l).pronto);
-  const ls=porAnalisar.filter(l=>statusLote(l).pronto);
-  if(!ls.length){
-    alert('Nenhum lote pronto: ainda há áudios sem transcrição.\n\nClique em "Transcrever áudios" e espere terminar.');
-    return;
-  }
-
-  const b=document.getElementById('btnGo');b.disabled=true;b.textContent='⏳ Analisando...';
-  limpaLog();setBar(0);
-  if(bloqueados.length){
-    log(`⚠️ ${bloqueados.length} lote(s) fora desta rodada por ter áudio sem transcrição:`,'wa');
-    for(const l of bloqueados)log(`   · ${(l.seller_name||'').trim()} (${l.etapa}) — ${statusLote(l).pendentes} áudio(s)`,'wa');
-  }
-  log(`Enviando ${ls.length} lote(s) para o servidor...`,'dim');
-  log('A análise roda no n8n — pode fechar a aba, o processo continua.','dim');
-
-  const alvo=ls.length;
-  const antes=analises.length;
-  try{
-    // no-cors: o disparo nunca falha por CORS; a resposta é opaca de propósito
-    await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',
-      body:JSON.stringify({week_label:wl,seller_email:vd||undefined})});
-    log('✓ Disparado. Acompanhando o resultado no banco...','ok');
-  }catch(e){
-    log('✕ Não consegui acionar: '+e.message,'er');
-    b.disabled=false;b.textContent='▶ Analisar pendentes';return;
-  }
-  acompanharAnalise(wl,antes,alvo);
-}
-
-/* observa ai_analyses até as novas análises aparecerem */
-function acompanharAnalise(wl,antes,alvo){
-  clearInterval(pollAn);
-  let ticks=0;
-  const b=document.getElementById('btnGo');
-  pollAn=setInterval(async()=>{
-    ticks++;
-    try{
-      const novas=await get(`ai_analyses?select=seller_name,etapa,score_geral,score_delta&week_label=eq.${wl}&order=created_at.desc`);
-      if(Array.isArray(novas)){
-        const feitas=novas.length-antes;
-        setBar(Math.min(100,Math.round(feitas/alvo*100)));
-        b.textContent=`⏳ Analisando... (${Math.max(0,feitas)}/${alvo})`;
-        if(feitas>=alvo){
-          clearInterval(pollAn);setBar(100);
-          for(const n of novas.slice(0,alvo)){
-            const d=n.score_delta;
-            log(`   ✓ ${(n.seller_name||'').trim()} (${n.etapa}) · score ${n.score_geral??'—'}`
-              +(d!=null?(d>0?'  ▲ +'+d:d<0?'  ▼ '+d:'  = 0'):''),'ok');
-          }
-          log('✓ Concluído.','ok');
-          b.disabled=false;b.textContent='▶ Analisar pendentes';
-          await refreshP2();
-        }
-      }
-    }catch(e){}
-    if(ticks>=60){
-      clearInterval(pollAn);
-      log('Parei de acompanhar aqui. Clique em ↻ Atualizar para ver o resultado.','wa');
-      log('Se nada apareceu, veja as execuções em n8n-ai.grupoaspekto.com','dim');
-      b.disabled=false;b.textContent='▶ Analisar pendentes';
-      await refreshP2();
-    }
+// ============ AÇÕES ============
+async function disparaAnalise(){
+  const btn=document.getElementById('btn-analisar');
+  const txt=btn.textContent;
+  btn.disabled=true;btn.textContent='disparando…';
+  // no-cors, sem Content-Type (evita preflight)
+  await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({week_label:STATE.week})});
+  btn.textContent='análise em curso — polling…';
+  let tries=0;
+  const iv=setInterval(async()=>{
+    tries++;
+    await refreshAll();
+    const done=STATE.analises.length>=STATE.lotes.length&&STATE.comp;
+    if(done||tries>60){clearInterval(iv);btn.textContent=txt;btn.disabled=false;renderFila();}
   },5000);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')
-  ['mConv','mErr','mDet','mVend'].forEach(i=>document.getElementById(i).classList.remove('open'));});
+async function disparaTranscricao(){
+  await fetch(WH_TRANSCR,{method:'POST',mode:'no-cors'});
+  alert('Transcrição disparada. Aguarde alguns minutos e atualize.');
+}
+async function gerarLotes(){
+  await fetch(WH_LOTES,{method:'POST',mode:'no-cors'});
+  alert('Geração de lotes disparada. Atualize em ~10s.');
+  setTimeout(refreshAll,10000);
+}
 
-carregar();
-setInterval(carregar,5*60*1000);
+// ============ PROMPT ============
+async function loadPrompt(){
+  const p=await sb('analysis_prompts?select=*&ativo=eq.true&limit=1');
+  if(!p.length){document.getElementById('prompt-body').innerHTML='<div class="warn">Nenhum prompt ativo.</div>';return;}
+  const pr=p[0];
+  document.getElementById('prompt-body').innerHTML=`
+    <div class="small" style="margin-bottom:8px"><strong>${pr.nome}</strong> · ${pr.descricao||''}</div>
+    <textarea id="pi" rows="20" style="width:100%">${(pr.prompt_individual||'').replace(/</g,'&lt;')}</textarea>
+    <h3>Comparativo</h3>
+    <textarea id="pc" rows="10" style="width:100%">${(pr.prompt_comparativo||'').replace(/</g,'&lt;')}</textarea>
+    <div style="margin-top:8px;text-align:right"><button class="btn btn-sm" onclick="salvarPrompt('${pr.id}')">Salvar</button></div>
+  `;
+}
+async function salvarPrompt(id){
+  const pi=document.getElementById('pi').value;
+  const pc=document.getElementById('pc').value;
+  await fetch(SU+'/rest/v1/analysis_prompts?id=eq.'+id,{
+    method:'PATCH',
+    headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:JSON.stringify({prompt_individual:pi,prompt_comparativo:pc})
+  });
+  alert('Prompt salvo. Rode análise nova para usar.');
+}
+
+// ============ TABS ============
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  document.getElementById('tab-intel').classList.toggle('hidden',t!=='intel');
+  document.getElementById('tab-conv').classList.toggle('hidden',t!=='conv');
+  if(t==='conv')loadConversas();
+}
+
+// ============ CONVERSAS ============
+async function loadConversas(){
+  // Popular selects
+  const vSel=document.getElementById('conv-vend');
+  if(vSel.options.length<=1){
+    STATE.vendedores.forEach(v=>{const o=document.createElement('option');o.value=v.email;o.textContent=v.name;vSel.appendChild(o);});
+  }
+  const ve=vSel.value;const et=document.getElementById('conv-etapa').value;const q=document.getElementById('conv-search').value.trim();
+  const wl=STATE.week;
+  const wStart=weekBounds(wl).start;
+  const wEnd=weekBounds(wl).end;
+  let path='conversations?select=id,seller_name,seller_email,origin_name,stage_atual,conversation_date,raw_messages&conversation_date=gte.'+wStart+'&conversation_date=lte.'+wEnd+'&order=conversation_date.desc&limit=500';
+  if(ve)path+='&seller_email=eq.'+encodeURIComponent(ve);
+  if(et==='avaliacao')path+='&origin_name=ilike.*avalia*';
+  if(et==='closer')path+='&origin_name=ilike.*closer*';
+  document.getElementById('conv-body').innerHTML='<div class="load">Carregando…</div>';
+  try{
+    let convs=await sb(path);
+    if(q)convs=convs.filter(c=>(c.raw_messages||[]).some(m=>(m.content||m.transcricao||'').toLowerCase().includes(q.toLowerCase())));
+    if(!convs.length){document.getElementById('conv-body').innerHTML='<div class="small">Nenhuma conversa nesta semana com os filtros aplicados.</div>';return;}
+    const rows=convs.map(c=>{
+      const et=(c.origin_name||'').toLowerCase().indexOf('closer')>=0?'Closer':'Aval';
+      const nMsgs=(c.raw_messages||[]).length;
+      return `<tr onclick="showConv('${c.id}')" style="cursor:pointer"><td>${c.conversation_date||''}</td><td>${(c.seller_name||'').trim()}</td><td><span class="chip chip-${et==='Closer'?'closer':'aval'}">${et}</span></td><td>${c.stage_atual||'?'}</td><td>${nMsgs}</td></tr>`;
+    }).join('');
+    document.getElementById('conv-body').innerHTML=`<table><thead><tr><th>Data</th><th>Vendedor</th><th>Etapa</th><th>Stage</th><th>Msgs</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }catch(e){document.getElementById('conv-body').innerHTML='<div class="err">'+e.message+'</div>';}
+}
+function weekBounds(wl){
+  const [y,w]=wl.split('-W').map(Number);
+  const jan1=new Date(y,0,1);
+  const dow=jan1.getDay();
+  const daysToMon=(dow===0?-6:1-dow);
+  const wk1=new Date(jan1);wk1.setDate(jan1.getDate()+daysToMon);
+  const s=new Date(wk1);s.setDate(wk1.getDate()+(w-1)*7);
+  const e=new Date(s);e.setDate(s.getDate()+6);
+  return {start:s.toISOString().split('T')[0],end:e.toISOString().split('T')[0]};
+}
+async function showConv(id){
+  const c=(await sb('conversations?select=*&id=eq.'+id+'&limit=1'))[0];
+  if(!c)return;
+  const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
+  const body=msgs.map(m=>{
+    const a=m.type==='USER'?'[V]':'[L]';
+    const t=m.content_type==='AUDIO'?(m.transcricao||'[áudio]'):(m.content||'');
+    const h=m.created_at?String(m.created_at).slice(11,16):'';
+    return `<div style="padding:4px 0;color:${m.type==='USER'?'var(--brand)':'var(--green)'}"><strong>${a} ${h}:</strong> ${(t+'').slice(0,600)}</div>`;
+  }).join('');
+  document.getElementById('modal-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div><h2>${(c.seller_name||'').trim()} · ${c.conversation_date}</h2><div class="small">${c.origin_name} · ${c.stage_atual}</div></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div style="max-height:60vh;overflow-y:auto">${body}</div>
+  `;
+  document.getElementById('modal').classList.add('on');
+}
+
+// ============ INIT ============
+(async()=>{
+  try{await loadWeeks();await refreshAll();loadPrompt();}
+  catch(e){document.getElementById('last-update').textContent='erro: '+e.message;}
+})();
 </script>
 </body>
 </html>
