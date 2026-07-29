@@ -1028,18 +1028,11 @@ function verDet(k){
    header Access-Control-Allow-Origin, e o preflight morre ali (confirmado no
    console em 29/07). É o mesmo truque que já faz o botão de transcrição funcionar.
    O n8n aceita o body como string e faz o JSON.parse do lado de lá. */
+/* A análise agora roda inteira no n8n (ver função analisar mais abaixo).
+   Os prompts de sistema e a chamada à OpenAI vivem lá — o dashboard não fala
+   com nenhuma API de IA diretamente. */
 const WH_ANALISAR='https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
-async function claude(sys,txt,maxTok){
-  const r=await fetch(WH_ANALISAR,{
-    method:'POST',
-    body:JSON.stringify({system:sys,prompt:txt,max_tokens:maxTok||8000})});
-  if(!r.ok)throw new Error('HTTP '+r.status+' no webhook de análise');
-  const d=await r.json();
-  if(!d||d.ok!==true)throw new Error((d&&d.erro)||'falha na analise');
-  return d.json;
-}
-const SYS_I='Voce analisa performance de vendedores e mede evolucao ao longo do tempo. Responda APENAS com JSON valido, sem markdown, sem texto antes ou depois.';
-const SYS_C='Voce faz analise comparativa de performance de vendas. Responda APENAS com JSON valido, sem markdown.';
+let pollAn=null;
 
 /* ---- Gerar lotes ---- */
 async function gerarLotes(){
@@ -1126,21 +1119,23 @@ async function salvarInstr(){
 }
 function toggleInstr(){const el=document.getElementById('instr');el.style.display=el.style.display==='none'?'block':'none';}
 
-/* ---- ANALISAR (com encadeamento evolutivo) ---- */
+/* ---- ANALISAR: dispara no servidor e acompanha pelo banco ----
+   O n8n faz TUDO (chama a OpenAI, calcula o score composto, grava em ai_analyses
+   e analyzed_deals). O dashboard só dispara e fica olhando o Supabase.
+   Por quê: existe um proxy na frente do n8n que derruba o preflight CORS, então o
+   browser NUNCA consegue ler a resposta do webhook. Com no-cors o disparo sempre
+   passa, e o resultado chega pelo Supabase — que tem CORS funcionando. */
 async function analisar(){
-  const pi=document.getElementById('pIndiv').value.trim(),pc=document.getElementById('pComp').value.trim();
   const wl=document.getElementById('semana').value;
+  const vd=document.getElementById('vend2').value;
   if(!wl){alert('Selecione uma semana.');return;}
-  if(!pi){alert('Escreva a instrução individual em ⚙️ Instruções.');return;}
 
   const porAnalisar=lotesFiltrados().filter(l=>!jaAnalisado(l));
   if(!porAnalisar.length){alert('Nenhum lote pendente — todos já foram analisados.');return;}
-
-  // TRAVA: lote com áudio sem transcrição fica de fora desta rodada
   const bloqueados=porAnalisar.filter(l=>!statusLote(l).pronto);
   const ls=porAnalisar.filter(l=>statusLote(l).pronto);
   if(!ls.length){
-    alert('Nenhum lote pronto: ainda há áudios sem transcrição.\n\nClique em "Transcrever áudios" e espere terminar antes de analisar.');
+    alert('Nenhum lote pronto: ainda há áudios sem transcrição.\n\nClique em "Transcrever áudios" e espere terminar.');
     return;
   }
 
@@ -1149,108 +1144,59 @@ async function analisar(){
   if(bloqueados.length){
     log(`⚠️ ${bloqueados.length} lote(s) fora desta rodada por ter áudio sem transcrição:`,'wa');
     for(const l of bloqueados)log(`   · ${(l.seller_name||'').trim()} (${l.etapa}) — ${statusLote(l).pendentes} áudio(s)`,'wa');
-    log('','dim');
   }
-  const etapas=[...new Set(ls.map(l=>l.etapa))];
-  const total=ls.length+(pc?etapas.length:0);
-  let passo=0,falhas=0;
+  log(`Enviando ${ls.length} lote(s) para o servidor...`,'dim');
+  log('A análise roda no n8n — pode fechar a aba, o processo continua.','dim');
 
-  for(const l of ls){
-    log(`→ ${(l.seller_name||'').trim()} (${l.etapa}) · ${l.total_conversas} lead(s)`,'dim');
-    try{
-      // 1. análise anterior deste vendedor+etapa
-      const prev=(await get(`ai_analyses?select=*&seller_email=eq.${encodeURIComponent(l.seller_email)}&etapa=eq.${l.etapa}&week_label=lt.${wl}&order=week_label.desc&limit=1`))[0];
-      let ctx='';
-      if(prev){
-        ctx=`\n\n## CONTEXTO — ANALISE ANTERIOR (${prev.previous_week_label?prev.week_label:prev.week_label})\n`
-          +`Score anterior: ${prev.score_geral}\n`
-          +`Pontos de melhoria apontados: ${JSON.stringify(prev.pontos_de_melhoria||[])}\n`
-          +`Metas definidas: ${JSON.stringify(prev.metas_proximas||[])}\n`
-          +`Resumo anterior: ${prev.resumo_conversa||''}\n\n`
-          +`Ao analisar as conversas NOVAS abaixo, avalie explicitamente se houve evolucao nesses pontos. `
-          +`Inclua no JSON os campos: evolucao (texto curto) e metas_cumpridas (array de {meta, cumprida, evidencia}).\n`;
-        log(`   ↳ comparando com ${prev.week_label} (score ${prev.score_geral})`,'dim');
-      } else { log('   ↳ primeira análise deste vendedor','dim'); }
-
-      const a=await claude(SYS_I,pi+ctx+'\n\n---\n\n'+l.markdown_content,1000);
-
-      // score objetivo vem do cálculo (não da IA)
-      const mo=(metricas||[]).find(x=>x.seller_email===l.seller_email&&x.etapa===l.etapa);
-      const sObj=mo&&mo.score_objetivo!=null?Number(mo.score_objetivo):null;
-      const sPro=a.score_processo!=null?Number(a.score_processo):null;
-      const sTec=a.score_tecnica!=null?Number(a.score_tecnica):null;
-
-      // composição 40/30/30 com os pesos vigentes
-      const partes=[[sPro,pesos.p],[sTec,pesos.t],[sObj,pesos.o]].filter(x=>x[0]!=null);
-      const somaPesos=partes.reduce((s,x)=>s+x[1],0);
-      const geral=partes.length&&somaPesos>0
-        ? +(partes.reduce((s,x)=>s+x[0]*x[1],0)/somaPesos).toFixed(2)
-        : (a.score_geral!=null?Number(a.score_geral):null);
-
-      const delta=(prev&&prev.score_geral!=null&&geral!=null)?+(geral-prev.score_geral).toFixed(2):null;
-
-      // 2. grava análise
-      const saved=await fetch(`${SU}/rest/v1/ai_analyses?on_conflict=week_label,seller_email,etapa`,{
-        method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=representation'}),
-        body:JSON.stringify({
-          conversation_id:null,week_label:l.week_label,seller_email:l.seller_email,seller_name:l.seller_name,
-          etapa:l.etapa,total_conversas:l.total_conversas,deal_ids:l.deal_ids||[],
-          score_geral:geral,score_processo:sPro,score_tecnica:sTec,score_objetivo:sObj,
-          urgencia_score:a.urgencia_score??null,
-          preco_mencionado:a.preco_mencionado===true,objecoes_contornadas:a.objecoes_contornadas===true,
-          etapas_cumpridas:a.etapas_cumpridas||{},tecnicas_utilizadas:a.tecnicas_utilizadas||[],
-          tecnicas_bem_aplicadas:a.tecnicas_bem_aplicadas||[],objecoes_identificadas:a.objecoes_identificadas||[],
-          pontos_de_melhoria:a.pontos_de_melhoria||[],resumo_conversa:a.resumo||a.resumo_conversa||'',
-          pontos_categorizados:a.pontos_categorizados||[],erros_graves:a.erros_graves||[],
-          evolucao:a.evolucao||null,metas_cumpridas:a.metas_cumpridas||[],metas_proximas:a.metas_proximas||a.pontos_de_melhoria||[],
-          previous_analysis_id:prev?prev.id:null,previous_week_label:prev?prev.week_label:null,score_delta:delta,
-          prompt_version:instrAtiva?instrAtiva.nome:'inline',modelo:'gpt-5.6-terra',created_at:new Date().toISOString()})
-      }).then(r=>r.json());
-      const aid=Array.isArray(saved)?(saved[0]||{}).id:null;
-
-      // 3. marca os LEADS como analisados pela chave contato+origem (nunca mais entram)
-      const cids = l.contact_ids || [];
-      const dids = l.deal_ids || [];
-      if (cids.length) {
-        await fetch(`${SU}/rest/v1/analyzed_deals?on_conflict=contact_id,origin_id`,{
-          method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
-          body:JSON.stringify(cids.map((cid,i)=>({
-            contact_id:cid,
-            origin_id: l.etapa==='closer' ? '3eabab75-2aae-45ac-918c-017066f5cb86' : 'dce6a8ad-4895-475f-b120-27e210c24655',
-            deal_id: dids[i]||null, analysis_id:aid,
-            seller_email:l.seller_email, seller_name:l.seller_name,
-            etapa:l.etapa, week_label:l.week_label, analyzed_at:new Date().toISOString()})))});
-      }
-      log(`   ✓ score ${a.score_geral??'—'}${delta!=null?(delta>0?'  ▲ +'+delta:delta<0?'  ▼ '+delta:'  = 0'):''} · ${cids.length} lead(s) marcados`,'ok');
-    }catch(e){falhas++;log('   ✕ '+e.message,'er');}
-    passo++;setBar(Math.round(passo/total*100));
+  const alvo=ls.length;
+  const antes=analises.length;
+  try{
+    // no-cors: o disparo nunca falha por CORS; a resposta é opaca de propósito
+    await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',
+      body:JSON.stringify({week_label:wl,seller_email:vd||undefined})});
+    log('✓ Disparado. Acompanhando o resultado no banco...','ok');
+  }catch(e){
+    log('✕ Não consegui acionar: '+e.message,'er');
+    b.disabled=false;b.textContent='▶ Analisar pendentes';return;
   }
-
-  // comparativas — só com os lotes que entraram nesta rodada
-  if(pc){
-    for(const et of etapas){
-      const grupo=ls.filter(l=>l.etapa===et);
-      log(`→ Comparativo ${et} (${grupo.length} vendedores)`,'dim');
-      try{
-        const md=grupo.map(l=>l.markdown_content).join('\n\n===PROXIMO VENDEDOR===\n\n');
-        const a=await claude(SYS_C,pc+'\n\n---\n\n'+md,1000);
-        await fetch(`${SU}/rest/v1/weekly_comparative_analyses?on_conflict=week_label,etapa`,{
-          method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
-          body:JSON.stringify({week_label:wl,etapa:et,prompt_nome:instrAtiva?instrAtiva.nome:'inline',
-            resultado:a,created_at:new Date().toISOString()})});
-        log('   ✓ comparativo gravado','ok');
-      }catch(e){falhas++;log('   ✕ '+e.message,'er');}
-      passo++;setBar(Math.round(passo/total*100));
-    }
-  }
-
-  setBar(100);log('');
-  log(falhas?`Concluído com ${falhas} falha(s).`:'✓ Concluído.',falhas?'wa':'ok');
-  if(bloqueados.length)log(`${bloqueados.length} lote(s) continuam esperando transcrição.`,'wa');
-  b.disabled=false;b.textContent='▶ Analisar pendentes';
-  await refreshP2();
+  acompanharAnalise(wl,antes,alvo);
 }
 
+/* observa ai_analyses até as novas análises aparecerem */
+function acompanharAnalise(wl,antes,alvo){
+  clearInterval(pollAn);
+  let ticks=0;
+  const b=document.getElementById('btnGo');
+  pollAn=setInterval(async()=>{
+    ticks++;
+    try{
+      const novas=await get(`ai_analyses?select=seller_name,etapa,score_geral,score_delta&week_label=eq.${wl}&order=created_at.desc`);
+      if(Array.isArray(novas)){
+        const feitas=novas.length-antes;
+        setBar(Math.min(100,Math.round(feitas/alvo*100)));
+        b.textContent=`⏳ Analisando... (${Math.max(0,feitas)}/${alvo})`;
+        if(feitas>=alvo){
+          clearInterval(pollAn);setBar(100);
+          for(const n of novas.slice(0,alvo)){
+            const d=n.score_delta;
+            log(`   ✓ ${(n.seller_name||'').trim()} (${n.etapa}) · score ${n.score_geral??'—'}`
+              +(d!=null?(d>0?'  ▲ +'+d:d<0?'  ▼ '+d:'  = 0'):''),'ok');
+          }
+          log('✓ Concluído.','ok');
+          b.disabled=false;b.textContent='▶ Analisar pendentes';
+          await refreshP2();
+        }
+      }
+    }catch(e){}
+    if(ticks>=60){
+      clearInterval(pollAn);
+      log('Parei de acompanhar aqui. Clique em ↻ Atualizar para ver o resultado.','wa');
+      log('Se nada apareceu, veja as execuções em n8n-ai.grupoaspekto.com','dim');
+      b.disabled=false;b.textContent='▶ Analisar pendentes';
+      await refreshP2();
+    }
+  },5000);
+}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')
   ['mConv','mErr','mDet','mVend'].forEach(i=>document.getElementById(i).classList.remove('open'));});
 
