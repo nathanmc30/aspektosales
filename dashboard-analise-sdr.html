@@ -665,8 +665,10 @@ function renderFila(){
     btnTr.disabled=!totPend;
     btnTr.textContent=totPend?`🎙️ Transcrever áudios (${totPend})`:'🎙️ Áudios completos';
   }
+  // rotulo mostra LOTE e LEAD: a analise roda por vendedor+etapa, nao lead a lead
+  const leadsLib=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
   btnGo.disabled=!liberados.length;
-  btnGo.textContent=liberados.length?`▶ Analisar pendentes (${liberados.length})`
+  btnGo.textContent=liberados.length?`▶ Analisar ${liberados.length} lote(s) · ${leadsLib} lead(s)`
     :(porAnalisar.length?'▶ Aguardando transcrição':'▶ Tudo analisado');
 }
 
