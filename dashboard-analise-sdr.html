@@ -333,8 +333,8 @@
     <div id="alertaVolume"></div>
 
     <div class="card" id="cardResultados">
-      <h3>💰 Resultado da semana <span id="resSemana" style="color:var(--muted);font-weight:400"></span></h3>
-      <p>Preencha o que aconteceu de verdade. Sem isso o sistema mede processo no vácuo — é este número que permite descobrir qual comportamento realmente vende.</p>
+      <h3>💰 Resultado <span id="resSemana" style="color:var(--muted);font-weight:400"></span></h3>
+      <p>Faturamento e vendas são <b>acumulados do mês até hoje</b>. As taxas são as que você acompanha: comparecimento sobre agendadas, e conversão sobre quem compareceu. A data é registrada automaticamente — o número de agendadas o sistema já conta sozinho.</p>
       <div id="resLista"></div>
       <div class="card-actions">
         <span id="resStatus" style="font-size:12px;color:var(--muted);margin-right:auto;align-self:center"></span>
@@ -583,7 +583,7 @@ async function refreshP2(){
       get(q), get(qc), get('seller_evolution?select=*'),
       get(`score_objetivo_calc?select=*&week_label=eq.${wl}`),
       get(`alerta_volume?select=*&week_label=eq.${wl}`),
-      get(`seller_results_calc?select=*&week_label=eq.${wl}`),
+      get(`seller_results_calc?select=*&data_medicao=eq.${hojeISO()}`),
       get(`lotes_prontos?select=*&week_label=eq.${wl}`)
     ]);
   }catch(e){console.error(e);}
@@ -591,31 +591,39 @@ async function refreshP2(){
   renderFila();renderVolume();renderResultados();renderKpis2();renderChart();renderRes();
 }
 
-/* ---- Resultado da semana: entrada manual por vendedor ---- */
+/* ---- Resultado: snapshot datado por vendedor ----
+   Modelo (29/07): o usuário informa o acumulado do MÊS na data de hoje + as duas
+   taxas que ele acompanha. A data entra sozinha e as agendadas vêm do sistema. */
 const nn=v=>(v===''||v==null||isNaN(Number(v)))?null:Number(v);
+const hojeISO=()=>new Date().toLocaleDateString('sv-SE');  // YYYY-MM-DD no fuso local
 
 function renderResultados(){
   const wl=document.getElementById('semana').value;
-  document.getElementById('resSemana').textContent=wl?'· '+wl:'';
+  const hoje=hojeISO();
+  document.getElementById('resSemana').textContent=
+    '· registrando em '+new Date(hoje+'T12:00:00').toLocaleDateString('pt-BR')
+    +(wl?' · semana '+wl:'');
   const el=document.getElementById('resLista');
-  // faturamento é por VENDEDOR/SEMANA — ignora o filtro de etapa de propósito
   const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
       .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()]
     .sort((a,b)=>a.nome.localeCompare(b.nome));
   if(!vs.length){el.innerHTML='<div class="dim" style="font-size:12px">Nenhum vendedor nesta semana.</div>';return;}
 
   el.innerHTML=`<div class="res-grid res-head">
-      <span>Vendedor</span><span>Faturamento</span><span>Vendas</span><span>Agendadas</span><span>Presenças</span><span>Calculado</span>
+      <span>Vendedor</span><span>Faturamento do mês</span><span>Vendas no mês</span>
+      <span>Comparecimento %</span><span>Conversão %</span><span>Calculado</span>
     </div>`
     +vs.map(v=>{
-      const r=(resultados||[]).find(x=>x.seller_email===v.email)||{};
+      // pega a medição de HOJE se já existir; senão a mais recente, só para referência
+      const doDia=(resultados||[]).find(x=>x.seller_email===v.email&&x.data_medicao===hoje);
+      const r=doDia||{};
       const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
       return `<div class="res-grid">
         <span class="res-nome" title="${esc(v.email)}">${esc(v.nome)||esc(v.email)}</span>
-        <input type="number" id="${id}_fat" placeholder="R$" step="0.01" min="0" value="${r.faturamento!=null?r.faturamento:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_fat" placeholder="R$ no mês" step="0.01" min="0" value="${r.faturamento!=null?r.faturamento:''}" oninput="calcRes('${id}')">
         <input type="number" id="${id}_ven" placeholder="0" min="0" value="${r.vendas_fechadas!=null?r.vendas_fechadas:''}" oninput="calcRes('${id}')">
-        <input type="number" id="${id}_age" placeholder="0" min="0" value="${r.avaliacoes_agendadas!=null?r.avaliacoes_agendadas:''}" oninput="calcRes('${id}')">
-        <input type="number" id="${id}_pre" placeholder="0" min="0" value="${r.presencas!=null?r.presencas:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_tcp" placeholder="%" min="0" max="100" step="0.1" value="${r.taxa_comparecimento!=null?r.taxa_comparecimento:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_tcv" placeholder="%" min="0" max="100" step="0.1" value="${r.taxa_conversao!=null?r.taxa_conversao:''}" oninput="calcRes('${id}')">
         <span class="res-calc" id="${id}_calc"></span>
       </div>`;}).join('');
 
@@ -623,22 +631,21 @@ function renderResultados(){
   document.getElementById('resStatus').textContent='';
 }
 
-/* prévia ao vivo do que a view vai calcular */
+/* prévia ao vivo: ticket e taxa ponta a ponta */
 function calcRes(id){
   const fat=nn(document.getElementById(id+'_fat').value);
   const ven=nn(document.getElementById(id+'_ven').value);
-  const age=nn(document.getElementById(id+'_age').value);
-  const pre=nn(document.getElementById(id+'_pre').value);
+  const tcp=nn(document.getElementById(id+'_tcp').value);
+  const tcv=nn(document.getElementById(id+'_tcv').value);
   const partes=[];
   if(fat!=null&&ven)partes.push(`ticket <b>R$ ${(fat/ven).toLocaleString('pt-BR',{maximumFractionDigits:0})}</b>`);
-  if(age&&pre!=null)partes.push(`presença <b>${(100*pre/age).toFixed(0)}%</b>`);
-  if(pre&&ven!=null)partes.push(`fechamento <b>${(100*ven/pre).toFixed(0)}%</b>`);
+  if(tcp!=null&&tcv!=null)partes.push(`agendada→venda <b>${(tcp*tcv/100).toFixed(1)}%</b>`);
   document.getElementById(id+'_calc').innerHTML=partes.length?partes.join(' · '):'<span class="dim">—</span>';
 }
 
 async function salvarResultados(){
   const wl=document.getElementById('semana').value;
-  if(!wl){alert('Selecione uma semana.');return;}
+  const hoje=hojeISO();
   const b=document.getElementById('btnRes'),st=document.getElementById('resStatus');
   const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
     .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()];
@@ -648,27 +655,29 @@ async function salvarResultados(){
     const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
     const fat=nn(document.getElementById(id+'_fat').value);
     const ven=nn(document.getElementById(id+'_ven').value);
-    const age=nn(document.getElementById(id+'_age').value);
-    const pre=nn(document.getElementById(id+'_pre').value);
-    // linha totalmente vazia não vira registro
-    if(fat==null&&ven==null&&age==null&&pre==null)continue;
-    if(pre!=null&&age!=null&&pre>age){alert(`${v.nome}: presenças (${pre}) não podem passar das agendadas (${age}).`);return;}
-    if(ven!=null&&pre!=null&&ven>pre){alert(`${v.nome}: vendas (${ven}) não podem passar das presenças (${pre}).`);return;}
-    linhas.push({week_label:wl,seller_email:v.email,seller_name:v.nome,
-      faturamento:fat,vendas_fechadas:ven,avaliacoes_agendadas:age,presencas:pre,
+    const tcp=nn(document.getElementById(id+'_tcp').value);
+    const tcv=nn(document.getElementById(id+'_tcv').value);
+    if(fat==null&&ven==null&&tcp==null&&tcv==null)continue;
+    if(tcp!=null&&(tcp<0||tcp>100)){alert(`${v.nome}: taxa de comparecimento precisa estar entre 0 e 100.`);return;}
+    if(tcv!=null&&(tcv<0||tcv>100)){alert(`${v.nome}: taxa de conversão precisa estar entre 0 e 100.`);return;}
+    linhas.push({data_medicao:hoje,week_label:wl||null,
+      seller_email:v.email,seller_name:v.nome,
+      faturamento:fat,vendas_fechadas:ven,
+      taxa_comparecimento:tcp,taxa_conversao:tcv,
       atualizado_em:new Date().toISOString()});
   }
   if(!linhas.length){alert('Nada preenchido para salvar.');return;}
 
   b.disabled=true;b.textContent='⏳ Salvando...';st.textContent='';
   try{
-    const r=await fetch(`${SU}/rest/v1/seller_results?on_conflict=week_label,seller_email`,{
+    const r=await fetch(`${SU}/rest/v1/seller_results?on_conflict=seller_email,data_medicao`,{
       method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
       body:JSON.stringify(linhas)});
     if(!r.ok)throw new Error('HTTP '+r.status+' — '+(await r.text()).slice(0,200));
-    resultados=await get(`seller_results_calc?select=*&week_label=eq.${wl}`);
+    resultados=await get(`seller_results_calc?select=*&data_medicao=eq.${hoje}`);
     renderResultados();
-    st.textContent=`✓ ${linhas.length} vendedor(es) salvos`;st.style.color='var(--green)';
+    st.textContent=`✓ ${linhas.length} vendedor(es) salvos em ${new Date(hoje+'T12:00:00').toLocaleDateString('pt-BR')}`;
+    st.style.color='var(--green)';
   }catch(e){
     st.textContent='✕ '+e.message;st.style.color='var(--red)';
   }
@@ -933,14 +942,17 @@ function verVendedor(email, etapa){
     </div>
 
     ${r.faturamento!=null?`<div class="card" style="margin-bottom:14px">
-      <h3>💰 Resultado da semana</h3>
-      ${linha('Faturamento','R$ '+Number(r.faturamento).toLocaleString('pt-BR'))}
-      ${linha('Vendas fechadas', r.vendas_fechadas!=null?r.vendas_fechadas:'—')}
+      <h3>💰 Resultado <span class="dim" style="font-weight:400">· medido em ${r.data_medicao?new Date(r.data_medicao+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</span></h3>
+      ${linha('Faturamento no mês','R$ '+Number(r.faturamento).toLocaleString('pt-BR'))}
+      ${linha('Vendas no mês', r.vendas_fechadas!=null?r.vendas_fechadas:'—')}
       ${linha('Ticket médio', r.ticket_medio!=null?'R$ '+Number(r.ticket_medio).toLocaleString('pt-BR'):'—')}
-      ${linha('Taxa de presença', r.taxa_presenca!=null?r.taxa_presenca+'%':'—')}
-      ${linha('Taxa de fechamento', r.taxa_fechamento!=null?r.taxa_fechamento+'%':'—')}
-    </div>`:`<div class="card" style="margin-bottom:14px"><h3>💰 Resultado da semana</h3>
-      <p class="dim">Faturamento ainda não preenchido para esta semana. Sem ele, não dá para cruzar processo com resultado.</p></div>`}
+      ${linha('Taxa de comparecimento', r.taxa_comparecimento!=null?r.taxa_comparecimento+'%':'—')}
+      ${linha('Taxa de conversão (sobre quem compareceu)', r.taxa_conversao!=null?r.taxa_conversao+'%':'—')}
+      ${linha('Agendada → venda', r.taxa_agendada_ate_venda!=null?r.taxa_agendada_ate_venda+'%':'—','ponta a ponta')}
+      ${linha('Agendadas no mês', r.agendadas_no_sistema!=null?r.agendadas_no_sistema:'—','contado pelo sistema')}
+      ${r.faturamento_desde_ultima_medicao!=null?linha('Desde a última medição','R$ '+Number(r.faturamento_desde_ultima_medicao).toLocaleString('pt-BR'), r.dias_desde_ultima_medicao?`em ${r.dias_desde_ultima_medicao} dia(s)`:''):''}
+    </div>`:`<div class="card" style="margin-bottom:14px"><h3>💰 Resultado</h3>
+      <p class="dim">Nada preenchido ainda. Sem faturamento, não dá para cruzar processo com resultado.</p></div>`}
 
     ${a.evolucao?`<div class="card" style="margin-bottom:14px"><h3>📈 Evolução</h3><div class="evo">${esc(a.evolucao)}</div></div>`:''}
 
