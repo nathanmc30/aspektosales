@@ -47,8 +47,17 @@
   .err-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;}
 
   .filters{padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);align-items:center;}
-  select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:var(--rs);font-size:13px;outline:none;font-family:inherit;}
-  select{cursor:pointer;} select:focus,textarea:focus{border-color:var(--accent);}
+  select,textarea,input[type=number]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:var(--rs);font-size:13px;outline:none;font-family:inherit;}
+  select{cursor:pointer;} select:focus,textarea:focus,input[type=number]:focus{border-color:var(--accent);}
+  input[type=number]{width:100%;padding:6px 9px;font-size:13px;}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  input[type=number]{-moz-appearance:textfield;}
+  .res-grid{display:grid;grid-template-columns:minmax(120px,1.4fr) repeat(4,minmax(78px,1fr)) minmax(150px,1.3fr);gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+  .res-grid:last-of-type{border-bottom:none;}
+  .res-head{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:6px;}
+  .res-nome{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .res-calc{font-size:11px;color:var(--muted);line-height:1.4;}
+  .res-calc b{color:var(--text);font-weight:600;}
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:16px 24px;}
   .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
@@ -322,6 +331,16 @@
     </div>
 
     <div id="alertaVolume"></div>
+
+    <div class="card" id="cardResultados">
+      <h3>💰 Resultado da semana <span id="resSemana" style="color:var(--muted);font-weight:400"></span></h3>
+      <p>Preencha o que aconteceu de verdade. Sem isso o sistema mede processo no vácuo — é este número que permite descobrir qual comportamento realmente vende.</p>
+      <div id="resLista"></div>
+      <div class="card-actions">
+        <span id="resStatus" style="font-size:12px;color:var(--muted);margin-right:auto;align-self:center"></span>
+        <button class="btn btn-primary" onclick="salvarResultados()" id="btnRes">💾 Salvar resultados</button>
+      </div>
+    </div>
     <div class="kpis" id="p2Kpis" style="display:none;padding:0 0 16px 0"></div>
     <div id="p2Chart"></div>
     <div id="p2Res"></div>
@@ -569,7 +588,91 @@ async function refreshP2(){
     ]);
   }catch(e){console.error(e);}
   if(!Array.isArray(prontos))prontos=[];
-  renderFila();renderVolume();renderKpis2();renderChart();renderRes();
+  renderFila();renderVolume();renderResultados();renderKpis2();renderChart();renderRes();
+}
+
+/* ---- Resultado da semana: entrada manual por vendedor ---- */
+const nn=v=>(v===''||v==null||isNaN(Number(v)))?null:Number(v);
+
+function renderResultados(){
+  const wl=document.getElementById('semana').value;
+  document.getElementById('resSemana').textContent=wl?'· '+wl:'';
+  const el=document.getElementById('resLista');
+  // faturamento é por VENDEDOR/SEMANA — ignora o filtro de etapa de propósito
+  const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
+      .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()]
+    .sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(!vs.length){el.innerHTML='<div class="dim" style="font-size:12px">Nenhum vendedor nesta semana.</div>';return;}
+
+  el.innerHTML=`<div class="res-grid res-head">
+      <span>Vendedor</span><span>Faturamento</span><span>Vendas</span><span>Agendadas</span><span>Presenças</span><span>Calculado</span>
+    </div>`
+    +vs.map(v=>{
+      const r=(resultados||[]).find(x=>x.seller_email===v.email)||{};
+      const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
+      return `<div class="res-grid">
+        <span class="res-nome" title="${esc(v.email)}">${esc(v.nome)||esc(v.email)}</span>
+        <input type="number" id="${id}_fat" placeholder="R$" step="0.01" min="0" value="${r.faturamento!=null?r.faturamento:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_ven" placeholder="0" min="0" value="${r.vendas_fechadas!=null?r.vendas_fechadas:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_age" placeholder="0" min="0" value="${r.avaliacoes_agendadas!=null?r.avaliacoes_agendadas:''}" oninput="calcRes('${id}')">
+        <input type="number" id="${id}_pre" placeholder="0" min="0" value="${r.presencas!=null?r.presencas:''}" oninput="calcRes('${id}')">
+        <span class="res-calc" id="${id}_calc"></span>
+      </div>`;}).join('');
+
+  vs.forEach(v=>calcRes('r_'+v.email.replace(/[^a-z0-9]/gi,'_')));
+  document.getElementById('resStatus').textContent='';
+}
+
+/* prévia ao vivo do que a view vai calcular */
+function calcRes(id){
+  const fat=nn(document.getElementById(id+'_fat').value);
+  const ven=nn(document.getElementById(id+'_ven').value);
+  const age=nn(document.getElementById(id+'_age').value);
+  const pre=nn(document.getElementById(id+'_pre').value);
+  const partes=[];
+  if(fat!=null&&ven)partes.push(`ticket <b>R$ ${(fat/ven).toLocaleString('pt-BR',{maximumFractionDigits:0})}</b>`);
+  if(age&&pre!=null)partes.push(`presença <b>${(100*pre/age).toFixed(0)}%</b>`);
+  if(pre&&ven!=null)partes.push(`fechamento <b>${(100*ven/pre).toFixed(0)}%</b>`);
+  document.getElementById(id+'_calc').innerHTML=partes.length?partes.join(' · '):'<span class="dim">—</span>';
+}
+
+async function salvarResultados(){
+  const wl=document.getElementById('semana').value;
+  if(!wl){alert('Selecione uma semana.');return;}
+  const b=document.getElementById('btnRes'),st=document.getElementById('resStatus');
+  const vs=[...new Map(lotes.filter(l=>l.week_label===wl)
+    .map(l=>[l.seller_email,{email:l.seller_email,nome:(l.seller_name||'').trim()}])).values()];
+
+  const linhas=[];
+  for(const v of vs){
+    const id='r_'+v.email.replace(/[^a-z0-9]/gi,'_');
+    const fat=nn(document.getElementById(id+'_fat').value);
+    const ven=nn(document.getElementById(id+'_ven').value);
+    const age=nn(document.getElementById(id+'_age').value);
+    const pre=nn(document.getElementById(id+'_pre').value);
+    // linha totalmente vazia não vira registro
+    if(fat==null&&ven==null&&age==null&&pre==null)continue;
+    if(pre!=null&&age!=null&&pre>age){alert(`${v.nome}: presenças (${pre}) não podem passar das agendadas (${age}).`);return;}
+    if(ven!=null&&pre!=null&&ven>pre){alert(`${v.nome}: vendas (${ven}) não podem passar das presenças (${pre}).`);return;}
+    linhas.push({week_label:wl,seller_email:v.email,seller_name:v.nome,
+      faturamento:fat,vendas_fechadas:ven,avaliacoes_agendadas:age,presencas:pre,
+      atualizado_em:new Date().toISOString()});
+  }
+  if(!linhas.length){alert('Nada preenchido para salvar.');return;}
+
+  b.disabled=true;b.textContent='⏳ Salvando...';st.textContent='';
+  try{
+    const r=await fetch(`${SU}/rest/v1/seller_results?on_conflict=week_label,seller_email`,{
+      method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify(linhas)});
+    if(!r.ok)throw new Error('HTTP '+r.status+' — '+(await r.text()).slice(0,200));
+    resultados=await get(`seller_results_calc?select=*&week_label=eq.${wl}`);
+    renderResultados();
+    st.textContent=`✓ ${linhas.length} vendedor(es) salvos`;st.style.color='var(--green)';
+  }catch(e){
+    st.textContent='✕ '+e.message;st.style.color='var(--red)';
+  }
+  b.disabled=false;b.textContent='💾 Salvar resultados';
 }
 
 function renderVolume(){
