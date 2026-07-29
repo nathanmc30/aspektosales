@@ -963,6 +963,21 @@ function verVendedor(email, etapa){
           ${ev?`<div class="dim" style="font-size:11px;margin-left:20px;margin-top:2px">${esc(ev)}</div>`:''}</div>`;}).join('')}
     </div>`:''}
 
+    ${a.referencia_qualidade?`<div class="card" style="margin-bottom:14px;border-color:var(--green)">
+      <h3 style="color:var(--green)">⭐ Conversa de referência — repetir isto</h3>
+      <p class="dim">Conversa ${esc(a.referencia_qualidade.conversa||'?')} do lote</p>
+      <div class="txt" style="margin-bottom:8px">${esc(a.referencia_qualidade.o_que_fez_bem||'')}</div>
+      ${a.referencia_qualidade.trecho?`<div class="evo" style="border-left-color:var(--green)">"${esc(a.referencia_qualidade.trecho)}"</div>`:''}
+    </div>`:''}
+
+    ${a.referencia_melhoria?`<div class="card" style="margin-bottom:14px;border-color:var(--orange)">
+      <h3 style="color:var(--orange)">🔧 Conversa de referência — corrigir isto</h3>
+      <p class="dim">Conversa ${esc(a.referencia_melhoria.conversa||'?')} do lote</p>
+      <div class="txt" style="margin-bottom:8px">${esc(a.referencia_melhoria.o_que_errou||'')}</div>
+      ${a.referencia_melhoria.trecho?`<div class="evo" style="border-left-color:var(--orange)">"${esc(a.referencia_melhoria.trecho)}"</div>`:''}
+      ${a.referencia_melhoria.como_deveria?`<div class="meta-row" style="margin-top:8px"><span style="color:var(--accent)">→</span><span class="txt"><b>Deveria ter feito:</b> ${esc(a.referencia_melhoria.como_deveria)}</span></div>`:''}
+    </div>`:''}
+
     ${pcs.length?`<div class="card" style="margin-bottom:14px"><h3>🔧 Pontos de melhoria</h3>
       ${pcs.map(p=>{const sev=(p.severidade||'medio');
         const cor=sev==='critico'?'var(--red)':sev==='leve'?'var(--muted)':'var(--yellow)';
