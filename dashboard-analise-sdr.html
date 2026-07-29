@@ -907,15 +907,18 @@ function verDet(k){
   document.getElementById('mDet').classList.add('open');
 }
 
-/* ---- Claude: sem API key, usa a sessão ---- */
+/* ---- Analise: passa pelo n8n, que chama a OpenAI com a chave do servidor ----
+   Chamada direta a api.anthropic.com do browser NAO funciona: a API nao manda
+   Access-Control-Allow-Origin, entao o CORS bloqueia de qualquer origem
+   (GitHub Pages, arquivo local, dominio proprio). Testado e confirmado 29/07. */
+const WH_ANALISAR='https://n8n-ai.grupoaspekto.com/webhook/sdr-analisar';
 async function claude(sys,txt,maxTok){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
+  const r=await fetch(WH_ANALISAR,{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTok||1000,system:sys,messages:[{role:'user',content:txt}]})});
+    body:JSON.stringify({system:sys,prompt:txt,max_tokens:maxTok||8000})});
   const d=await r.json();
-  if(d.error)throw new Error(d.error.message||'erro na API');
-  const t=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-  return JSON.parse(t.replace(/```json|```/g,'').trim());
+  if(!d||d.ok!==true)throw new Error((d&&d.erro)||'falha na analise');
+  return d.json;
 }
 const SYS_I='Voce analisa performance de vendedores e mede evolucao ao longo do tempo. Responda APENAS com JSON valido, sem markdown, sem texto antes ou depois.';
 const SYS_C='Voce faz analise comparativa de performance de vendas. Responda APENAS com JSON valido, sem markdown.';
@@ -1082,7 +1085,7 @@ async function analisar(){
           pontos_categorizados:a.pontos_categorizados||[],erros_graves:a.erros_graves||[],
           evolucao:a.evolucao||null,metas_cumpridas:a.metas_cumpridas||[],metas_proximas:a.metas_proximas||a.pontos_de_melhoria||[],
           previous_analysis_id:prev?prev.id:null,previous_week_label:prev?prev.week_label:null,score_delta:delta,
-          prompt_version:instrAtiva?instrAtiva.nome:'inline',modelo:'claude-sonnet-4-6',created_at:new Date().toISOString()})
+          prompt_version:instrAtiva?instrAtiva.nome:'inline',modelo:'gpt-5.6-terra',created_at:new Date().toISOString()})
       }).then(r=>r.json());
       const aid=Array.isArray(saved)?(saved[0]||{}).id:null;
 
