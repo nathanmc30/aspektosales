@@ -219,6 +219,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
     <input id="conv-search" placeholder="Buscar em mensagens…" style="flex:1;min-width:200px">
     <button class="btn btn-2 btn-sm" onclick="loadConversas()">Filtrar</button>
   </div>
+  <div id="conv-resumo" class="grid grid-3" style="margin-bottom:14px"></div>
   <div id="conv-body" class="load">Carregando…</div>
 </div>
 </div>
@@ -1322,26 +1323,62 @@ async function loadConversas(){
   }
   const ve=vSel.value,et=document.getElementById('conv-etapa').value,q=document.getElementById('conv-search').value.trim();
   const b=weekBounds(STATE.week);
-  let path='conversations?select=id,contact_id,seller_name,seller_email,origin_name,stage_atual,conversation_date,raw_messages'
+  let path='conversations?select=id,contact_id,contact_name,telefone,seller_name,seller_email,origin_name,conversation_date,raw_messages'
     +'&conversation_date=gte.'+b.start+'&conversation_date=lte.'+b.end+'&order=conversation_date.desc&limit=500';
   if(ve)path+='&seller_email=eq.'+encodeURIComponent(ve);
   if(et==='avaliacao')path+='&origin_name=ilike.*avalia*';
   if(et==='closer')path+='&origin_name=ilike.*closer*';
   document.getElementById('conv-body').innerHTML='<div class="load">Carregando…</div>';
+  document.getElementById('conv-resumo').innerHTML='';
   try{
     let convs=await sb(path);
     if(q)convs=convs.filter(c=>(c.raw_messages||[]).some(m=>(m.content||m.transcricao||'').toLowerCase().includes(q.toLowerCase())));
     if(!convs.length){document.getElementById('conv-body').innerHTML='<div class="small">Nenhuma conversa nesta semana com os filtros aplicados.</div>';return;}
+
+    let totAud=0,totPend=0,convComPend=0;
+    convs.forEach(c=>{const a=audiosDe(c);totAud+=a.total;totPend+=a.pendentes;if(a.pendentes>0)convComPend++;});
+    document.getElementById('conv-resumo').innerHTML=`
+      <div class="kpi"><div class="label">Conversas</div><div class="val">${convs.length}</div><div class="sub">${ve||et||q?'na seleção':'na semana '+STATE.week}</div></div>
+      <div class="kpi"><div class="label">Áudios gravados</div><div class="val">${totAud}</div><div class="sub">${convs.length?(totAud/convs.length).toFixed(1):'0'} por conversa</div></div>
+      <div class="kpi"><div class="label">Áudios pendentes</div><div class="val ${totPend?'text-bad':'text-good'}">${totPend}</div><div class="sub">${totPend?convComPend+' conversa(s) sem transcrever':'tudo transcrito'}</div></div>`;
+
     const rows=convs.map(c=>{
       const et2=(c.origin_name||'').toLowerCase().indexOf('closer')>=0?'Closer':'Aval';
+      const a=audiosDe(c);
+      const nome=(c.contact_name||'').trim();
+      const tel=fmtTel(c.telefone);
+      const audCel=a.total
+        ? `${a.total}${a.pendentes?` <span class="chip chip-yellow">${a.pendentes} pend.</span>`:''}`
+        : '<span class="text-mute">–</span>';
       return `<tr onclick="abrirConversaBanco('${c.contact_id}',0)" style="cursor:pointer">
-        <td>${esc(c.conversation_date||'')}</td><td>${esc((c.seller_name||'').trim())}</td>
+        <td>${esc(c.conversation_date||'')}</td>
+        <td>${nome?esc(nome):'<span class="text-mute">sem nome</span>'}</td>
+        <td class="mono">${tel?esc(tel):'<span class="text-mute">–</span>'}</td>
+        <td>${esc((c.seller_name||'').trim())}</td>
         <td><span class="chip chip-${et2==='Closer'?'closer':'aval'}">${et2}</span></td>
-        <td>${esc(c.stage_atual||'?')}</td><td>${(c.raw_messages||[]).length}</td></tr>`;
+        <td>${audCel}</td></tr>`;
     }).join('');
-    document.getElementById('conv-body').innerHTML=`<table><thead><tr><th>Data</th><th>Vendedor</th><th>Etapa</th><th>Stage</th><th>Msgs</th></tr></thead><tbody>${rows}</tbody></table>`;
+    document.getElementById('conv-body').innerHTML=`<table><thead><tr><th>Data</th><th>Lead</th><th>Telefone</th><th>Vendedor</th><th>Etapa</th><th>Áudios</th></tr></thead><tbody>${rows}</tbody></table>`;
   }catch(e){document.getElementById('conv-body').innerHTML='<div class="err">'+esc(e.message)+'</div>';}
 }
+
+// Audio pendente = AUDIO com transcricao vazia ou comecando com "[",
+// exceto "[formato-nao-suportado" (esses nunca serao transcritos e nao contam).
+function audiosDe(c){
+  const nsup=t=>String(t||'').indexOf('[formato-nao-suportado')===0;
+  const ms=(c.raw_messages||[]).filter(m=>m&&m.content_type==='AUDIO'&&!nsup(m.transcricao));
+  const pend=ms.filter(m=>{const t=String(m.transcricao||'').trim();return !t||t.indexOf('[')===0;});
+  return {total:ms.length,pendentes:pend.length};
+}
+function fmtTel(t){
+  const d=String(t||'').replace(/\D/g,'');
+  if(!d)return '';
+  const n=d.length>11&&d.slice(0,2)==='55'?d.slice(2):d;
+  if(n.length===11)return '('+n.slice(0,2)+') '+n.slice(2,7)+'-'+n.slice(7);
+  if(n.length===10)return '('+n.slice(0,2)+') '+n.slice(2,6)+'-'+n.slice(6);
+  return d;
+}
+
 function weekBounds(wl){
   const [y,w]=String(wl||'').split('-W').map(Number);
   const jan1=new Date(y,0,1),dow=jan1.getDay(),daysToMon=(dow===0?-6:1-dow);
