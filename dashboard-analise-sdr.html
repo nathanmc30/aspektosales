@@ -45,6 +45,8 @@ header .sub{color:var(--text-dim);font-size:13px;margin-top:2px}
 .fluxo-etapa .chip{display:block;width:fit-content;margin-bottom:5px}
 .fluxo-seta{display:flex;align-items:center;color:var(--text-mute);font-size:18px}
 @media(max-width:900px){.fluxo-seta{display:none}}
+.peso-atual{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text-dim)}
+.peso-de{color:var(--text-mute);text-decoration:line-through}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
 .card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .card h2 .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -282,6 +284,17 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
+  <h2><span class="title">⚖️ 1b · Proposta de repesagem do score</span></h2>
+  <div class="small" style="margin-bottom:10px">
+    Mesmo estágio das sugestões acima — a IA criticando a régua — mas com um destino diferente:
+    isto não vira critério, mexeria nos <strong>pesos</strong> do score composto. O prompt obriga a IA a
+    nomear <strong>o que a mudança faz enxergar pior</strong>; sem esse custo declarado, a proposta é
+    só um pedido de régua mais confortável. E ela não vê faturamento quando propõe — de propósito.
+  </div>
+  <div id="pesos-body" class="load">Carregando…</div>
+</div>
+
+<div class="card">
   <h2><span class="title">🎯 2 · Critérios de avaliação (a régua)</span></h2>
   <div class="small" style="margin-bottom:10px">
     Aqui você muda <strong>o que a IA olha</strong>, não a nota de ninguém. É onde a divergência entre
@@ -429,7 +442,7 @@ async function refreshAll(){
     an.forEach(a=>v.set(a.seller_email,(a.seller_name||'').trim()));
     STATE.vendedores=[...v.entries()].map(([e,n])=>({email:e,name:n})).sort((a,b)=>a.name.localeCompare(b.name));
 
-    renderKpis();renderResultados();renderFila();renderMelhores();renderComp();renderCards();renderRegras();renderSugestoesGeral();
+    renderKpis();renderResultados();renderFila();renderMelhores();renderComp();renderCards();renderRegras();renderSugestoesGeral();renderPesos();
     if(STATE.openDetail)showDetail(STATE.openDetail);
     document.getElementById('last-update').textContent='atualizado '+new Date().toLocaleTimeString('pt-BR');
   }catch(e){
@@ -719,6 +732,84 @@ async function promoverSugestao(id,btn){
     if(btn){btn.disabled=false;btn.innerHTML=volta;}
     toast('Erro: '+e.message,'err');
   }
+}
+
+/* =====================================================================
+   v4.8 · E1 — A PROPOSTA DE REPESAGEM PASSA A APARECER
+   O prompt v4 autoriza a IA a propor uma redistribuicao do 40/30/30, e o
+   no do n8n grava em ai_analyses.sugestoes_metodo.pesos_do_score desde
+   30/07. Nada renderizava — a proposta existia so no banco.
+   NAO existe botao de aprovar aqui, e a ausencia e proposital: mudar
+   score_weights REPONTUA O HISTORICO INTEIRO, entao aprovar hoje
+   reescreveria os scores da W31 que ja foram lidos e discutidos. O botao
+   so nasce depois que o peso tiver vigencia por semana (pendencia D1).
+   ===================================================================== */
+function pesosPropostos(){
+  const out=[];
+  for(const a of STATE.analises){
+    const p=(a.sugestoes_metodo||{}).pesos_do_score;
+    if(!p||typeof p!=='object')continue;                 // null = a IA disse que nao tem base
+    const v=['processo','tecnica','objetivo'].map(k=>Number(p[k]));
+    if(v.some(x=>!isFinite(x)))continue;
+    out.push({nome:(a.seller_name||'').trim(),p:v[0],t:v[1],o:v[2],soma:v[0]+v[1]+v[2],
+              por_que:p.por_que||'',melhora:p.o_que_melhora||'',piora:p.o_que_piora||''});
+  }
+  return out;
+}
+
+function renderPesos(){
+  const el=document.getElementById('pesos-body');
+  if(!el)return;
+  const at={p:Math.round(STATE.pesos.p*100),t:Math.round(STATE.pesos.t*100),o:Math.round(STATE.pesos.o*100)};
+  const atualTxt=`<div class="peso-atual">Em vigor: <strong>${at.p}% processo · ${at.t}% técnica · ${at.o}% objetivo</strong></div>`;
+  const props=pesosPropostos();
+
+  if(!props.length){
+    el.innerHTML=atualTxt+`<div class="small" style="margin-top:10px">
+      Nenhuma proposta de repesagem nesta semana — a IA devolveu <span class="mono">null</span> nas
+      ${STATE.analises.length} análises. Isso não é falha: o prompt manda propor <em>só</em> com razão
+      concreta e observável no lote. Sem razão, ela não propõe. Vale como leitura do estado da base.
+    </div>`;
+    return;
+  }
+
+  const seta=(de,para)=>{
+    const d=para-de;
+    const cls=d>0?'text-good':d<0?'text-bad':'text-mute';
+    return `<span class="peso-de">${de}%</span> → <strong class="${cls}">${para}%</strong>
+            <span class="small ${cls}">${d>0?'+':''}${d}</span>`;
+  };
+
+  el.innerHTML=atualTxt+props.map(x=>`
+    <div class="ref-card">
+      <div class="ref-title">
+        <span class="chip chip-purple">proposta</span>
+        <span class="small">a partir da análise de ${esc(x.nome)}</span>
+        ${x.soma!==100?`<span class="chip chip-red">soma ${x.soma}, deveria ser 100</span>`:''}
+      </div>
+      <div class="grid grid-3" style="margin:8px 0">
+        <div class="kpi"><div class="label">Processo</div><div class="val" style="font-size:16px">${seta(at.p,x.p)}</div></div>
+        <div class="kpi"><div class="label">Técnica</div><div class="val" style="font-size:16px">${seta(at.t,x.t)}</div></div>
+        <div class="kpi"><div class="label">Objetivo</div><div class="val" style="font-size:16px">${seta(at.o,x.o)}</div></div>
+      </div>
+      ${x.por_que?`<div class="small"><strong>por quê:</strong> ${esc(x.por_que)}</div>`:''}
+      ${x.melhora?`<div class="ref-text"><span class="text-good">passa a enxergar melhor:</span> ${esc(x.melhora)}</div>`:''}
+      ${x.piora
+        ? `<div class="ref-text"><span class="text-bad">passa a enxergar pior:</span> ${esc(x.piora)}</div>`
+        : `<div class="ref-text"><span class="chip chip-orange">sem custo declarado</span>
+             O prompt exige nomear o que piora. Proposta sem isso não deveria ser levada a sério.</div>`}
+      <div style="margin-top:10px">
+        <button class="btn btn-2 btn-xs" disabled>aprovar repesagem</button>
+        <span class="small text-mute" style="margin-left:8px">bloqueado — ver abaixo</span>
+      </div>
+    </div>`).join('')
+    +`<div class="warn" style="margin-top:12px">
+      <strong>Por que não dá para aprovar ainda.</strong> Os pesos vivem em
+      <span class="mono">score_weights</span>, e o score composto é recalculado com o peso vigente —
+      não com o peso da época. Trocar hoje <strong>repontua o histórico inteiro</strong>: os números da
+      ${esc(STATE.week)} que você já leu e discutiu com o time mudariam retroativamente.
+      O botão só faz sentido depois que cada semana carregar o peso que valia nela.
+    </div>`;
 }
 
 function renderRegras(){
