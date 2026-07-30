@@ -828,6 +828,8 @@ function renderMelhores(){
   if(!an.length){el.innerHTML='<div class="small">Nenhuma análise nesta semana ainda.</div>';return;}
 
   const convDe=e=>{const u=ultimoResultado(e);return u&&u.taxa_conversao!=null?+u.taxa_conversao:null;};
+  const nomeDe=e=>{const a=an.find(x=>x.seller_email===e);return a?(a.seller_name||'').trim():e;};
+  const SEP_MIN=15; // pontos percentuais minimos de diferenca no comportamento entre os grupos
 
   // aderência de cada comportamento ao resultado
   const sinais=[];
@@ -839,13 +841,24 @@ function renderMelhores(){
     const meio=Math.max(1,Math.floor(ord.length/2));
     const alto=ord.slice(0,meio),baixo=ord.slice(-meio);
     const med=v=>v.reduce((s,x)=>s+x.c,0)/v.length;
-    sinais.push({k,nome,
+    const medP=v=>v.reduce((s,x)=>s+x.p,0)/v.length;
+    sinais.push({k,nome,n:pts.length,
       media:Math.round(pts.reduce((s,x)=>s+x.p,0)/pts.length),
       delta:+(med(alto)-med(baixo)).toFixed(1),
+      // separacao NO COMPORTAMENTO: se os dois grupos fazem quase a mesma coisa,
+      // comparar a conversao deles nao diz nada sobre o comportamento
+      sep:+(medP(alto)-medP(baixo)).toFixed(1),
+      chave:alto.map(x=>x.e).slice().sort().join('|'),
+      quemAlto:alto.map(x=>nomeDe(x.e)),
       cAlto:+med(alto).toFixed(1),cBaixo:+med(baixo).toFixed(1)});
   }
+  // quantos comportamentos caem exatamente na MESMA divisao de vendedores.
+  // Se 5 sinais dividem o time igual, sao 5 linhas com UMA evidencia, nao 5 evidencias.
+  const porChave={};
+  sinais.forEach(x=>{porChave[x.chave]=(porChave[x.chave]||0)+1;});
+  sinais.forEach(x=>{x.compartilha=porChave[x.chave]||1;x.valido=x.delta>0&&x.sep>=SEP_MIN;});
   sinais.sort((a,b)=>b.delta-a.delta);
-  const confirmados=sinais.filter(s=>s.delta>0).map(s=>s.k);
+  const confirmados=sinais.filter(s=>s.valido).map(s=>s.k);
 
   // pódio pela régua, com o ponto forte confirmado de cada um
   const podio=[...an].filter(a=>a.score_geral!=null).sort((a,b)=>b.score_geral-a.score_geral).slice(0,3);
@@ -864,19 +877,25 @@ function renderMelhores(){
     </div>`;}).join('');
 
   const tabela=sinais.map(s=>{
-    const bom=s.delta>0;
+    const bom=s.valido;
     const jaEnv=(STATE.feedback||[]).some(f=>f.ativo!==false&&f.target_ref==='sinal:'+s.k+':'+STATE.week);
     return `<tr>
-      <td>${esc(s.nome)}</td>
+      <td>${esc(s.nome)}
+        <div class="small text-mute" style="margin-top:3px;font-weight:400">
+          faz muito: ${esc(s.quemAlto.join(', '))} · n=${s.n}
+          ${s.compartilha>1?`<span class="chip chip-yellow" style="margin-left:6px">mesma divisão de ${s.compartilha} comportamentos</span>`:''}
+        </div></td>
       <td class="cmp-num">${s.media}%</td>
       <td class="cmp-num text-mute">${s.cAlto}%</td>
       <td class="cmp-num text-mute">${s.cBaixo}%</td>
       <td class="cmp-num ${bom?'text-good':'text-bad'}">${s.delta>0?'+':''}${s.delta}</td>
-      <td>${bom
-        ? `<span class="chip chip-green">confirma</span>`+(jaEnv
+      <td>${s.delta<=0
+        ? '<span class="chip chip-yellow">não confirma</span>'
+        : !bom
+        ? `<span class="chip chip-orange">sem separação (${s.sep}pp)</span>`
+        : `<span class="chip chip-green">confirma</span>`+(jaEnv
             ? ` <button class="btn btn-xs btn-enviado" style="margin-left:6px" disabled>✓ enviado</button>`
-            : ` <button class="btn btn-2 btn-xs" style="margin-left:6px" onclick="promoverSinal('${s.k}',this)">virar critério →</button>`)
-        : '<span class="chip chip-yellow">não confirma</span>'}</td>
+            : ` <button class="btn btn-2 btn-xs" style="margin-left:6px" onclick="promoverSinal('${s.k}',this)">virar critério →</button>`)}</td>
     </tr>`;}).join('');
 
   el.innerHTML=`
@@ -887,6 +906,9 @@ function renderMelhores(){
       Para cada comportamento: quanto o time faz dele, e a conversão média de quem faz muito contra quem faz pouco.
       Delta positivo = comportamento que aparece junto com venda, então é ponto forte nosso de verdade.
       Delta negativo = a régua cobra algo que não está se pagando.
+      Só vale como “confirma” quando os dois grupos realmente diferem no comportamento (15pp ou mais) —
+      caso contrário a comparação está medindo outra coisa. Quando vários comportamentos caem na mesma
+      divisão de vendedores, é uma evidência só aparecendo várias vezes.
     </div>
     <table><thead><tr>
       <th>Comportamento</th><th>Média do time</th><th>Conversão · faz muito</th>
