@@ -29,6 +29,22 @@ header .sub{color:var(--text-dim);font-size:13px;margin-top:2px}
 .tabs{display:flex;gap:4px;background:var(--panel);border-radius:8px;padding:4px;margin-bottom:20px}
 .tab{padding:8px 16px;border-radius:6px;border:none;background:none;color:var(--text-dim);font-weight:500}
 .tab.on{background:var(--brand-dim);color:var(--text)}
+/* v4.7 — barra fixa: abas + comandos. Comandos valem para a semana selecionada,
+   nao para a aba aberta, entao ficam sempre visiveis. */
+.topbar{position:sticky;top:0;z-index:60;background:var(--bg);padding:10px 0 12px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.topbar .tabs{margin-bottom:10px}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.actions select{padding:6px 10px}
+.act-sep{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+/* o status da re-analise pode virar um paragrafo inteiro; joga para a linha de baixo
+   em vez de esticar a barra */
+.actions .fb-status{flex-basis:100%;line-height:1.5}
+.actions .fb-status:empty{display:none}
+.fluxo{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:16px}
+.fluxo-etapa{flex:1;min-width:210px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-dim);line-height:1.6}
+.fluxo-etapa .chip{display:block;width:fit-content;margin-bottom:5px}
+.fluxo-seta{display:flex;align-items:center;color:var(--text-mute);font-size:18px}
+@media(max-width:900px){.fluxo-seta{display:none}}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
 .card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .card h2 .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -166,41 +182,45 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
     <h1>Análise SDR · Grupo Aspekto</h1>
     <div class="sub">Semana: <span id="week-info">–</span> · <span id="last-update">–</span></div>
   </div>
-  <div>
-    <select id="week-select" onchange="onWeekChange()"></select>
-    <button class="btn btn-2 btn-sm" onclick="refreshAll()">↻ Atualizar</button>
-  </div>
 </header>
 
-<div class="tabs">
-  <button class="tab on" data-tab="intel" onclick="switchTab('intel')">🧠 Inteligência</button>
-  <button class="tab" data-tab="conv" onclick="switchTab('conv')">Conversas</button>
-  <button class="tab" data-tab="regras" onclick="switchTab('regras')">📌 Contexto da operação</button>
-</div>
-
-<!-- ================= ABA INTELIGÊNCIA ================= -->
-<div id="tab-intel">
-
-<div class="card">
-  <h2><span class="title">💰 Resultado da semana</span></h2>
-  <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do mês; taxas são sobre agendadas/comparecimentos.</div>
-  <div id="res-body" class="load">Carregando…</div>
-  <div style="margin-top:12px;text-align:right">
-    <button class="btn btn-sm" onclick="salvarResultados()">💾 Salvar snapshot</button>
+<!-- =====================================================================
+     BARRA FIXA — abas + comandos
+     v4.7: transcrever, gerar lotes, analisar e re-analisar sairam de dentro
+     das abas. Sao COMANDOS, nao lugares: valem para a semana selecionada,
+     independente da aba aberta. Por isso vivem aqui, sempre visiveis.
+     ===================================================================== -->
+<div class="topbar">
+  <div class="tabs">
+    <button class="tab on" data-tab="semana" onclick="switchTab('semana')">📅 Semana</button>
+    <button class="tab" data-tab="vendedores" onclick="switchTab('vendedores')">👥 Vendedores</button>
+    <button class="tab" data-tab="regua" onclick="switchTab('regua')">📐 Régua</button>
+    <button class="tab" data-tab="conversas" onclick="switchTab('conversas')">💬 Conversas</button>
+  </div>
+  <div class="actions">
+    <select id="week-select" onchange="onWeekChange()"></select>
+    <button class="btn btn-2 btn-sm" onclick="refreshAll()">↻ Atualizar</button>
+    <span class="act-sep"></span>
+    <button id="btn-analisar" class="btn btn-sm" onclick="disparaAnalise()" disabled>▶ Analisar</button>
+    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">🎤 Transcrever áudios</button>
+    <button class="btn btn-2 btn-sm" onclick="gerarLotes()">🔄 Gerar lotes</button>
+    <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar tudo com meus complementos</button>
+    <span id="re-status" class="fb-status"></span>
   </div>
 </div>
+
+<!-- ================= ABA SEMANA =================
+     Pergunta que responde: como o time foi nesta semana? -->
+<div id="pane-semana">
 
 <div class="grid grid-4" id="kpis"></div>
 
 <div class="card">
   <h2><span class="title">🔍 Fila de análise</span></h2>
   <div id="fila-body" class="load">Carregando…</div>
-  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <button id="btn-analisar" class="btn" onclick="disparaAnalise()" disabled>▶ Analisar</button>
-    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">🎤 Transcrever áudios</button>
-    <button class="btn btn-2 btn-sm" onclick="gerarLotes()">🔄 Gerar lotes</button>
-    <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar TUDO com meus complementos</button>
-    <span id="re-status" class="fb-status"></span>
+  <div class="small" style="margin-top:10px">
+    Os comandos estão na barra do topo. <strong>Analisar</strong> só libera quando os áudios da semana
+    já estiverem transcritos — enquanto houver pendente, o botão fica em “aguardando transcrição”.
   </div>
 </div>
 
@@ -214,49 +234,55 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
   <div id="comp-body" class="load">Carregando…</div>
 </div>
 
+<div class="card">
+  <h2><span class="title">💰 Resultado da semana</span></h2>
+  <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do mês; taxas são sobre agendadas/comparecimentos. É a entrada que faz o pódio e o comparativo acima terem o que qualificar.</div>
+  <div id="res-body" class="load">Carregando…</div>
+  <div style="margin-top:12px;text-align:right">
+    <button class="btn btn-sm" onclick="salvarResultados()">💾 Salvar snapshot</button>
+  </div>
+</div>
+
+</div>
+
+<!-- ================= ABA VENDEDORES =================
+     Pergunta que responde: o que eu falo com o fulano? -->
+<div id="pane-vendedores" class="hidden">
+<div class="small" style="margin-bottom:12px">
+  Um card por vendedor, ordenado pelo score composto. <strong>Ver detalhes</strong> abre obrigatórios com as
+  conversas ausentes, as duas referências, pontos categorizados, metas e evolução — e é lá que você escreve
+  contexto em cima de cada ponto.
+</div>
 <div id="cards-body"></div>
-
-<details>
-  <summary>⚙️ Editor do prompt ativo</summary>
-  <div id="prompt-body" class="load" style="margin-top:12px">Carregando…</div>
-</details>
-
 </div>
 
-<!-- ================= ABA CONVERSAS ================= -->
-<div id="tab-conv" class="hidden">
+<!-- ================= ABA RÉGUA =================
+     Pergunta que responde: o que estamos medindo, e está certo?
+     v4.7: "melhorias da IA" e "contexto da operacao" eram o MESMO trabalho em
+     estagios diferentes — uma sugestao vira criterio, que vira regua em vigor.
+     Separar obrigava a aprovar numa aba e conferir em outra. -->
+<div id="pane-regua" class="hidden">
+
+<div class="fluxo">
+  <div class="fluxo-etapa"><span class="chip chip-brand">1 · sugerido</span>A IA critica o processo e a própria régua ao analisar a semana. Nada aqui vale sozinho.</div>
+  <div class="fluxo-seta">→</div>
+  <div class="fluxo-etapa"><span class="chip chip-purple">2 · aprovado</span>Você aprova — a sugestão vira critério de avaliação, ou você escreve o seu do zero.</div>
+  <div class="fluxo-seta">→</div>
+  <div class="fluxo-etapa"><span class="chip chip-green">3 · em vigor</span>Critérios e regras da operação entram no prompt de toda análise, da próxima rodada em diante.</div>
+</div>
+
 <div class="card">
-  <h2><span class="title">Conversas</span></h2>
-  <div class="controls" style="margin-bottom:12px">
-    <select id="conv-vend"><option value="">Todos vendedores</option></select>
-    <select id="conv-etapa"><option value="">Todas etapas</option><option value="avaliacao">Avaliação</option><option value="closer">Closer</option></select>
-    <input id="conv-search" placeholder="Buscar em mensagens…" style="flex:1;min-width:200px">
-    <button class="btn btn-2 btn-sm" onclick="loadConversas()">Filtrar</button>
-  </div>
-  <div id="conv-resumo" class="grid grid-3" style="margin-bottom:14px"></div>
-  <div id="conv-body" class="load">Carregando…</div>
-</div>
-</div>
-
-<!-- ================= ABA CONTEXTO DA OPERAÇÃO ================= -->
-<div id="tab-regras" class="hidden">
-<div class="card">
-  <h2><span class="title">📌 Regras da operação</span></h2>
+  <h2><span class="title">💡 1 · Sugestões da IA sobre o método</span></h2>
   <div class="small" style="margin-bottom:10px">
-    O que estiver aqui entra no prompt de <strong>toda</strong> análise, de todos os vendedores, em todas as semanas.
-    É onde mora o que a IA não tem como saber lendo a conversa — política comercial, limite de sistema, exceção que não existe.
+    O prompt pede que a IA critique o processo de vendas <strong>e a própria régua</strong> — inclusive dizendo
+    que um critério existente está injusto ou incompleto. Nada aqui muda a avaliação sozinho: você aprova, e só
+    então vira critério. É esse ciclo que faz o algoritmo melhorar em vez de só acumular análise.
   </div>
-  <div id="regras-body" class="load">Carregando…</div>
-  <div class="fb-form" style="margin-top:12px">
-    <textarea id="nova-regra" rows="3" placeholder="Ex.: não é possível reservar horário na agenda antes do pagamento e da assinatura do contrato. O vendedor pode garantir a entrega dentro do prazo se o pagamento sair no mesmo dia — não pode passar data nem horário antes disso."></textarea>
-    <div class="fb-actions">
-      <button class="btn btn-sm" onclick="salvarRegra()">Salvar regra</button>
-      <span id="regra-status" class="fb-status"></span>
-    </div>
-  </div>
+  <div id="sugestoes-body" class="load">Carregando…</div>
 </div>
+
 <div class="card">
-  <h2><span class="title">🎯 Critérios de avaliação (a régua)</span></h2>
+  <h2><span class="title">🎯 2 · Critérios de avaliação (a régua)</span></h2>
   <div class="small" style="margin-bottom:10px">
     Aqui você muda <strong>o que a IA olha</strong>, não a nota de ninguém. É onde a divergência entre
     score e faturamento deve virar aprendizado: se quem vende mais tira nota baixa, o que falta na régua?
@@ -272,20 +298,51 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
     </div>
   </div>
 </div>
+
 <div class="card">
-  <h2><span class="title">💡 Sugestões da IA sobre o método</span></h2>
+  <h2><span class="title">📌 3 · Regras da operação</span></h2>
   <div class="small" style="margin-bottom:10px">
-    O prompt pede que a IA critique o processo de vendas <strong>e a própria régua</strong> — inclusive dizendo
-    que um critério existente está injusto ou incompleto. Nada aqui muda a avaliação sozinho: você aprova, e só
-    então vira critério. É esse ciclo que faz o algoritmo melhorar em vez de só acumular análise.
+    O que estiver aqui entra no prompt de <strong>toda</strong> análise, de todos os vendedores, em todas as semanas,
+    e tem <strong>precedência sobre a avaliação</strong>: se a regra diz que algo não é possível, a IA não pode cobrar
+    isso como falha. É onde mora o que ela não tem como saber lendo a conversa — política comercial, limite de sistema,
+    exceção que não existe.
   </div>
-  <div id="sugestoes-body" class="load">Carregando…</div>
+  <div id="regras-body" class="load">Carregando…</div>
+  <div class="fb-form" style="margin-top:12px">
+    <textarea id="nova-regra" rows="3" placeholder="Ex.: não é possível reservar horário na agenda antes do pagamento e da assinatura do contrato. O vendedor pode garantir a entrega dentro do prazo se o pagamento sair no mesmo dia — não pode passar data nem horário antes disso."></textarea>
+    <div class="fb-actions">
+      <button class="btn btn-sm" onclick="salvarRegra()">Salvar regra</button>
+      <span id="regra-status" class="fb-status"></span>
+    </div>
+  </div>
 </div>
 
 <div class="card">
   <h2><span class="title">🗂️ Correções pontuais registradas</span></h2>
-  <div class="small" style="margin-bottom:10px">Contexto que você escreveu em cima de um ponto específico. Entra na re-análise daquele vendedor e como histórico nas semanas seguintes.</div>
+  <div class="small" style="margin-bottom:10px">Contexto que você escreveu em cima de um ponto específico, no detalhamento do vendedor. Entra na re-análise daquele vendedor e como histórico nas semanas seguintes.</div>
   <div id="pontuais-body" class="load">Carregando…</div>
+</div>
+
+<details>
+  <summary>⚙️ Editor do prompt ativo</summary>
+  <div id="prompt-body" class="load" style="margin-top:12px">Carregando…</div>
+</details>
+
+</div>
+
+<!-- ================= ABA CONVERSAS =================
+     Pergunta que responde: preciso ver um caso. -->
+<div id="pane-conversas" class="hidden">
+<div class="card">
+  <h2><span class="title">💬 Conversas</span></h2>
+  <div class="controls" style="margin-bottom:12px">
+    <select id="conv-vend"><option value="">Todos vendedores</option></select>
+    <select id="conv-etapa"><option value="">Todas etapas</option><option value="avaliacao">Avaliação</option><option value="closer">Closer</option></select>
+    <input id="conv-search" placeholder="Buscar em mensagens…" style="flex:1;min-width:200px">
+    <button class="btn btn-2 btn-sm" onclick="loadConversas()">Filtrar</button>
+  </div>
+  <div id="conv-resumo" class="grid grid-3" style="margin-bottom:14px"></div>
+  <div id="conv-body" class="load">Carregando…</div>
 </div>
 </div>
 
@@ -305,6 +362,8 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-content" id="modal-content"></div>
 </div>
+
+</div><!-- /wrap -->
 
 <script>
 const SU='https://mwlxudtdvflygvewuwal.supabase.co';
@@ -751,9 +810,13 @@ function abrirConversa(email,n,trecho){
   document.getElementById('modal').classList.add('on');
 }
 
-async function abrirConversaBanco(contactId,n){
+/* porId=true → ref e o conversations.id (linha exata).
+   porId falso → ref e o contact_id, e ai pegamos a linha mais recente: o mesmo
+   contato pode existir em Avaliacao E em Closer, entao so use quando nao houver id. */
+async function abrirConversaBanco(ref,n,porId){
   try{
-    const rows=await sb('conversations?select=*&contact_id=eq.'+contactId+'&order=stage_entered_at.desc');
+    const col=porId?'id':'contact_id';
+    const rows=await sb('conversations?select=*&'+col+'=eq.'+encodeURIComponent(ref)+'&order=stage_entered_at.desc');
     if(!rows.length){toast('Não achei essa conversa no banco.','err');return;}
     const c=rows[0];
     const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
@@ -766,10 +829,13 @@ async function abrirConversaBanco(contactId,n){
     document.getElementById('modal-content').innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
         <div><h2 style="font-size:18px">${esc((c.seller_name||'').trim())} · fio completo</h2>
-          <div class="small">${esc(c.origin_name||'')} · ${esc(c.conversation_date||'')} · ${msgs.length} mensagens · era a Conversa ${n} do lote</div></div>
+          <div class="small">${esc(c.origin_name||'')} · ${esc(c.conversation_date||'')} · ${msgs.length} mensagens${n?' · era a Conversa '+n+' do lote':''}</div></div>
         <button class="close" onclick="closeModal()">×</button>
       </div>
       <div style="max-height:62vh;overflow-y:auto">${body}</div>`;
+    // REGRA DESTA TELA: toda funcao que escreve em #modal-content abre o modal na
+    // ultima linha. Sem isto o clique preenche uma caixa invisivel, sem erro nenhum.
+    document.getElementById('modal').classList.add('on');
   }catch(e){toast('Erro: '+e.message,'err');}
 }
 
@@ -1380,12 +1446,17 @@ async function salvarPrompt(id){
 }
 
 // ============ TABS ============
+// v4.7 — 4 abas. A lista e a fonte unica: aba nova entra aqui e no markup,
+// em mais lugar nenhum.
+const PANES=['semana','vendedores','regua','conversas'];
 function switchTab(t){
+  if(!PANES.includes(t))t=PANES[0];
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  document.getElementById('tab-intel').classList.toggle('hidden',t!=='intel');
-  document.getElementById('tab-conv').classList.toggle('hidden',t!=='conv');
-  document.getElementById('tab-regras').classList.toggle('hidden',t!=='regras');
-  if(t==='conv')loadConversas();
+  PANES.forEach(p=>{
+    const el=document.getElementById('pane-'+p);
+    if(el)el.classList.toggle('hidden',p!==t);
+  });
+  if(t==='conversas')loadConversas();
 }
 
 // ============ DIALOGOS DO PROPRIO HTML ============
@@ -1455,7 +1526,7 @@ async function loadConversas(){
       const audCel=a.total
         ? `${a.total}${a.pendentes?` <span class="chip chip-yellow">${a.pendentes} pend.</span>`:''}`
         : '<span class="text-mute">–</span>';
-      return `<tr onclick="abrirConversaBanco('${c.contact_id}',0)" style="cursor:pointer">
+      return `<tr onclick="abrirConversaBanco('${c.id}',0,1)" style="cursor:pointer">
         <td>${esc(c.conversation_date||'')}</td>
         <td>${nome?esc(nome):'<span class="text-mute">sem nome</span>'}</td>
         <td class="mono">${tel?esc(tel):'<span class="text-mute">–</span>'}</td>
