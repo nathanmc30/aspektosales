@@ -89,6 +89,7 @@ tr:hover td{background:var(--panel2)}
 .cmodal-corpo{color:var(--text-dim);font-size:13.5px;line-height:1.65;margin-bottom:18px}
 .cmodal-acoes{display:flex;justify-content:flex-end;gap:8px}
 .btn-danger{background:var(--red);color:#fff}
+.btn.btn-enviado,.btn.btn-enviado:disabled{background:var(--green-dim);color:var(--green);border:1px solid var(--green-dim);cursor:default;opacity:1}
 .mono{font-family:"SF Mono",Monaco,Menlo,Consolas,monospace;font-size:12px}
 .small{font-size:12px;color:var(--text-dim)}
 .rank-cell{width:32px;color:var(--text-dim);font-weight:600}
@@ -616,7 +617,7 @@ function sugCard(s,eixo,vend){
     ${s.evidencia?`<div class="ref-text">${esc(s.evidencia)}</div>`:''}
     <div style="margin-top:8px">${jaFoi
       ?'<span class="chip chip-green">✓ já virou critério</span>'
-      :`<button class="btn btn-2 btn-xs" onclick="promoverSugestao('${id}')">aprovar como critério →</button>`}</div>
+      :`<button class="btn btn-2 btn-xs" onclick="promoverSugestao('${id}',this)">aprovar como critério →</button>`}</div>
   </div>`;
 }
 
@@ -639,20 +640,26 @@ function renderSugestoesGeral(){
   el.innerHTML=h||'<div class="small">A IA ainda não devolveu sugestões. O campo é novo (prompt v4) — aparece na próxima análise.</div>';
 }
 
-async function promoverSugestao(id){
+async function promoverSugestao(id,btn){
   const s=SUGREG[id];
   if(!s||!s.texto)return;
   if(!await confirmar({titulo:'Aprovar como critério de avaliação',
     corpo:'<p style="margin-bottom:10px">Passa a valer para <strong>todos os vendedores</strong> na próxima análise:</p><div class="ref-card">'+esc(s.texto)+'</div>',
     ok:'Enviar'}))return;
+  const volta=btn?btn.innerHTML:null;
+  if(btn){btn.disabled=true;btn.textContent='enviando…';}
   try{
     await fetch(SU+'/rest/v1/analysis_feedback',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',
         target_ref:'sugestao_ia:'+STATE.week,texto:s.texto,regra:s.texto}])});
+    if(btn){btn.textContent='✓ enviado';btn.className='btn btn-xs btn-enviado';}
     toast('Critério enviado — vale a partir da próxima análise');
     await refreshAll();
-  }catch(e){toast('Erro: '+e.message,'err');}
+  }catch(e){
+    if(btn){btn.disabled=false;btn.innerHTML=volta;}
+    toast('Erro: '+e.message,'err');
+  }
 }
 
 function renderRegras(){
@@ -858,6 +865,7 @@ function renderMelhores(){
 
   const tabela=sinais.map(s=>{
     const bom=s.delta>0;
+    const jaEnv=(STATE.feedback||[]).some(f=>f.ativo!==false&&f.target_ref==='sinal:'+s.k+':'+STATE.week);
     return `<tr>
       <td>${esc(s.nome)}</td>
       <td class="cmp-num">${s.media}%</td>
@@ -865,8 +873,9 @@ function renderMelhores(){
       <td class="cmp-num text-mute">${s.cBaixo}%</td>
       <td class="cmp-num ${bom?'text-good':'text-bad'}">${s.delta>0?'+':''}${s.delta}</td>
       <td>${bom
-        ? `<span class="chip chip-green">confirma</span>
-           <button class="btn btn-2 btn-xs" style="margin-left:6px" onclick="promoverSinal('${s.k}')">virar critério →</button>`
+        ? `<span class="chip chip-green">confirma</span>`+(jaEnv
+            ? ` <button class="btn btn-xs btn-enviado" style="margin-left:6px" disabled>✓ enviado</button>`
+            : ` <button class="btn btn-2 btn-xs" style="margin-left:6px" onclick="promoverSinal('${s.k}',this)">virar critério →</button>`)
         : '<span class="chip chip-yellow">não confirma</span>'}</td>
     </tr>`;}).join('');
 
@@ -891,21 +900,27 @@ function renderMelhores(){
     </div>`;
 }
 
-async function promoverSinal(k){
+async function promoverSinal(k,btn){
   const nome=SINAIS[k]||k;
   const txt=`Dar peso maior a "${nome}": é um dos comportamentos que mais aparece junto de fechamento neste time. `
     +`Avaliar explicitamente se ele acontece em cada conversa e cobrar quando faltar.`;
   if(!await confirmar({titulo:'Virar critério de avaliação',
     corpo:'<p style="margin-bottom:10px">Passa a valer para <strong>todos os vendedores</strong> na próxima análise:</p><div class="ref-card">'+esc(txt)+'</div>',
     ok:'Enviar'}))return;
+  const volta=btn?btn.innerHTML:null;
+  if(btn){btn.disabled=true;btn.textContent='enviando…';}
   try{
     await fetch(SU+'/rest/v1/analysis_feedback',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',
         target_ref:'sinal:'+k+':'+STATE.week,texto:txt,regra:txt}])});
+    if(btn){btn.textContent='✓ enviado';btn.className='btn btn-xs btn-enviado';btn.style.marginLeft='6px';}
     toast('Critério enviado — vale a partir da próxima análise');
     await refreshAll();
-  }catch(e){toast('Erro: '+e.message,'err');}
+  }catch(e){
+    if(btn){btn.disabled=false;btn.innerHTML=volta;}
+    toast('Erro: '+e.message,'err');
+  }
 }
 
 function renderComp(){
