@@ -76,6 +76,19 @@ tr:hover td{background:var(--panel2)}
 .err{background:var(--red-dim);color:var(--red);padding:12px;border-radius:6px;margin:12px 0}
 .ok{background:var(--green-dim);color:var(--green);padding:12px;border-radius:6px;margin:12px 0}
 .warn{background:var(--yellow-dim);color:var(--yellow);padding:12px;border-radius:6px;margin:12px 0}
+#toasts{position:fixed;right:16px;bottom:16px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--green);color:var(--text);padding:11px 15px;border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:13px;max-width:360px;animation:tin .18s ease-out}
+.toast.err{border-left-color:var(--red)}
+.toast.info{border-left-color:var(--brand)}
+.toast.out{opacity:0;transform:translateY(4px);transition:opacity .3s,transform .3s}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.cmodal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:20px;z-index:290}
+.cmodal.on{display:flex}
+.cmodal-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;max-width:540px;width:100%;padding:22px;box-shadow:0 16px 48px rgba(0,0,0,.55);animation:tin .16s ease-out}
+.cmodal-box h3{font-size:16px;font-weight:600;color:var(--text);margin:0 0 10px;text-transform:none;letter-spacing:0}
+.cmodal-corpo{color:var(--text-dim);font-size:13.5px;line-height:1.65;margin-bottom:18px}
+.cmodal-acoes{display:flex;justify-content:flex-end;gap:8px}
+.btn-danger{background:var(--red);color:#fff}
 .mono{font-family:"SF Mono",Monaco,Menlo,Consolas,monospace;font-size:12px}
 .small{font-size:12px;color:var(--text-dim)}
 .rank-cell{width:32px;color:var(--text-dim);font-weight:600}
@@ -275,6 +288,18 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 </div>
 
+<div id="cmodal" class="cmodal">
+  <div class="cmodal-box">
+    <h3 id="cm-titulo">Confirmar</h3>
+    <div class="cmodal-corpo" id="cm-corpo"></div>
+    <div class="cmodal-acoes">
+      <button class="btn btn-2 btn-sm" id="cm-cancel">Cancelar</button>
+      <button class="btn btn-sm" id="cm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div id="toasts"></div>
+
 <!-- MODAL -->
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-content" id="modal-content"></div>
@@ -429,15 +454,15 @@ async function salvarResultados(){
     body.push({seller_email:r.dataset.email,seller_name:r.dataset.name,week_label:STATE.week,
       data_medicao:today,faturamento:fat,vendas_fechadas:vd,taxa_comparecimento:tc,taxa_conversao:tv});
   });
-  if(!body.length){alert('Nada para salvar');return;}
+  if(!body.length){toast('Nada para salvar','info');return;}
   try{
     const r=await fetch(SU+'/rest/v1/seller_results?on_conflict=seller_email,data_medicao',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify(body)});
     if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,200));
-    alert('Salvo ('+body.length+' vendedores)');
+    toast('Resultado salvo — '+body.length+' vendedor(es)');
     refreshAll();
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){toast('Erro: '+e.message,'err');}
 }
 
 /* =====================================================================
@@ -520,13 +545,16 @@ async function fbSalvar(id){
 }
 
 async function fbRemover(fid){
-  if(!confirm('Remover este contexto? Ele deixa de entrar nas próximas análises.'))return;
+  if(!await confirmar({titulo:'Remover contexto',
+    corpo:'Ele deixa de entrar nas próximas análises. Nada é apagado — só sai de circulação.',
+    ok:'Remover',perigo:true}))return;
   try{
     await fetch(SU+'/rest/v1/analysis_feedback?id=eq.'+fid,{
       method:'PATCH',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify({ativo:false})});
+    toast('Contexto removido');
     await refreshAll();
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){toast('Erro: '+e.message,'err');}
 }
 
 async function salvarRegra(){
@@ -614,14 +642,17 @@ function renderSugestoesGeral(){
 async function promoverSugestao(id){
   const s=SUGREG[id];
   if(!s||!s.texto)return;
-  if(!confirm('Aprovar como critério de avaliação, valendo para todos na próxima análise?\n\n'+s.texto))return;
+  if(!await confirmar({titulo:'Aprovar como critério de avaliação',
+    corpo:'<p style="margin-bottom:10px">Passa a valer para <strong>todos os vendedores</strong> na próxima análise:</p><div class="ref-card">'+esc(s.texto)+'</div>',
+    ok:'Enviar'}))return;
   try{
     await fetch(SU+'/rest/v1/analysis_feedback',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',
         target_ref:'sugestao_ia:'+STATE.week,texto:s.texto,regra:s.texto}])});
+    toast('Critério enviado — vale a partir da próxima análise');
     await refreshAll();
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){toast('Erro: '+e.message,'err');}
 }
 
 function renderRegras(){
@@ -682,7 +713,7 @@ function realcar(txt,trecho){
 function abrirConversa(email,n,trecho){
   const l=loteDe(email);
   const bloco=blocoConversa(l&&l.markdown_content,n);
-  if(!bloco){alert('Não encontrei a Conversa '+n+' no lote desta semana.');return;}
+  if(!bloco){toast('Não encontrei a Conversa '+n+' no lote desta semana.','err');return;}
   const linhas=bloco.split('\n');
   const cab=linhas.shift()||'';
   const meta=(linhas[0]||'').startsWith('Msgs:')?linhas.shift():'';
@@ -716,7 +747,7 @@ function abrirConversa(email,n,trecho){
 async function abrirConversaBanco(contactId,n){
   try{
     const rows=await sb('conversations?select=*&contact_id=eq.'+contactId+'&order=stage_entered_at.desc');
-    if(!rows.length){alert('Não achei essa conversa no banco.');return;}
+    if(!rows.length){toast('Não achei essa conversa no banco.','err');return;}
     const c=rows[0];
     const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
     const body=msgs.map(m=>{
@@ -732,7 +763,7 @@ async function abrirConversaBanco(contactId,n){
         <button class="close" onclick="closeModal()">×</button>
       </div>
       <div style="max-height:62vh;overflow-y:auto">${body}</div>`;
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){toast('Erro: '+e.message,'err');}
 }
 
 function btnConversa(email,n,trecho){
@@ -864,14 +895,17 @@ async function promoverSinal(k){
   const nome=SINAIS[k]||k;
   const txt=`Dar peso maior a "${nome}": é um dos comportamentos que mais aparece junto de fechamento neste time. `
     +`Avaliar explicitamente se ele acontece em cada conversa e cobrar quando faltar.`;
-  if(!confirm('Vai virar critério de avaliação, valendo para todos, na próxima análise:\n\n'+txt))return;
+  if(!await confirmar({titulo:'Virar critério de avaliação',
+    corpo:'<p style="margin-bottom:10px">Passa a valer para <strong>todos os vendedores</strong> na próxima análise:</p><div class="ref-card">'+esc(txt)+'</div>',
+    ok:'Enviar'}))return;
   try{
     await fetch(SU+'/rest/v1/analysis_feedback',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',
         target_ref:'sinal:'+k+':'+STATE.week,texto:txt,regra:txt}])});
+    toast('Critério enviado — vale a partir da próxima análise');
     await refreshAll();
-  }catch(e){alert('Erro: '+e.message);}
+  }catch(e){toast('Erro: '+e.message,'err');}
 }
 
 function renderComp(){
@@ -1240,10 +1274,12 @@ async function disparaAnalise(){
 async function reAnalisar(email){
   const st=document.getElementById('re-status');
   const alvo=email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises;
-  if(!alvo.length){alert('Nada analisado nesta semana para refazer.');return;}
+  if(!alvo.length){toast('Nada analisado nesta semana para refazer.','info');return;}
   const quem=email?((alvo[0].seller_name||'').trim()):'a semana toda';
   const ctx=STATE.feedback.filter(f=>f.escopo==='global'||(!email||f.seller_email===email));
-  if(!ctx.length&&!confirm('Você ainda não escreveu nenhum contexto. Refazer agora vai dar quase o mesmo resultado. Continuar?'))return;
+  if(!ctx.length&&!await confirmar({titulo:'Refazer sem contexto novo?',
+    corpo:'Você ainda não escreveu nenhuma regra nem critério. Refazer agora vai dar praticamente o mesmo resultado.',
+    ok:'Refazer assim mesmo'}))return;
 
   const antes=alvo.map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
   st.textContent='disparando re-análise de '+quem+'…';st.className='fb-status text-mute';
@@ -1278,11 +1314,11 @@ async function reAnalisar(email){
 
 async function disparaTranscricao(){
   await fetch(WH_TRANSCR,{method:'POST',mode:'no-cors'});
-  alert('Transcrição disparada. Aguarde alguns minutos e atualize.');
+  toast('Transcrição disparada — aguarde alguns minutos e atualize','info');
 }
 async function gerarLotes(){
   await fetch(WH_LOTES,{method:'POST',mode:'no-cors'});
-  alert('Geração de lotes disparada. Atualize em ~10s.');
+  toast('Geração de lotes disparada — atualize em ~10s','info');
   setTimeout(refreshAll,10000);
 }
 
@@ -1303,7 +1339,7 @@ async function salvarPrompt(id){
   await fetch(SU+'/rest/v1/analysis_prompts?id=eq.'+id,{
     method:'PATCH',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
     body:JSON.stringify({prompt_individual:pi,prompt_comparativo:pc})});
-  alert('Prompt salvo. Rode análise nova para usar.');
+  toast('Prompt salvo — rode uma análise nova para usar');
 }
 
 // ============ TABS ============
@@ -1313,6 +1349,38 @@ function switchTab(t){
   document.getElementById('tab-conv').classList.toggle('hidden',t!=='conv');
   document.getElementById('tab-regras').classList.toggle('hidden',t!=='regras');
   if(t==='conv')loadConversas();
+}
+
+// ============ DIALOGOS DO PROPRIO HTML ============
+// Substituem confirm()/alert() nativos: o navegador mostrava "nathanmc30.github.io diz",
+// que quebra a identidade da tela e nao permite formatar o texto.
+function confirmar(o){
+  o=o||{};
+  return new Promise(res=>{
+    const m=document.getElementById('cmodal');
+    const bOk=document.getElementById('cm-ok'), bNo=document.getElementById('cm-cancel');
+    document.getElementById('cm-titulo').textContent=o.titulo||'Confirmar';
+    document.getElementById('cm-corpo').innerHTML=o.corpo||'';
+    bOk.textContent=o.ok||'Confirmar';
+    bOk.className='btn btn-sm'+(o.perigo?' btn-danger':'');
+    m.classList.add('on');
+    bOk.focus();
+    const fim=v=>{m.classList.remove('on');bOk.onclick=null;bNo.onclick=null;m.onclick=null;CM_ABERTO=null;res(v);};
+    CM_ABERTO=()=>fim(false);
+    bOk.onclick=()=>fim(true);
+    bNo.onclick=()=>fim(false);
+    m.onclick=e=>{if(e.target===m)fim(false);};
+  });
+}
+let CM_ABERTO=null;
+function toast(msg,tipo){
+  const c=document.getElementById('toasts');
+  if(!c)return;
+  const t=document.createElement('div');
+  t.className='toast '+(tipo||'ok');
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),320);},3400);
 }
 
 // ============ CONVERSAS ============
@@ -1388,7 +1456,7 @@ function weekBounds(wl){
   return {start:s.toISOString().split('T')[0],end:e.toISOString().split('T')[0]};
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(CM_ABERTO){CM_ABERTO();return;}closeModal();});
 
 // ============ INIT ============
 (async()=>{
