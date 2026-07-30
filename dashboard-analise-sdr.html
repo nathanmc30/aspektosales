@@ -233,6 +233,23 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
   </div>
 </div>
 <div class="card">
+  <h2><span class="title">🎯 Critérios de avaliação (a régua)</span></h2>
+  <div class="small" style="margin-bottom:10px">
+    Aqui você muda <strong>o que a IA olha</strong>, não a nota de ninguém. É onde a divergência entre
+    score e faturamento deve virar aprendizado: se quem vende mais tira nota baixa, o que falta na régua?
+    Entra no prompt de toda análise, junto com as regras da operação, mas com peso de instrução de avaliação.
+    <br><em>Faturamento nunca é mostrado à IA — se fosse, ela só repetiria o ranking de vendas.</em>
+  </div>
+  <div id="criterios-body" class="load">Carregando…</div>
+  <div class="fb-form" style="margin-top:12px">
+    <textarea id="novo-criterio" rows="3" placeholder="Ex.: considerar concluída a etapa de fechamento só quando o vendedor oferece algo verificável (compromisso por escrito, prazo com consequência) — repetir “pode ficar tranquilo” não conta como contorno de objeção."></textarea>
+    <div class="fb-actions">
+      <button class="btn btn-sm" onclick="salvarCriterioLivre()">Salvar critério</button>
+      <span id="criterio-status" class="fb-status"></span>
+    </div>
+  </div>
+</div>
+<div class="card">
   <h2><span class="title">🗂️ Correções pontuais registradas</span></h2>
   <div class="small" style="margin-bottom:10px">Contexto que você escreveu em cima de um ponto específico. Entra na re-análise daquele vendedor e como histórico nas semanas seguintes.</div>
   <div id="pontuais-body" class="load">Carregando…</div>
@@ -439,8 +456,9 @@ function fbBlock(o){
       <textarea id="${id}_t" rows="3" placeholder="${esc(o.hint||'O que a IA não sabia, ou entendeu errado. Escreva como você explicaria para uma pessoa nova no time.')}"></textarea>
       <div class="fb-actions">
         <select id="${id}_e">
-          <option value="ponto">Vale para este ponto</option>
-          <option value="global">É regra da operação — vale para todas as análises</option>
+          <option value="ponto">Vale só para este ponto</option>
+          <option value="global">É regra da operação — o que o processo permite ou proíbe</option>
+          <option value="criterio">É critério de avaliação — muda o que a IA deve olhar em todo mundo</option>
         </select>
         <button class="btn btn-sm" onclick="fbSalvar('${id}')">Salvar</button>
         <button class="btn btn-2 btn-sm" onclick="fbToggle('${id}')">Cancelar</button>
@@ -453,24 +471,27 @@ function fbToggle(id){document.getElementById(id).classList.toggle('hidden');}
 async function fbSalvar(id){
   const o=FBREG[id];
   const texto=document.getElementById(id+'_t').value.trim();
-  const escopo=document.getElementById(id+'_e').value;
+  const sel=document.getElementById(id+'_e').value;
   const st=document.getElementById(id+'_s');
   if(!texto){st.textContent='escreva algo antes de salvar';st.className='fb-status text-bad';return;}
   st.textContent='salvando…';st.className='fb-status text-mute';
   const an=STATE.analises.find(a=>a.seller_email===o.email);
+  const geral=sel!=='ponto';
+  const tipo=sel==='criterio'?'criterio':sel==='global'?'regra_operacional':'contesta';
   try{
     await fetch(SU+'/rest/v1/analysis_feedback',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
       body:JSON.stringify([{
-        escopo,
-        tipo:escopo==='global'?'regra_operacional':'contesta',
+        escopo:geral?'global':'ponto',
+        tipo,
         analysis_id:an?an.id:null,
-        week_label:escopo==='global'?null:STATE.week,
-        seller_email:escopo==='global'?null:(o.email||null),
-        seller_name:escopo==='global'?null:(o.name||null),
-        target_tipo:o.tt,target_ref:o.ref?String(o.ref):null,
+        week_label:geral?null:STATE.week,
+        seller_email:geral?null:(o.email||null),
+        seller_name:geral?null:(o.name||null),
+        target_tipo:sel==='criterio'?'criterio_avaliacao':o.tt,
+        target_ref:sel==='criterio'?(o.tt+(o.ref?'#'+o.ref:'')):(o.ref?String(o.ref):null),
         conversa_n:o.conversa??null,
-        texto,regra:escopo==='global'?texto:null
+        texto,regra:geral?texto:null
       }])});
     st.textContent='salvo';st.className='fb-status text-good';
     await refreshAll();
@@ -502,13 +523,37 @@ async function salvarRegra(){
   }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
 }
 
+async function salvarCriterioLivre(){
+  const t=document.getElementById('novo-criterio').value.trim();
+  const st=document.getElementById('criterio-status');
+  if(!t){st.textContent='escreva o critério primeiro';st.className='fb-status text-bad';return;}
+  st.textContent='salvando…';st.className='fb-status text-mute';
+  try{
+    await fetch(SU+'/rest/v1/analysis_feedback',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',texto:t,regra:t}])});
+    document.getElementById('novo-criterio').value='';
+    st.textContent='salvo';st.className='fb-status text-good';
+    await refreshAll();
+  }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
+}
+
 function renderRegras(){
-  const g=STATE.feedback.filter(f=>f.escopo==='global');
-  document.getElementById('regras-body').innerHTML=g.length
-    ? g.map(f=>`<div class="fb-saved g"><div>${esc(f.texto)}</div>
-        <div class="fb-meta"><span>registrada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</span>
-        <button class="btn btn-2 btn-xs" onclick="fbRemover('${f.id}')">remover</button></div></div>`).join('')
+  const linha=f=>`<div class="fb-saved g"><div>${esc(f.texto)}</div>
+      <div class="fb-meta"><span>registrada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</span>
+      ${f.target_ref&&String(f.target_ref).startsWith('divergencia:')?'<span class="chip chip-orange">veio de uma divergência</span>':''}
+      <button class="btn btn-2 btn-xs" onclick="fbRemover('${f.id}')">remover</button></div></div>`;
+
+  const regras=STATE.feedback.filter(f=>f.escopo==='global'&&f.tipo==='regra_operacional');
+  const crits=STATE.feedback.filter(f=>f.tipo==='criterio');
+
+  document.getElementById('regras-body').innerHTML=regras.length
+    ? regras.map(linha).join('')
     : `<div class="small">Nenhuma regra registrada ainda. A primeira costuma ser a que a IA erra sempre: um limite do processo que não aparece na conversa.</div>`;
+
+  document.getElementById('criterios-body').innerHTML=crits.length
+    ? crits.map(linha).join('')
+    : `<div class="small">Nenhum critério ainda. Um bom primeiro critério nasce de uma linha laranja no comparativo.</div>`;
 
   const p=STATE.feedback.filter(f=>f.escopo!=='global');
   document.getElementById('pontuais-body').innerHTML=p.length
@@ -645,18 +690,24 @@ function renderComp(){
   const posI=posicoes(an.map(a=>({k:a.seller_email,v:iaPor[a.seller_email]?iaPor[a.seller_email].nota:null})));
   const posF=posicoes(an.map(a=>{const u=ultimoResultado(a.seller_email);return {k:a.seller_email,v:u?u.faturamento:null};}));
 
+  STATE.cmp={};
   const linhas=[...an].sort((a,b)=>(posF[a.seller_email]||99)-(posF[b.seller_email]||99)).map(a=>{
     const e=a.seller_email,ia=iaPor[e]||{},u=ultimoResultado(e);
     const pc=posC[e],pi=posI[e],pf=posF[e];
     const divC=(pc&&pf)?Math.abs(pc-pf):null;
     const alerta=divC!=null&&divC>=2;
+    STATE.cmp[e]={nome:(a.seller_name||'').trim(),score:a.score_geral,nota:ia.nota,
+                  fat:u?u.faturamento:null,conv:u?u.taxa_conversao:null,pc,pi,pf,div:divC};
     return `<tr class="${alerta?'div-alto':''}">
       <td>${esc((a.seller_name||'').trim())}${ia.amostra?' <span class="chip chip-yellow">amostra pequena</span>':''}</td>
       <td class="cmp-num ${scoreColor(a.score_geral)}">${a.score_geral??'–'}<span class="cmp-pos">${pc?pc+'º':''}</span></td>
       <td class="cmp-num">${ia.nota??'–'}<span class="cmp-pos">${pi?pi+'º':''}</span></td>
-      <td class="cmp-num">${u&&u.faturamento!=null?brl(u.faturamento):'–'}<span class="cmp-pos">${pf?pf+'º':''}</span></td>
+      <td class="cmp-num text-mute">${u&&u.faturamento!=null?brl(u.faturamento):'–'}<span class="cmp-pos">${pf?pf+'º':''}</span></td>
       <td class="small">${u&&u.taxa_conversao!=null?u.taxa_conversao+'%':'–'}</td>
-      <td>${alerta?`<span class="chip chip-orange">${divC} posições</span>`:'<span class="small">—</span>'}</td>
+      <td>${alerta
+        ? `<span class="chip chip-orange">${divC} posições</span>
+           <button class="btn btn-2 btn-xs" style="margin-left:6px" onclick="revisarCriterio('${esc(e)}')">revisar critério →</button>`
+        : '<span class="small">—</span>'}</td>
     </tr>`;}).join('');
 
   const paresC=an.filter(a=>posC[a.seller_email]&&posF[a.seller_email]).map(a=>[posC[a.seller_email],posF[a.seller_email]]);
@@ -667,22 +718,28 @@ function renderComp(){
   document.getElementById('comp-body').innerHTML=`
     <table class="cmp-table"><thead><tr>
       <th>Vendedor</th><th>Score composto</th><th>Nota qualitativa da IA</th>
-      <th>Faturamento do mês</th><th>Conversão</th><th>Divergência</th>
+      <th>Faturamento do mês <span class="text-mute">· referência</span></th>
+      <th>Conversão</th><th>Divergência</th>
     </tr></thead><tbody>${linhas}</tbody></table>
 
     <div class="legenda">
-      <strong>Por que há dois números.</strong> O <em>score composto</em> é calculado
+      <strong>O faturamento não entra na nota.</strong> Ele não é componente do score, não muda peso
+      e não é mostrado à IA quando ela avalia — se fosse, o score viraria uma cópia lavada do faturamento
+      e pararia de dizer <em>o que</em> consertar. Aqui ele serve para uma coisa só: auditar a régua.
+      Quando o score e o faturamento discordam, a suspeita recai sobre o <strong>critério</strong>,
+      não sobre o vendedor. O botão “revisar critério” é onde essa suspeita virar texto que muda
+      o que a IA olha na próxima rodada.
+      <br><br>
+      <strong>Por que há dois números de avaliação.</strong> O <em>score composto</em> é calculado
       (${Math.round(STATE.pesos.p*100)}% processo · ${Math.round(STATE.pesos.t*100)}% técnica ·
-      ${Math.round(STATE.pesos.o*100)}% métricas objetivas) e é o que aparece no card do vendedor.
+      ${Math.round(STATE.pesos.o*100)}% métricas objetivas) e é o que aparece no card.
       A <em>nota qualitativa</em> vem de uma segunda leitura da IA, que compara os vendedores entre si
-      e não inclui a parte objetiva — por isso ela é sistematicamente mais alta e às vezes inverte a ordem.
-      São medidas diferentes, não um erro de conta. A ordem da tabela é a do faturamento, que é o juiz.
+      e não inclui a parte objetiva — por isso é sistematicamente mais alta e às vezes inverte a ordem.
+      São medidas diferentes, não erro de conta.
       <br><br>
       <strong>Aderência ao faturamento</strong> (correlação de ordem, −1 a 1):
       score composto <strong>${fmtRho(rhoC)}</strong> · nota qualitativa <strong>${fmtRho(rhoI)}</strong>.
-      Com ${an.length} vendedores isso é indício, não prova — serve para decidir onde olhar, não para promover ninguém.
-      Linhas em laranja são quem o score e o faturamento discordam em 2 posições ou mais: é ali que o modelo
-      está aprendendo algo errado, ou existe um fator que ele não registra.
+      Isso é um termômetro da régua, não uma nota de ninguém. Com ${an.length} vendedores é indício, não prova.
     </div>
 
     ${r.melhor_pratica?`<h3>Melhor prática a copiar</h3><div class="ref-card ref-good">${esc(r.melhor_pratica)}</div>`:''}
@@ -690,6 +747,70 @@ function renderComp(){
     ${r.destaques?`<h3>Destaques</h3><div class="small" style="line-height:1.6">${esc(r.destaques)}</div>`:''}
     ${fbBlock({tt:'comparativo',ref:STATE.week,hint:'O que está errado ou faltando nesta comparação? Ex.: diferença de volume, qualidade de lead, período que não bate.'})}
   `;
+}
+
+/* =====================================================================
+   v4.1 · DIVERGÊNCIA → REVISÃO DE CRITÉRIO
+   O faturamento nunca virou nota e nunca vira peso. Quando ele discorda
+   do score, o que está sob suspeita é a RÉGUA. O que sai daqui é texto
+   que entra no prompt como critério — vale para todos, na próxima rodada.
+   ===================================================================== */
+function revisarCriterio(email){
+  const c=(STATE.cmp||{})[email];
+  if(!c)return;
+  const jaTem=STATE.feedback.filter(f=>f.tipo==='criterio');
+  const dir=c.pc<c.pf?'melhor no score do que no faturamento':'melhor no faturamento do que no score';
+  const pergunta=c.pc<c.pf
+    ? 'O score premiou algo que não converte. Que critério está pesando demais, ou o que ele faz bem que não vira venda?'
+    : 'O score puniu alguém que vende. Que critério está faltando, ou o que ele faz de certo que a régua não enxerga?';
+  document.getElementById('modal-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div><h2 style="font-size:20px">Revisar critério · ${esc(c.nome)}</h2>
+        <div class="small">${STATE.week} · ${esc(dir)} (${c.div} posições)</div></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+
+    <div class="grid grid-4" style="margin-bottom:14px">
+      <div class="kpi"><div class="label">Score composto</div><div class="val ${scoreColor(c.score)}">${c.score??'–'}</div><div class="sub">${c.pc}º do time</div></div>
+      <div class="kpi"><div class="label">Nota qualitativa</div><div class="val">${c.nota??'–'}</div><div class="sub">${c.pi?c.pi+'º':'–'}</div></div>
+      <div class="kpi"><div class="label">Faturamento</div><div class="val text-mute">${c.fat!=null?brl(c.fat):'–'}</div><div class="sub">${c.pf}º · não entra na nota</div></div>
+      <div class="kpi"><div class="label">Conversão</div><div class="val text-mute">${c.conv!=null?c.conv+'%':'–'}</div></div>
+    </div>
+
+    <div class="warn" style="margin-bottom:14px">
+      Isto <strong>não</strong> altera a nota dele, nem os pesos, nem esta semana.
+      O que você escrever entra no prompt como critério e muda o que a IA passa a olhar
+      em <strong>todos</strong> os vendedores, da próxima análise em diante.
+    </div>
+
+    <h3>${esc(pergunta)}</h3>
+    <div class="fb-form">
+      <textarea id="crit-txt" rows="4" placeholder="Escreva como critério, não como comentário. Ex.: 'valorizar quando o vendedor transfere risco para a clínica (compromisso escrito, garantia) em vez de pedir confiança' — algo que a IA consiga procurar em qualquer conversa."></textarea>
+      <div class="fb-actions">
+        <button class="btn btn-sm" onclick="salvarCriterio('${esc(email)}')">Salvar critério</button>
+        <button class="btn btn-2 btn-sm" onclick="closeModal()">Cancelar</button>
+        <span class="fb-status" id="crit-st"></span>
+      </div>
+    </div>
+
+    ${jaTem.length?`<h3>Critérios já registrados</h3>${jaTem.map(f=>`<div class="fb-saved g">${esc(f.texto)}</div>`).join('')}`:''}
+  `;
+  document.getElementById('modal').classList.add('on');
+}
+
+async function salvarCriterio(email){
+  const t=document.getElementById('crit-txt').value.trim();
+  const st=document.getElementById('crit-st');
+  if(!t){st.textContent='escreva o critério primeiro';st.className='fb-status text-bad';return;}
+  st.textContent='salvando…';st.className='fb-status text-mute';
+  try{
+    await fetch(SU+'/rest/v1/analysis_feedback',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify([{escopo:'global',tipo:'criterio',target_tipo:'criterio_avaliacao',
+        target_ref:'divergencia:'+STATE.week+':'+email,texto:t,regra:t}])});
+    st.textContent='salvo — entra na próxima análise';st.className='fb-status text-good';
+    await refreshAll();
+  }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
 }
 
 // ============ CARDS INDIVIDUAIS ============
