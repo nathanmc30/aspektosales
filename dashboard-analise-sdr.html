@@ -397,7 +397,7 @@ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLo
 const brl=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
 
 let STATE={week:null,weeks:[],analises:[],lotes:[],prontos:[],comp:null,
-           pesos:{p:0.4,t:0.3,o:0.3},resultados:[],vendedores:[],feedback:[],openDetail:null};
+           pesos:{p:0.4,t:0.3,o:0.3},resultados:[],vendedores:[],feedback:[],atividade:[],openDetail:null};
 
 // ============ SEMANA ============
 function currentWeekLabel(){
@@ -425,18 +425,22 @@ async function refreshAll(){
   document.getElementById('last-update').textContent='atualizando…';
   try{
     const wl=STATE.week;
-    const [an,lo,pr,cp,ps,rs,fb]=await Promise.all([
+    const wb=weekBounds(wl);
+    const [an,lo,pr,cp,ps,rs,fb,at]=await Promise.all([
       sb('ai_analyses?select=*&week_label=eq.'+wl+'&order=score_geral.desc.nullslast'),
       sb('weekly_batches?select=*&week_label=eq.'+wl),
       sb('lotes_prontos?select=*&week_label=eq.'+wl),
       sb('weekly_comparative_analyses?select=*&week_label=eq.'+wl+'&order=created_at.desc&limit=1'),
       sb('score_weights?select=*&order=vigente_desde.desc&limit=1'),
       sb('seller_results?select=*&order=data_medicao.desc&limit=300'),
-      sb('analysis_feedback?select=*&ativo=eq.true&order=criado_em.desc&limit=500')
+      sb('analysis_feedback?select=*&ativo=eq.true&order=criado_em.desc&limit=500'),
+      // v4.9 — atividade REAL, lida das mensagens. Ver comentario em renderKpis.
+      sb('conversa_atividade?select=seller_email,ultima_msg,ultima_msg_lead,total_msgs'
+         +'&ultima_msg=gte.'+wb.start+'&ultima_msg=lte.'+wb.end+'T23:59:59')
     ]);
     STATE.analises=an;STATE.lotes=lo;STATE.prontos=pr;STATE.comp=cp[0]||null;
     if(ps.length)STATE.pesos={p:+ps[0].peso_processo,t:+ps[0].peso_tecnica,o:+ps[0].peso_objetivo};
-    STATE.resultados=rs;STATE.feedback=fb;
+    STATE.resultados=rs;STATE.feedback=fb;STATE.atividade=at;
     const v=new Map();
     lo.forEach(l=>v.set(l.seller_email,(l.seller_name||'').trim()));
     an.forEach(a=>v.set(a.seller_email,(a.seller_name||'').trim()));
@@ -456,6 +460,23 @@ function ultimoResultado(email){
     .sort((a,b)=>String(b.data_medicao).localeCompare(String(a.data_medicao)))[0]||null;
 }
 
+/* =====================================================================
+   v4.9 · VOLUME DE LEAD NAO E METRICA DE AVALIACAO
+   `conversation_date` e o dia em que o lead entrou na etapa no Clint, nao o dia
+   da conversa. Vendedor que dispara follow-up e nao recebe resposta gera um
+   "lead da semana" onde nao houve conversa nenhuma. Medido na W31: 10% do volume
+   do Davi Matos contra 47% do Marcos — comparar volume documentado entre
+   vendedores compara coisas diferentes.
+   A conta honesta le as mensagens: conversa real = o LEAD falou na janela.
+   Regra do usuario (30/07): nao usar volume de lead para avaliar ninguem.
+   ===================================================================== */
+function atividadeDe(email){
+  const ini=weekBounds(STATE.week).start;
+  const rows=(STATE.atividade||[]).filter(a=>!email||a.seller_email===email);
+  const reais=rows.filter(a=>a.ultima_msg_lead&&String(a.ultima_msg_lead).slice(0,10)>=ini);
+  return {total:rows.length,reais:reais.length,mudas:rows.length-reais.length};
+}
+
 // ============ KPIs ============
 function renderKpis(){
   const an=STATE.analises,lo=STATE.lotes;
@@ -464,9 +485,10 @@ function renderKpis(){
   const pendentes=lo.length-analisados;
   const avg=an.length?(an.reduce((s,a)=>s+(+a.score_geral||0),0)/an.length).toFixed(2):'–';
   const nfb=STATE.feedback.length;
+  const ativ=atividadeDe(null);
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="label">Vendedores</div><div class="val">${lo.length}</div><div class="sub">${analisados} analisados · ${pendentes} pendentes</div></div>
-    <div class="kpi"><div class="label">Leads na semana</div><div class="val">${totalLeads}</div><div class="sub">agrupados por vendedor</div></div>
+    <div class="kpi"><div class="label">Conversas reais</div><div class="val">${ativ.reais}</div><div class="sub" title="Conversa real = o lead falou nesta semana. Follow-up sem resposta nao conta.">${ativ.mudas} follow-up(s) sem resposta · ${totalLeads} no lote</div></div>
     <div class="kpi"><div class="label">Score médio</div><div class="val">${avg}</div><div class="sub">${STATE.pesos.p*100}p ${STATE.pesos.t*100}t ${STATE.pesos.o*100}o</div></div>
     <div class="kpi"><div class="label">Meu contexto</div><div class="val">${nfb}</div><div class="sub">${STATE.feedback.filter(f=>f.escopo==='global').length} regra(s) da operação</div></div>
   `;
@@ -1269,7 +1291,8 @@ function renderCards(){
           <span class="rank-cell">${i+1}º</span>
           <span>${esc(nm)}</span>
           ${delTxt}
-          <span class="chip chip-brand">${totC} leads${(av||cl)?` (${av} Aval + ${cl} Closer)`:''}</span>
+          <span class="chip chip-brand" title="Conversa real = o lead falou nesta semana.">${atividadeDe(a.seller_email).reais} conversas reais</span>
+          <span class="chip" style="background:var(--panel2);color:var(--text-mute)">${totC} no lote${(av||cl)?` · ${av} Aval + ${cl} Closer`:''}</span>
           ${a.revisao>1?`<span class="chip chip-purple">revisão ${a.revisao}</span>`:''}
           ${nfb?`<span class="chip chip-yellow">${nfb} contexto(s) meu(s)</span>`:''}
         </span>
