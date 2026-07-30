@@ -20,6 +20,7 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 button{cursor:pointer;font-family:inherit;font-size:inherit}
 input,select,textarea{font-family:inherit;font-size:inherit;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--brand)}
+textarea{width:100%;resize:vertical;line-height:1.6}
 a{color:var(--brand);text-decoration:none}
 .wrap{max-width:1400px;margin:0 auto;padding:20px}
 header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
@@ -29,8 +30,8 @@ header .sub{color:var(--text-dim);font-size:13px;margin-top:2px}
 .tab{padding:8px 16px;border-radius:6px;border:none;background:none;color:var(--text-dim);font-weight:500}
 .tab.on{background:var(--brand-dim);color:var(--text)}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
-.card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:space-between}
-.card h2 .title{display:flex;align-items:center;gap:8px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.card h2 .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .card h3{font-size:13px;font-weight:600;color:var(--text-dim);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.5px}
 .grid{display:grid;gap:12px}
 .grid-2{grid-template-columns:1fr 1fr}
@@ -48,6 +49,7 @@ header .sub{color:var(--text-dim);font-size:13px;margin-top:2px}
 .btn-2{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
 .btn-2:hover{background:var(--border)}
 .btn-sm{padding:6px 12px;font-size:13px}
+.btn-xs{padding:3px 9px;font-size:12px;border-radius:5px}
 .chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500}
 .chip-green{background:var(--green-dim);color:var(--green)}
 .chip-yellow{background:var(--yellow-dim);color:var(--yellow)}
@@ -93,7 +95,7 @@ details[open] summary{margin-bottom:8px}
 .ref-card{background:var(--panel2);border-left:3px solid var(--brand);padding:12px;border-radius:6px;margin:8px 0}
 .ref-good{border-left-color:var(--green)}
 .ref-bad{border-left-color:var(--orange)}
-.ref-title{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.ref-title{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ref-text{font-style:italic;color:var(--text-dim);border-left:2px solid var(--border);padding-left:10px;margin:6px 0}
 .res-row{display:grid;grid-template-columns:180px 1fr 1fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
 .res-row:last-child{border-bottom:none}
@@ -106,6 +108,38 @@ details[open] summary{margin-bottom:8px}
 .text-good{color:var(--green)}
 .text-mid{color:var(--yellow)}
 .text-bad{color:var(--red)}
+.text-mute{color:var(--text-mute)}
+
+/* ---------- v4: contexto do gestor ---------- */
+.fb{margin-top:8px}
+.fb-toggle{background:none;border:1px dashed var(--border);color:var(--text-mute);padding:4px 10px;border-radius:6px;font-size:12px}
+.fb-toggle:hover{color:var(--brand);border-color:var(--brand)}
+.fb-form{margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px}
+.fb-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.fb-saved{background:var(--brand-dim);border-left:3px solid var(--brand);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px}
+.fb-saved.g{background:var(--purple-dim);border-left-color:var(--purple)}
+.fb-meta{color:var(--text-mute);font-size:11px;margin-top:4px;display:flex;gap:8px;align-items:center}
+.fb-status{font-size:12px}
+
+/* ---------- v4: conversa citada ---------- */
+.conv-head{background:var(--panel2);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+.msg{padding:5px 0;display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid rgba(37,42,58,.5)}
+.msg:last-child{border-bottom:none}
+.msg-who{flex:0 0 62px;font-size:11px;font-weight:600;padding-top:2px}
+.msg-v .msg-who{color:var(--brand)}
+.msg-l .msg-who{color:var(--green)}
+.msg-txt{flex:1;white-space:pre-wrap;word-break:break-word;font-size:13px}
+.msg-v .msg-txt{color:var(--text)}
+.msg-l .msg-txt{color:var(--text)}
+.msg-meta{flex:0 0 42px;color:var(--text-mute);font-size:11px;text-align:right;padding-top:2px}
+mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
+
+/* ---------- v4: comparativo ---------- */
+.cmp-table th{white-space:nowrap}
+.cmp-num{font-family:"SF Mono",Monaco,Menlo,monospace}
+.cmp-pos{color:var(--text-mute);font-size:11px;margin-left:4px}
+.div-alto{background:var(--orange-dim)!important}
+.legenda{font-size:12px;color:var(--text-dim);line-height:1.7;margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
 </style>
 </head>
 <body>
@@ -124,6 +158,7 @@ details[open] summary{margin-bottom:8px}
 <div class="tabs">
   <button class="tab on" data-tab="intel" onclick="switchTab('intel')">🧠 Inteligência</button>
   <button class="tab" data-tab="conv" onclick="switchTab('conv')">Conversas</button>
+  <button class="tab" data-tab="regras" onclick="switchTab('regras')">📌 Contexto da operação</button>
 </div>
 
 <!-- ================= ABA INTELIGÊNCIA ================= -->
@@ -147,6 +182,8 @@ details[open] summary{margin-bottom:8px}
     <button id="btn-analisar" class="btn" onclick="disparaAnalise()" disabled>▶ Analisar</button>
     <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">🎤 Transcrever áudios</button>
     <button class="btn btn-2 btn-sm" onclick="gerarLotes()">🔄 Gerar lotes</button>
+    <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar a semana com meu contexto</button>
+    <span id="re-status" class="fb-status"></span>
   </div>
 </div>
 
@@ -178,11 +215,33 @@ details[open] summary{margin-bottom:8px}
 </div>
 </div>
 
+<!-- ================= ABA CONTEXTO DA OPERAÇÃO ================= -->
+<div id="tab-regras" class="hidden">
+<div class="card">
+  <h2><span class="title">📌 Regras da operação</span></h2>
+  <div class="small" style="margin-bottom:10px">
+    O que estiver aqui entra no prompt de <strong>toda</strong> análise, de todos os vendedores, em todas as semanas.
+    É onde mora o que a IA não tem como saber lendo a conversa — política comercial, limite de sistema, exceção que não existe.
+  </div>
+  <div id="regras-body" class="load">Carregando…</div>
+  <div class="fb-form" style="margin-top:12px">
+    <textarea id="nova-regra" rows="3" placeholder="Ex.: não é possível reservar horário na agenda antes do pagamento e da assinatura do contrato. O vendedor pode garantir a entrega dentro do prazo se o pagamento sair no mesmo dia — não pode passar data nem horário antes disso."></textarea>
+    <div class="fb-actions">
+      <button class="btn btn-sm" onclick="salvarRegra()">Salvar regra</button>
+      <span id="regra-status" class="fb-status"></span>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <h2><span class="title">🗂️ Correções pontuais registradas</span></h2>
+  <div class="small" style="margin-bottom:10px">Contexto que você escreveu em cima de um ponto específico. Entra na re-análise daquele vendedor e como histórico nas semanas seguintes.</div>
+  <div id="pontuais-body" class="load">Carregando…</div>
+</div>
+</div>
+
 <!-- MODAL -->
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-content" id="modal-content"></div>
-</div>
-
 </div>
 
 <script>
@@ -199,8 +258,12 @@ async function sb(path,opts={}){
   const t=await r.text();
   return t?JSON.parse(t):[];
 }
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const brl=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
 
-let STATE={week:null,weeks:[],analises:[],lotes:[],prontos:[],comp:null,pesos:{p:0.4,t:0.3,o:0.3},resultados:[],vendedores:[]};
+let STATE={week:null,weeks:[],analises:[],lotes:[],prontos:[],comp:null,
+           pesos:{p:0.4,t:0.3,o:0.3},resultados:[],vendedores:[],feedback:[],openDetail:null};
 
 // ============ SEMANA ============
 function currentWeekLabel(){
@@ -228,47 +291,50 @@ async function refreshAll(){
   document.getElementById('last-update').textContent='atualizando…';
   try{
     const wl=STATE.week;
-    const [an,lo,pr,cp,ps,rs]=await Promise.all([
+    const [an,lo,pr,cp,ps,rs,fb]=await Promise.all([
       sb('ai_analyses?select=*&week_label=eq.'+wl+'&order=score_geral.desc.nullslast'),
       sb('weekly_batches?select=*&week_label=eq.'+wl),
       sb('lotes_prontos?select=*&week_label=eq.'+wl),
-      sb('weekly_comparative_analyses?select=*&week_label=eq.'+wl+'&limit=1'),
+      sb('weekly_comparative_analyses?select=*&week_label=eq.'+wl+'&order=created_at.desc&limit=1'),
       sb('score_weights?select=*&order=vigente_desde.desc&limit=1'),
-      sb('seller_results?select=*&order=data_medicao.desc&limit=200')
+      sb('seller_results?select=*&order=data_medicao.desc&limit=300'),
+      sb('analysis_feedback?select=*&ativo=eq.true&order=criado_em.desc&limit=500')
     ]);
     STATE.analises=an;STATE.lotes=lo;STATE.prontos=pr;STATE.comp=cp[0]||null;
     if(ps.length)STATE.pesos={p:+ps[0].peso_processo,t:+ps[0].peso_tecnica,o:+ps[0].peso_objetivo};
-    STATE.resultados=rs;
-    // Vendedores unicos
+    STATE.resultados=rs;STATE.feedback=fb;
     const v=new Map();
     lo.forEach(l=>v.set(l.seller_email,(l.seller_name||'').trim()));
     an.forEach(a=>v.set(a.seller_email,(a.seller_name||'').trim()));
     STATE.vendedores=[...v.entries()].map(([e,n])=>({email:e,name:n})).sort((a,b)=>a.name.localeCompare(b.name));
 
-    renderKpis();
-    renderResultados();
-    renderFila();
-    renderComp();
-    renderCards();
+    renderKpis();renderResultados();renderFila();renderComp();renderCards();renderRegras();
+    if(STATE.openDetail)showDetail(STATE.openDetail);
     document.getElementById('last-update').textContent='atualizado '+new Date().toLocaleTimeString('pt-BR');
   }catch(e){
     document.getElementById('last-update').textContent='erro: '+e.message;
   }
 }
 
+/* último snapshot de resultado por vendedor */
+function ultimoResultado(email){
+  return STATE.resultados.filter(r=>r.seller_email===email)
+    .sort((a,b)=>String(b.data_medicao).localeCompare(String(a.data_medicao)))[0]||null;
+}
+
 // ============ KPIs ============
 function renderKpis(){
-  const an=STATE.analises;
-  const lo=STATE.lotes;
+  const an=STATE.analises,lo=STATE.lotes;
   const totalLeads=lo.reduce((s,l)=>s+(l.total_conversas||0),0);
   const analisados=an.length;
   const pendentes=lo.length-analisados;
   const avg=an.length?(an.reduce((s,a)=>s+(+a.score_geral||0),0)/an.length).toFixed(2):'–';
+  const nfb=STATE.feedback.length;
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="label">Vendedores</div><div class="val">${lo.length}</div><div class="sub">${analisados} analisados · ${pendentes} pendentes</div></div>
     <div class="kpi"><div class="label">Leads na semana</div><div class="val">${totalLeads}</div><div class="sub">agrupados por vendedor</div></div>
     <div class="kpi"><div class="label">Score médio</div><div class="val">${avg}</div><div class="sub">${STATE.pesos.p*100}p ${STATE.pesos.t*100}t ${STATE.pesos.o*100}o</div></div>
-    <div class="kpi"><div class="label">Comparativo</div><div class="val">${STATE.comp?'✓':'–'}</div><div class="sub">${STATE.comp?'gerado':'ainda não'}</div></div>
+    <div class="kpi"><div class="label">Meu contexto</div><div class="val">${nfb}</div><div class="sub">${STATE.feedback.filter(f=>f.escopo==='global').length} regra(s) da operação</div></div>
   `;
 }
 
@@ -276,21 +342,17 @@ function renderKpis(){
 function renderFila(){
   const analisados=new Set(STATE.analises.map(a=>a.seller_email));
   const pend=STATE.lotes.filter(l=>!analisados.has(l.seller_email));
+  const btn=document.getElementById('btn-analisar');
   if(!pend.length){
-    document.getElementById('fila-body').innerHTML='<div class="ok">Todos os vendedores desta semana já foram analisados.</div>';
-    document.getElementById('btn-analisar').disabled=true;
-    document.getElementById('btn-analisar').textContent='▶ Tudo analisado';
+    document.getElementById('fila-body').innerHTML='<div class="ok">Todos os vendedores desta semana já foram analisados. Para refazer com o seu contexto, use “Re-analisar”.</div>';
+    btn.disabled=true;btn.textContent='▶ Tudo analisado';
     return;
   }
-  const rows=pend.map(l=>{
-    const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);
-    const pronto=ps.length===0||ps.every(p=>p.pronto!==false);
-    return `<tr><td>${(l.seller_name||'').trim()}</td><td>${l.total_conversas}</td><td>${pronto?'<span class="chip chip-green">pronto</span>':'<span class="chip chip-yellow">áudio pendente</span>'}</td></tr>`;
-  }).join('');
+  const prontoDe=l=>{const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);return ps.length===0||ps.every(p=>p.pronto!==false);};
+  const rows=pend.map(l=>`<tr><td>${esc((l.seller_name||'').trim())}</td><td>${l.total_conversas}</td><td>${prontoDe(l)?'<span class="chip chip-green">pronto</span>':'<span class="chip chip-yellow">áudio pendente</span>'}</td></tr>`).join('');
   document.getElementById('fila-body').innerHTML=`<table><thead><tr><th>Vendedor</th><th>Conversas</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const liberados=pend.filter(l=>{const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);return ps.length===0||ps.every(p=>p.pronto!==false);});
+  const liberados=pend.filter(prontoDe);
   const leads=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
-  const btn=document.getElementById('btn-analisar');
   btn.disabled=liberados.length===0;
   btn.textContent=liberados.length?`▶ Analisar ${liberados.length} vendedor(es) · ${leads} lead(s)`:'▶ Aguardando transcrição';
 }
@@ -298,31 +360,25 @@ function renderFila(){
 // ============ RESULTADOS (form) ============
 function renderResultados(){
   if(!STATE.lotes.length){
-    document.getElementById('res-body').innerHTML='<div class="warn">Sem lotes nesta semana. Rode "Gerar lotes" primeiro.</div>';
+    document.getElementById('res-body').innerHTML='<div class="warn">Sem lotes nesta semana. Rode “Gerar lotes” primeiro.</div>';
     return;
   }
   const rows=STATE.lotes.map(l=>{
-    const eml=l.seller_email;const nm=(l.seller_name||'').trim();
-    const ult=STATE.resultados.find(r=>r.seller_email===eml);
-    const fat=ult?ult.faturamento||'':'';
-    const vd=ult?ult.vendas_fechadas||'':'';
-    const tc=ult?ult.taxa_comparecimento||'':'';
-    const tv=ult?ult.taxa_conversao||'':'';
-    return `<div class="res-row" data-email="${eml}" data-name="${nm}">
-      <div class="res-name">${nm}</div>
-      <div><input class="res-input res-fat" type="number" step="0.01" placeholder="R$" value="${fat}"></div>
-      <div><input class="res-input res-vd" type="number" placeholder="Vendas mês" value="${vd}"></div>
-      <div><input class="res-input res-tc" type="number" step="0.1" placeholder="% compar." value="${tc}"></div>
-      <div><input class="res-input res-tv" type="number" step="0.1" placeholder="% conversão" value="${tv}"></div>
-      <div class="res-calc">${ult?'último: '+ult.data_medicao:'—'}</div>
+    const eml=l.seller_email,nm=(l.seller_name||'').trim();
+    const ult=ultimoResultado(eml)||{};
+    return `<div class="res-row" data-email="${esc(eml)}" data-name="${esc(nm)}">
+      <div class="res-name">${esc(nm)}</div>
+      <div><input class="res-input res-fat" type="number" step="0.01" placeholder="R$" value="${ult.faturamento??''}"></div>
+      <div><input class="res-input res-vd" type="number" placeholder="Vendas mês" value="${ult.vendas_fechadas??''}"></div>
+      <div><input class="res-input res-tc" type="number" step="0.1" placeholder="% compar." value="${ult.taxa_comparecimento??''}"></div>
+      <div><input class="res-input res-tv" type="number" step="0.1" placeholder="% conversão" value="${ult.taxa_conversao??''}"></div>
+      <div class="res-calc">${ult.data_medicao?'último: '+ult.data_medicao:'—'}</div>
     </div>`;
   }).join('');
   document.getElementById('res-body').innerHTML=`
     <div class="res-row" style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px">
       <div>Vendedor</div><div>Faturamento mês</div><div>Vendas mês</div><div>Compar. (%)</div><div>Conversão (%)</div><div>Última</div>
-    </div>
-    ${rows}
-  `;
+    </div>${rows}`;
 }
 
 async function salvarResultados(){
@@ -331,47 +387,308 @@ async function salvarResultados(){
   const today=new Date().toLocaleDateString('sv-SE');
   const body=[];
   rows.forEach(r=>{
-    const fat=nn(r.querySelector('.res-fat').value);
-    const vd=nn(r.querySelector('.res-vd').value);
-    const tc=nn(r.querySelector('.res-tc').value);
-    const tv=nn(r.querySelector('.res-tv').value);
+    const fat=nn(r.querySelector('.res-fat').value),vd=nn(r.querySelector('.res-vd').value),
+          tc=nn(r.querySelector('.res-tc').value),tv=nn(r.querySelector('.res-tv').value);
     if(fat==null&&vd==null&&tc==null&&tv==null)return;
-    body.push({
-      seller_email:r.dataset.email,
-      seller_name:r.dataset.name,
-      week_label:STATE.week,
-      data_medicao:today,
-      faturamento:fat,
-      vendas_fechadas:vd,
-      taxa_comparecimento:tc,
-      taxa_conversao:tv
-    });
+    body.push({seller_email:r.dataset.email,seller_name:r.dataset.name,week_label:STATE.week,
+      data_medicao:today,faturamento:fat,vendas_fechadas:vd,taxa_comparecimento:tc,taxa_conversao:tv});
   });
   if(!body.length){alert('Nada para salvar');return;}
   try{
-    await fetch(SU+'/rest/v1/seller_results?on_conflict=seller_email,data_medicao',{
-      method:'POST',
-      headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify(body)
-    });
+    const r=await fetch(SU+'/rest/v1/seller_results?on_conflict=seller_email,data_medicao',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,200));
     alert('Salvo ('+body.length+' vendedores)');
     refreshAll();
   }catch(e){alert('Erro: '+e.message);}
 }
 
-// ============ COMPARATIVO ============
+/* =====================================================================
+   v4 · CONTEXTO DO GESTOR
+   Um bloco reaproveitável. Cada ponto da análise pode receber texto livre.
+   escopo=ponto  → vale para aquele ponto/vendedor/semana
+   escopo=global → entra no prompt de toda análise, sempre
+   ===================================================================== */
+let FBSEQ=0;const FBREG={};
+
+function fbDaqui(tt,ref,email){
+  return STATE.feedback.filter(f=>
+    f.target_tipo===tt &&
+    String(f.target_ref||'')===String(ref||'') &&
+    String(f.seller_email||'')===String(email||'') &&
+    (f.escopo==='global'||f.week_label===STATE.week));
+}
+
+function fbBlock(o){
+  const id='fb'+(++FBSEQ);
+  FBREG[id]=o;
+  const mine=fbDaqui(o.tt,o.ref,o.email);
+  const list=mine.map(f=>`
+    <div class="fb-saved ${f.escopo==='global'?'g':''}">
+      <div>${esc(f.texto)}</div>
+      <div class="fb-meta">
+        <span class="chip ${f.escopo==='global'?'chip-purple':'chip-brand'}">${f.escopo==='global'?'regra da operação':'correção deste ponto'}</span>
+        <span>${new Date(f.criado_em).toLocaleDateString('pt-BR')}</span>
+        <button class="btn btn-2 btn-xs" onclick="fbRemover('${f.id}')">remover</button>
+      </div>
+    </div>`).join('');
+  return `<div class="fb">${list}
+    <button class="fb-toggle" onclick="fbToggle('${id}')">🗒️ ${mine.length?'Adicionar contexto':'Contestar ou complementar'}</button>
+    <div class="fb-form hidden" id="${id}">
+      <textarea id="${id}_t" rows="3" placeholder="${esc(o.hint||'O que a IA não sabia, ou entendeu errado. Escreva como você explicaria para uma pessoa nova no time.')}"></textarea>
+      <div class="fb-actions">
+        <select id="${id}_e">
+          <option value="ponto">Vale para este ponto</option>
+          <option value="global">É regra da operação — vale para todas as análises</option>
+        </select>
+        <button class="btn btn-sm" onclick="fbSalvar('${id}')">Salvar</button>
+        <button class="btn btn-2 btn-sm" onclick="fbToggle('${id}')">Cancelar</button>
+        <span class="fb-status" id="${id}_s"></span>
+      </div>
+    </div></div>`;
+}
+function fbToggle(id){document.getElementById(id).classList.toggle('hidden');}
+
+async function fbSalvar(id){
+  const o=FBREG[id];
+  const texto=document.getElementById(id+'_t').value.trim();
+  const escopo=document.getElementById(id+'_e').value;
+  const st=document.getElementById(id+'_s');
+  if(!texto){st.textContent='escreva algo antes de salvar';st.className='fb-status text-bad';return;}
+  st.textContent='salvando…';st.className='fb-status text-mute';
+  const an=STATE.analises.find(a=>a.seller_email===o.email);
+  try{
+    await fetch(SU+'/rest/v1/analysis_feedback',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify([{
+        escopo,
+        tipo:escopo==='global'?'regra_operacional':'contesta',
+        analysis_id:an?an.id:null,
+        week_label:escopo==='global'?null:STATE.week,
+        seller_email:escopo==='global'?null:(o.email||null),
+        seller_name:escopo==='global'?null:(o.name||null),
+        target_tipo:o.tt,target_ref:o.ref?String(o.ref):null,
+        conversa_n:o.conversa??null,
+        texto,regra:escopo==='global'?texto:null
+      }])});
+    st.textContent='salvo';st.className='fb-status text-good';
+    await refreshAll();
+  }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
+}
+
+async function fbRemover(fid){
+  if(!confirm('Remover este contexto? Ele deixa de entrar nas próximas análises.'))return;
+  try{
+    await fetch(SU+'/rest/v1/analysis_feedback?id=eq.'+fid,{
+      method:'PATCH',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify({ativo:false})});
+    await refreshAll();
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+async function salvarRegra(){
+  const t=document.getElementById('nova-regra').value.trim();
+  const st=document.getElementById('regra-status');
+  if(!t){st.textContent='escreva a regra primeiro';st.className='fb-status text-bad';return;}
+  st.textContent='salvando…';st.className='fb-status text-mute';
+  try{
+    await fetch(SU+'/rest/v1/analysis_feedback',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify([{escopo:'global',tipo:'regra_operacional',target_tipo:'operacao',texto:t,regra:t}])});
+    document.getElementById('nova-regra').value='';
+    st.textContent='salvo';st.className='fb-status text-good';
+    await refreshAll();
+  }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
+}
+
+function renderRegras(){
+  const g=STATE.feedback.filter(f=>f.escopo==='global');
+  document.getElementById('regras-body').innerHTML=g.length
+    ? g.map(f=>`<div class="fb-saved g"><div>${esc(f.texto)}</div>
+        <div class="fb-meta"><span>registrada em ${new Date(f.criado_em).toLocaleDateString('pt-BR')}</span>
+        <button class="btn btn-2 btn-xs" onclick="fbRemover('${f.id}')">remover</button></div></div>`).join('')
+    : `<div class="small">Nenhuma regra registrada ainda. A primeira costuma ser a que a IA erra sempre: um limite do processo que não aparece na conversa.</div>`;
+
+  const p=STATE.feedback.filter(f=>f.escopo!=='global');
+  document.getElementById('pontuais-body').innerHTML=p.length
+    ? p.map(f=>`<div class="fb-saved"><div>${esc(f.texto)}</div>
+        <div class="fb-meta">
+          <span class="chip chip-brand">${esc(f.target_tipo||'—')}${f.conversa_n?' · conversa '+f.conversa_n:''}</span>
+          <span>${esc(f.seller_name||f.seller_email||'')} · ${esc(f.week_label||'')}</span>
+          <button class="btn btn-2 btn-xs" onclick="fbRemover('${f.id}')">remover</button>
+        </div></div>`).join('')
+    : '<div class="small">Nada ainda. Escreva em cima de um ponto no card do vendedor.</div>';
+}
+
+/* =====================================================================
+   v4 · ABRIR A CONVERSA CITADA
+   A numeração ("Conversa 14") é a ordem do markdown do lote — que é
+   exatamente o texto que a IA leu. Então abrimos o próprio bloco do
+   markdown: o que você vê é o que ela viu. O link do banco abre o fio
+   completo a partir de contact_ids[n-1].
+   ===================================================================== */
+function loteDe(email){return STATE.lotes.find(l=>l.seller_email===email);}
+
+function blocoConversa(md,n){
+  if(!md)return null;
+  const re=new RegExp('^## Conversa '+n+'(?![0-9])','m');
+  const m=re.exec(md);
+  if(!m)return null;
+  const from=m.index;
+  const nx=md.indexOf('\n## Conversa ',from+5);
+  return md.slice(from,nx===-1?undefined:nx).replace(/\n+-{3,}\s*$/,'').trim();
+}
+
+function realcar(txt,trecho){
+  const t=String(trecho||'').replace(/^["“”\s]+|["“”\s]+$/g,'').slice(0,60);
+  if(t.length<12)return esc(txt);
+  const i=norm(txt).indexOf(norm(t));
+  if(i<0)return esc(txt);
+  return esc(txt.slice(0,i))+'<mark>'+esc(txt.slice(i,i+t.length))+'</mark>'+esc(txt.slice(i+t.length));
+}
+
+function abrirConversa(email,n,trecho){
+  const l=loteDe(email);
+  const bloco=blocoConversa(l&&l.markdown_content,n);
+  if(!bloco){alert('Não encontrei a Conversa '+n+' no lote desta semana.');return;}
+  const linhas=bloco.split('\n');
+  const cab=linhas.shift()||'';
+  const meta=(linhas[0]||'').startsWith('Msgs:')?linhas.shift():'';
+  const msgs=[];
+  for(const ln of linhas){
+    const m=/^\[([VL])\]\s*(\d{1,2}:\d{2})?:?\s?([\s\S]*)$/.exec(ln);
+    if(m){msgs.push({who:m[1],h:m[2]||'',txt:m[3]||''});}
+    else if(msgs.length&&ln.trim()!==''){msgs[msgs.length-1].txt+='\n'+ln;}
+  }
+  const nome=(l.seller_name||'').trim();
+  const contato=(l.contact_ids||[])[n-1]||null;
+  const body=msgs.map(m=>`<div class="msg msg-${m.who.toLowerCase()}">
+      <div class="msg-who">${m.who==='V'?'vendedor':'lead'}</div>
+      <div class="msg-txt">${realcar(m.txt,trecho)}</div>
+      <div class="msg-meta">${esc(m.h)}</div></div>`).join('');
+  document.getElementById('modal-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div><h2 style="font-size:18px">${esc(nome)} · Conversa ${n}</h2>
+        <div class="small">${esc(cab.replace(/^##\s*/,''))}</div></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="conv-head">
+      ${esc(meta)||'&nbsp;'}
+      <div class="small" style="margin-top:6px">Este é o texto exato que a IA analisou.
+      ${contato?`<a href="#" onclick="event.preventDefault();abrirConversaBanco('${contato}',${n})">Abrir o fio completo do banco →</a>`:''}</div>
+    </div>
+    <div style="max-height:58vh;overflow-y:auto">${body||'<div class="small">Bloco sem mensagens legíveis.</div>'}</div>`;
+  document.getElementById('modal').classList.add('on');
+}
+
+async function abrirConversaBanco(contactId,n){
+  try{
+    const rows=await sb('conversations?select=*&contact_id=eq.'+contactId+'&order=stage_entered_at.desc');
+    if(!rows.length){alert('Não achei essa conversa no banco.');return;}
+    const c=rows[0];
+    const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
+    const body=msgs.map(m=>{
+      const t=m.content_type==='AUDIO'?(m.transcricao||'[áudio sem transcrição]'):(m.content||'['+m.content_type+']');
+      return `<div class="msg msg-${m.type==='USER'?'v':'l'}">
+        <div class="msg-who">${m.type==='USER'?'vendedor':'lead'}</div>
+        <div class="msg-txt">${esc(t)}</div>
+        <div class="msg-meta">${m.created_at?String(m.created_at).slice(11,16):''}</div></div>`;}).join('');
+    document.getElementById('modal-content').innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+        <div><h2 style="font-size:18px">${esc((c.seller_name||'').trim())} · fio completo</h2>
+          <div class="small">${esc(c.origin_name||'')} · ${esc(c.conversation_date||'')} · ${msgs.length} mensagens · era a Conversa ${n} do lote</div></div>
+        <button class="close" onclick="closeModal()">×</button>
+      </div>
+      <div style="max-height:62vh;overflow-y:auto">${body}</div>`;
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function btnConversa(email,n,trecho){
+  if(n==null||n==='')return '';
+  const tr=String(trecho||'').replace(/'/g,'').replace(/"/g,'').slice(0,60);
+  return `<button class="btn btn-2 btn-xs" onclick="abrirConversa('${esc(email)}',${n},'${esc(tr)}')">abrir conversa ${n} →</button>`;
+}
+
+/* =====================================================================
+   v4 · COMPARATIVO: três rankings, uma tabela
+   O score do card e a nota do comparativo vinham de duas chamadas de IA
+   diferentes — a segunda não recebe o score composto e não inclui a
+   componente objetiva. São grandezas distintas, então param de brigar:
+   ficam em colunas separadas, ao lado do faturamento, que é o juiz.
+   ===================================================================== */
+function posicoes(pares){ // [{k,v}] → {k:pos}
+  const ord=pares.filter(p=>p.v!=null).sort((a,b)=>b.v-a.v);
+  const out={};ord.forEach((p,i)=>out[p.k]=i+1);return out;
+}
+function spearman(pares){ // [[posA,posB]]
+  const n=pares.length;if(n<3)return null;
+  let d2=0;for(const [a,b] of pares)d2+=(a-b)*(a-b);
+  return 1-(6*d2)/(n*(n*n-1));
+}
+
 function renderComp(){
-  if(!STATE.comp){document.getElementById('comp-body').innerHTML='<div class="small">Comparativo ainda não foi gerado. Rode a análise dos vendedores pendentes.</div>';return;}
-  const r=STATE.comp.resultado||{};
-  const rk=(r.ranking||[]).map((v,i)=>`
-    <tr><td class="rank-cell">${i+1}º</td><td>${v.nome}${v.amostra_pequena?' <span class="chip chip-yellow">amostra pequena</span>':''}</td><td class="score-mid">${v.score_geral}</td><td class="small">${v.destaque||''}</td></tr>
-  `).join('');
+  const an=STATE.analises;
+  if(!an.length){document.getElementById('comp-body').innerHTML='<div class="small">Nenhuma análise nesta semana ainda.</div>';return;}
+  const r=(STATE.comp&&STATE.comp.resultado)||{};
+  const iaRank=Array.isArray(r.ranking)?r.ranking:[];
+
+  // casa o ranking da IA (que vem por nome) com o e-mail
+  const iaPor={};
+  iaRank.forEach((v,i)=>{
+    const alvo=an.find(a=>norm(a.seller_name)===norm(v.nome))
+            || an.find(a=>norm(a.seller_name).split(' ')[0]===norm(v.nome).split(' ')[0]);
+    if(alvo)iaPor[alvo.seller_email]={nota:v.score_geral,pos:i+1,destaque:v.destaque,amostra:v.amostra_pequena};
+  });
+
+  const posC=posicoes(an.map(a=>({k:a.seller_email,v:a.score_geral})));
+  const posI=posicoes(an.map(a=>({k:a.seller_email,v:iaPor[a.seller_email]?iaPor[a.seller_email].nota:null})));
+  const posF=posicoes(an.map(a=>{const u=ultimoResultado(a.seller_email);return {k:a.seller_email,v:u?u.faturamento:null};}));
+
+  const linhas=[...an].sort((a,b)=>(posF[a.seller_email]||99)-(posF[b.seller_email]||99)).map(a=>{
+    const e=a.seller_email,ia=iaPor[e]||{},u=ultimoResultado(e);
+    const pc=posC[e],pi=posI[e],pf=posF[e];
+    const divC=(pc&&pf)?Math.abs(pc-pf):null;
+    const alerta=divC!=null&&divC>=2;
+    return `<tr class="${alerta?'div-alto':''}">
+      <td>${esc((a.seller_name||'').trim())}${ia.amostra?' <span class="chip chip-yellow">amostra pequena</span>':''}</td>
+      <td class="cmp-num ${scoreColor(a.score_geral)}">${a.score_geral??'–'}<span class="cmp-pos">${pc?pc+'º':''}</span></td>
+      <td class="cmp-num">${ia.nota??'–'}<span class="cmp-pos">${pi?pi+'º':''}</span></td>
+      <td class="cmp-num">${u&&u.faturamento!=null?brl(u.faturamento):'–'}<span class="cmp-pos">${pf?pf+'º':''}</span></td>
+      <td class="small">${u&&u.taxa_conversao!=null?u.taxa_conversao+'%':'–'}</td>
+      <td>${alerta?`<span class="chip chip-orange">${divC} posições</span>`:'<span class="small">—</span>'}</td>
+    </tr>`;}).join('');
+
+  const paresC=an.filter(a=>posC[a.seller_email]&&posF[a.seller_email]).map(a=>[posC[a.seller_email],posF[a.seller_email]]);
+  const paresI=an.filter(a=>posI[a.seller_email]&&posF[a.seller_email]).map(a=>[posI[a.seller_email],posF[a.seller_email]]);
+  const rhoC=spearman(paresC),rhoI=spearman(paresI);
+  const fmtRho=v=>v==null?'–':v.toFixed(2);
+
   document.getElementById('comp-body').innerHTML=`
-    <h3>Ranking</h3>
-    <table><tbody>${rk}</tbody></table>
-    ${r.melhor_pratica?`<h3>Melhor prática a copiar</h3><div class="ref-card ref-good">${r.melhor_pratica}</div>`:''}
-    ${r.padrao_coletivo?`<h3>Padrão coletivo</h3><div class="ref-card">${r.padrao_coletivo}</div>`:''}
-    ${r.destaques?`<h3>Destaques</h3><div class="small" style="line-height:1.6">${r.destaques}</div>`:''}
+    <table class="cmp-table"><thead><tr>
+      <th>Vendedor</th><th>Score composto</th><th>Nota qualitativa da IA</th>
+      <th>Faturamento do mês</th><th>Conversão</th><th>Divergência</th>
+    </tr></thead><tbody>${linhas}</tbody></table>
+
+    <div class="legenda">
+      <strong>Por que há dois números.</strong> O <em>score composto</em> é calculado
+      (${Math.round(STATE.pesos.p*100)}% processo · ${Math.round(STATE.pesos.t*100)}% técnica ·
+      ${Math.round(STATE.pesos.o*100)}% métricas objetivas) e é o que aparece no card do vendedor.
+      A <em>nota qualitativa</em> vem de uma segunda leitura da IA, que compara os vendedores entre si
+      e não inclui a parte objetiva — por isso ela é sistematicamente mais alta e às vezes inverte a ordem.
+      São medidas diferentes, não um erro de conta. A ordem da tabela é a do faturamento, que é o juiz.
+      <br><br>
+      <strong>Aderência ao faturamento</strong> (correlação de ordem, −1 a 1):
+      score composto <strong>${fmtRho(rhoC)}</strong> · nota qualitativa <strong>${fmtRho(rhoI)}</strong>.
+      Com ${an.length} vendedores isso é indício, não prova — serve para decidir onde olhar, não para promover ninguém.
+      Linhas em laranja são quem o score e o faturamento discordam em 2 posições ou mais: é ali que o modelo
+      está aprendendo algo errado, ou existe um fator que ele não registra.
+    </div>
+
+    ${r.melhor_pratica?`<h3>Melhor prática a copiar</h3><div class="ref-card ref-good">${esc(r.melhor_pratica)}</div>`:''}
+    ${r.padrao_coletivo?`<h3>Padrão coletivo</h3><div class="ref-card">${esc(r.padrao_coletivo)}</div>`:''}
+    ${r.destaques?`<h3>Destaques</h3><div class="small" style="line-height:1.6">${esc(r.destaques)}</div>`:''}
+    ${fbBlock({tt:'comparativo',ref:STATE.week,hint:'O que está errado ou faltando nesta comparação? Ex.: diferença de volume, qualidade de lead, período que não bate.'})}
   `;
 }
 
@@ -388,32 +705,36 @@ function renderCards(){
     const delTxt=del==null?'':(del>0?`<span class="delta delta-up">▲ ${del.toFixed(2)}</span>`:del<0?`<span class="delta delta-down">▼ ${Math.abs(del).toFixed(2)}</span>`:`<span class="delta delta-flat">= 0</span>`);
     const lote=STATE.lotes.find(l=>l.seller_email===a.seller_email);
     const totC=lote?lote.total_conversas:a.total_conversas;
-    // Contar Aval/Closer no markdown
     let av=0,cl=0;
     if(lote&&lote.markdown_content){
-      const m=lote.markdown_content;
-      av=(m.match(/\[Aval\]/g)||[]).length;
-      cl=(m.match(/\[Closer\]/g)||[]).length;
+      av=(lote.markdown_content.match(/\[Aval\]/g)||[]).length;
+      cl=(lote.markdown_content.match(/\[Closer\]/g)||[]).length;
     }
-    const subC=(av||cl)?` <span class="small">(${av} Aval + ${cl} Closer)</span>`:'';
+    const u=ultimoResultado(a.seller_email);
+    const nfb=STATE.feedback.filter(f=>f.seller_email===a.seller_email&&f.week_label===STATE.week).length;
     return `<div class="card">
       <h2>
         <span class="title">
           <span class="rank-cell">${i+1}º</span>
-          <span>${nm}</span>
+          <span>${esc(nm)}</span>
           ${delTxt}
-          <span class="chip chip-brand">${totC} leads${subC.replace(/<[^>]+>/g,'')}</span>
+          <span class="chip chip-brand">${totC} leads${(av||cl)?` (${av} Aval + ${cl} Closer)`:''}</span>
+          ${a.revisao>1?`<span class="chip chip-purple">revisão ${a.revisao}</span>`:''}
+          ${nfb?`<span class="chip chip-yellow">${nfb} contexto(s) meu(s)</span>`:''}
         </span>
-        <button class="btn btn-2 btn-sm" onclick="showDetail('${a.seller_email}')">Ver detalhes</button>
+        <span style="display:flex;gap:6px">
+          <button class="btn btn-2 btn-sm" onclick="reAnalisar('${esc(a.seller_email)}')">↻ Re-analisar</button>
+          <button class="btn btn-2 btn-sm" onclick="showDetail('${esc(a.seller_email)}')">Ver detalhes</button>
+        </span>
       </h2>
       <div class="grid grid-4">
         <div class="kpi"><div class="label">Score geral</div><div class="val ${scoreColor(a.score_geral)}">${a.score_geral??'–'}</div><div class="bar ${scoreBar(a.score_geral)}"><div style="width:${(a.score_geral||0)*10}%"></div></div></div>
         <div class="kpi"><div class="label">Processo</div><div class="val ${scoreColor(a.score_processo)}">${a.score_processo??'–'}</div></div>
         <div class="kpi"><div class="label">Técnica</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div></div>
-        <div class="kpi"><div class="label">Urgência</div><div class="val ${scoreColor(a.urgencia_score)}">${a.urgencia_score??'–'}</div></div>
+        <div class="kpi"><div class="label">Faturamento do mês</div><div class="val">${u&&u.faturamento!=null?brl(u.faturamento):'–'}</div><div class="sub">${u&&u.taxa_conversao!=null?'conversão '+u.taxa_conversao+'%':'sem snapshot'}</div></div>
       </div>
       ${renderObrigatoriosMini(a)}
-      ${a.resumo_conversa?`<h3>Padrão da semana</h3><div class="small" style="line-height:1.6">${a.resumo_conversa}</div>`:''}
+      ${a.resumo_conversa?`<h3>Padrão da semana</h3><div class="small" style="line-height:1.6">${esc(a.resumo_conversa)}</div>`:''}
     </div>`;
   }).join('');
   document.getElementById('cards-body').innerHTML=html;
@@ -421,13 +742,10 @@ function renderCards(){
 
 function renderObrigatoriosMini(a){
   const o=a.obrigatorios||{};
-  const rows=[
-    ['Conversou sobre valores',o.conversou_sobre_valores],
-    ['Entendeu a dor',o.entendeu_a_dor],
-    ['Resolveu a dor',o.resolveu_a_dor]
-  ].map(([nm,x])=>{
+  const rows=[['Conversou sobre valores',o.conversou_sobre_valores],['Entendeu a dor',o.entendeu_a_dor],['Resolveu a dor',o.resolveu_a_dor]]
+  .map(([nm,x])=>{
     if(!x||typeof x!=='object')return `<div class="sinal-row"><div class="sinal-name">${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
-    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const p=x.presente_em||0,t=x.total||0,pc=pct(p,t);
     const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
     const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
     return `<div class="sinal-row"><div class="sinal-name">${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>`;
@@ -439,86 +757,146 @@ function renderObrigatoriosMini(a){
 function showDetail(email){
   const a=STATE.analises.find(x=>x.seller_email===email);
   if(!a)return;
+  STATE.openDetail=email;
   const nm=(a.seller_name||'').trim();
   const lote=STATE.lotes.find(l=>l.seller_email===email);
   let av=0,cl=0;
   if(lote&&lote.markdown_content){av=(lote.markdown_content.match(/\[Aval\]/g)||[]).length;cl=(lote.markdown_content.match(/\[Closer\]/g)||[]).length;}
-  // Metricas objetivas
+  const u=ultimoResultado(email);
+  const totalConv=lote?lote.total_conversas:(a.total_conversas||0);
+
   const html=`
     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
-      <div><h2 style="font-size:22px">${nm}</h2><div class="small">${STATE.week} · ${a.total_conversas} leads (${av} Aval + ${cl} Closer)</div></div>
+      <div><h2 style="font-size:22px">${esc(nm)}</h2>
+        <div class="small">${STATE.week} · ${a.total_conversas} leads (${av} Aval + ${cl} Closer) · prompt ${esc(a.prompt_version||'—')}${a.revisao>1?' · revisão '+a.revisao:''}</div></div>
       <button class="close" onclick="closeModal()">×</button>
     </div>
+
     <div class="grid grid-4" style="margin-bottom:16px">
       <div class="kpi"><div class="label">Score geral</div><div class="val ${scoreColor(a.score_geral)}">${a.score_geral??'–'}</div></div>
       <div class="kpi"><div class="label">Processo</div><div class="val ${scoreColor(a.score_processo)}">${a.score_processo??'–'}</div></div>
       <div class="kpi"><div class="label">Técnica</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div></div>
       <div class="kpi"><div class="label">Objetivo</div><div class="val ${scoreColor(a.score_objetivo)}">${a.score_objetivo??'–'}</div></div>
     </div>
-    ${a.resumo_conversa?`<h3>Padrão</h3><div style="line-height:1.7;margin-bottom:12px">${a.resumo_conversa}</div>`:''}
+
+    ${u?`<div class="grid grid-4" style="margin-bottom:16px">
+      <div class="kpi"><div class="label">Faturamento do mês</div><div class="val">${brl(u.faturamento)}</div><div class="sub">medido em ${esc(u.data_medicao||'')}</div></div>
+      <div class="kpi"><div class="label">Vendas no mês</div><div class="val">${u.vendas_fechadas??'–'}</div></div>
+      <div class="kpi"><div class="label">Comparecimento</div><div class="val">${u.taxa_comparecimento!=null?u.taxa_comparecimento+'%':'–'}</div></div>
+      <div class="kpi"><div class="label">Conversão</div><div class="val">${u.taxa_conversao!=null?u.taxa_conversao+'%':'–'}</div><div class="sub">sobre quem compareceu</div></div>
+    </div>
+    <div class="small" style="margin:-8px 0 16px">Atenção ao escopo: o score é da semana ${STATE.week}; faturamento e vendas são acumulados do mês. Só compare tendência, não nível.</div>`
+    :'<div class="warn" style="margin-bottom:16px">Sem snapshot de resultado para este vendedor. Sem faturamento não há como cruzar processo com resultado.</div>'}
+
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn btn-2 btn-sm" onclick="reAnalisar('${esc(email)}')">↻ Re-analisar com meu contexto</button>
+      <select id="jump-conv" style="padding:6px 10px">
+        ${Array.from({length:totalConv},(_,k)=>`<option value="${k+1}">Conversa ${k+1}</option>`).join('')}
+      </select>
+      <button class="btn btn-2 btn-sm" onclick="abrirConversa('${esc(email)}',+document.getElementById('jump-conv').value,'')">abrir →</button>
+    </div>
+
+    ${a.resumo_conversa?`<h3>Padrão</h3><div style="line-height:1.7;margin-bottom:12px">${esc(a.resumo_conversa)}</div>
+      ${fbBlock({tt:'padrao_semana',ref:'',email,name:nm,hint:'O que este resumo está lendo errado sobre o padrão dele?'})}`:''}
+
     <h3>Obrigatórios (contagens)</h3>
-    ${renderObrigatoriosCompleto(a.obrigatorios)}
+    ${renderObrigatoriosCompleto(a.obrigatorios,email)}
+
     <h3>Sinais do fluxo</h3>
     ${renderSinaisCompleto(a.etapas_cumpridas)}
-    ${a.referencia_qualidade?renderRef('good','✓ Referência de qualidade',a.referencia_qualidade):''}
-    ${a.referencia_melhoria?renderRef('bad','⚠ Referência de melhoria',a.referencia_melhoria):''}
-    ${(a.pontos_categorizados||[]).length?`<h3>Pontos categorizados</h3>${a.pontos_categorizados.map(p=>`<div class="ref-card"><div class="ref-title"><span class="chip chip-${p.severidade==='critico'?'red':p.severidade==='medio'?'orange':'yellow'}">${p.severidade}</span> <span class="chip chip-brand">${p.categoria}</span></div><div>${p.descricao}</div>${p.evidencia?`<div class="ref-text">${p.evidencia}</div>`:''}</div>`).join('')}`:''}
-    ${(a.erros_graves||[]).length?`<h3>Erros graves</h3>${a.erros_graves.map(e=>`<div class="ref-card ref-bad"><div>${e.descricao}</div>${e.evidencia?`<div class="ref-text">${e.evidencia}</div>`:''}</div>`).join('')}`:''}
-    ${(a.metas_proximas||[]).length?`<h3>Metas para próxima semana</h3><ul style="padding-left:20px;line-height:1.7">${a.metas_proximas.map(m=>`<li>${m}</li>`).join('')}</ul>`:''}
-    ${a.evolucao?`<h3>Evolução</h3><div style="line-height:1.6">${a.evolucao}</div>`:''}
+
+    ${a.referencia_qualidade?renderRef('good','✓ Referência de qualidade',a.referencia_qualidade,email,nm,'referencia_qualidade'):''}
+    ${a.referencia_melhoria?renderRef('bad','⚠ Referência de melhoria',a.referencia_melhoria,email,nm,'referencia_melhoria'):''}
+
+    ${(a.pontos_categorizados||[]).length?`<h3>Pontos categorizados</h3>${a.pontos_categorizados.map((p,idx)=>`
+      <div class="ref-card">
+        <div class="ref-title">
+          <span class="chip chip-${p.severidade==='critico'?'red':p.severidade==='medio'?'orange':'yellow'}">${esc(p.severidade||'')}</span>
+          <span class="chip chip-brand">${esc(p.categoria||'')}</span>
+          ${p.conversa?btnConversa(email,p.conversa,p.evidencia):''}
+        </div>
+        <div>${esc(p.descricao||'')}</div>
+        ${p.evidencia?`<div class="ref-text">"${esc(p.evidencia)}"</div>`:''}
+        ${fbBlock({tt:'ponto_categorizado',ref:(p.categoria||'')+'#'+idx,email,name:nm,conversa:p.conversa,
+                   hint:'Este ponto está certo? Se a IA cobrou algo que o processo não permite, escreva aqui — e marque como regra da operação.'})}
+      </div>`).join('')}`:''}
+
+    ${(a.erros_graves||[]).length?`<h3>Erros graves</h3>${a.erros_graves.map((e,idx)=>`
+      <div class="ref-card ref-bad"><div>${esc(e.descricao||e)}</div>
+      ${e.evidencia?`<div class="ref-text">"${esc(e.evidencia)}"</div>`:''}
+      ${e.conversa?`<div style="margin-top:6px">${btnConversa(email,e.conversa,e.evidencia)}</div>`:''}
+      ${fbBlock({tt:'erro_grave',ref:'#'+idx,email,name:nm,conversa:e.conversa,hint:'Isto é realmente um erro grave no seu processo?'})}
+      </div>`).join('')}`:''}
+
+    ${(a.metas_proximas||[]).length?`<h3>Metas para próxima semana</h3>
+      <ul style="padding-left:20px;line-height:1.7">${a.metas_proximas.map(m=>`<li>${esc(typeof m==='string'?m:(m.meta||''))}</li>`).join('')}</ul>
+      ${fbBlock({tt:'metas',ref:'',email,name:nm,hint:'Alguma meta destas é impossível ou não é prioridade? Escreva o que substituir.'})}`:''}
+
+    ${a.evolucao?`<h3>Evolução</h3><div style="line-height:1.6">${esc(a.evolucao)}</div>`:''}
+
+    <h3>Contexto geral sobre este vendedor</h3>
+    ${fbBlock({tt:'geral',ref:'',email,name:nm,hint:'Qualquer coisa que a IA precisa saber sobre ele e não está na conversa.'})}
   `;
   document.getElementById('modal-content').innerHTML=html;
   document.getElementById('modal').classList.add('on');
 }
-function renderObrigatoriosCompleto(o){
+
+function renderObrigatoriosCompleto(o,email){
   if(!o||typeof o!=='object')return'<div class="small">Sem dados.</div>';
   const nomes={conversou_sobre_valores:'Conversou sobre valores',entendeu_a_dor:'Entendeu a dor',resolveu_a_dor:'Resolveu a dor'};
   return Object.entries(nomes).map(([k,nm])=>{
     const x=o[k];
     if(!x||typeof x!=='object')return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
-    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const p=x.presente_em||0,t=x.total||0,pc=pct(p,t);
     const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
     const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
-    const aus=Array.isArray(x.conversas_ausentes)&&x.conversas_ausentes.length?`<details><summary>${x.conversas_ausentes.length} conversas ausentes</summary><div class="mono small">${x.conversas_ausentes.join(', ')}</div></details>`:'';
+    const aus=Array.isArray(x.conversas_ausentes)&&x.conversas_ausentes.length
+      ? `<details><summary>${x.conversas_ausentes.length} conversas ausentes — abrir e conferir</summary>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+          ${x.conversas_ausentes.map(n=>btnConversa(email,n,'')).join('')}</div></details>`
+      : '';
     return `<div style="margin-bottom:12px"><div class="sinal-row"><div>${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>${aus}</div>`;
   }).join('');
 }
+
 function renderSinaisCompleto(o){
   if(!o||typeof o!=='object')return'<div class="small">Sem dados.</div>';
   const nomes={abordagem_audio:'Abordagem por áudio',dor_investigada:'Dor investigada',dor_resolvida:'Dor resolvida',valor_gerado:'Valor gerado',chamada_avaliacao:'Chamada para avaliação',compromisso_gerado:'Compromisso gerado',confirmacao:'Confirmação'};
   return Object.entries(nomes).map(([k,nm])=>{
     const x=o[k];
     if(!x||typeof x!=='object'){
-      // Se ainda vier como boolean (v2 antigo), mostrar assim
       const b=o[k];
       if(typeof b==='boolean')return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count ${b?'text-good':'text-bad'}">${b?'✓':'✗'}</div><div></div></div>`;
       return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count text-mute">–</div><div></div></div>`;
     }
-    const p=x.presente_em||0,t=x.total||0;const pc=pct(p,t);
+    const p=x.presente_em||0,t=x.total||0,pc=pct(p,t);
     const cls=pc>=70?'text-good':pc>=40?'text-mid':'text-bad';
     const barCls=pc>=70?'bar-good':pc>=40?'bar-mid':'bar-bad';
     return `<div class="sinal-row"><div>${nm}</div><div class="sinal-count ${cls}">${p}/${t} (${pc}%)</div><div class="bar ${barCls}"><div style="width:${pc}%"></div></div></div>`;
   }).join('');
 }
-function renderRef(kind,title,r){
-  const et=r.etapa?`<span class="chip chip-${r.etapa==='Closer'?'closer':'aval'}">${r.etapa}</span>`:'';
+
+function renderRef(kind,title,r,email,nome,tt){
+  const et=r.etapa?`<span class="chip chip-${norm(r.etapa)==='closer'?'closer':'aval'}">${esc(r.etapa)}</span>`:'';
   return `<h3>${title}</h3><div class="ref-card ref-${kind==='good'?'good':'bad'}">
-    <div class="ref-title">Conversa ${r.conversa} ${et}</div>
-    <div>${r.o_que_fez_bem||r.o_que_errou||''}</div>
-    ${r.trecho?`<div class="ref-text">"${r.trecho}"</div>`:''}
-    ${r.como_deveria?`<div style="margin-top:6px"><strong>Como deveria:</strong> ${r.como_deveria}</div>`:''}
+    <div class="ref-title">Conversa ${esc(r.conversa)} ${et} ${btnConversa(email,r.conversa,r.trecho)}</div>
+    <div>${esc(r.o_que_fez_bem||r.o_que_errou||'')}</div>
+    ${r.trecho?`<div class="ref-text">"${esc(r.trecho)}"</div>`:''}
+    ${r.como_deveria?`<div style="margin-top:6px"><strong>Como deveria:</strong> ${esc(r.como_deveria)}</div>`:''}
+    ${fbBlock({tt,ref:String(r.conversa||''),email,name:nome,conversa:r.conversa,
+      hint:kind==='good'?'Esta conversa serve de exemplo mesmo? Se o desfecho foi ruim, diga aqui.'
+                        :'A IA cobrou algo que o processo não permite? Escreva o que ela não sabia e marque como regra da operação.'})}
   </div>`;
 }
-function closeModal(){document.getElementById('modal').classList.remove('on');}
+function closeModal(){document.getElementById('modal').classList.remove('on');STATE.openDetail=null;}
 
 // ============ AÇÕES ============
 async function disparaAnalise(){
   const btn=document.getElementById('btn-analisar');
   const txt=btn.textContent;
   btn.disabled=true;btn.textContent='disparando…';
-  // no-cors, sem Content-Type (evita preflight)
   await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({week_label:STATE.week})});
-  btn.textContent='análise em curso — polling…';
+  btn.textContent='análise em curso — acompanhando…';
   let tries=0;
   const iv=setInterval(async()=>{
     tries++;
@@ -527,6 +905,50 @@ async function disparaAnalise(){
     if(done||tries>60){clearInterval(iv);btn.textContent=txt;btn.disabled=false;renderFila();}
   },5000);
 }
+
+/* Re-análise: manda force=true e os IDs do contexto que deve entrar no prompt.
+   O disparo é no-cors, então a resposta é opaca — a única prova de que rodou é
+   ai_analyses mudar. Se não mudar, dizemos isso em voz alta em vez de mentir
+   que deu certo. */
+async function reAnalisar(email){
+  const st=document.getElementById('re-status');
+  const alvo=email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises;
+  if(!alvo.length){alert('Nada analisado nesta semana para refazer.');return;}
+  const quem=email?((alvo[0].seller_name||'').trim()):'a semana toda';
+  const ctx=STATE.feedback.filter(f=>f.escopo==='global'||(!email||f.seller_email===email));
+  if(!ctx.length&&!confirm('Você ainda não escreveu nenhum contexto. Refazer agora vai dar quase o mesmo resultado. Continuar?'))return;
+
+  const antes=alvo.map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
+  st.textContent='disparando re-análise de '+quem+'…';st.className='fb-status text-mute';
+  try{
+    await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({
+      week_label:STATE.week,seller_email:email||undefined,force:true,
+      feedback_ids:ctx.map(f=>f.id)})});
+  }catch(e){st.textContent='não consegui disparar: '+e.message;st.className='fb-status text-bad';return;}
+
+  let tries=0;
+  const iv=setInterval(async()=>{
+    tries++;
+    await refreshAll();
+    const agora=(email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises)
+      .map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
+    if(agora!==antes){
+      clearInterval(iv);
+      st.textContent='re-análise concluída ('+quem+')';st.className='fb-status text-good';
+      return;
+    }
+    st.textContent='aguardando o servidor… ('+tries*5+'s)';
+    if(tries>=18){
+      clearInterval(iv);
+      st.innerHTML='<span class="text-bad">nada mudou em ai_analyses em 90s.</span> '
+        +'O fluxo do n8n ainda ignora <span class="mono">force</span> e '
+        +'<span class="mono">feedback_ids</span> — falta o passo do servidor. '
+        +'O contexto que você escreveu está salvo e será usado quando o fluxo for atualizado.';
+      st.className='fb-status';
+    }
+  },5000);
+}
+
 async function disparaTranscricao(){
   await fetch(WH_TRANSCR,{method:'POST',mode:'no-cors'});
   alert('Transcrição disparada. Aguarde alguns minutos e atualize.');
@@ -543,21 +965,17 @@ async function loadPrompt(){
   if(!p.length){document.getElementById('prompt-body').innerHTML='<div class="warn">Nenhum prompt ativo.</div>';return;}
   const pr=p[0];
   document.getElementById('prompt-body').innerHTML=`
-    <div class="small" style="margin-bottom:8px"><strong>${pr.nome}</strong> · ${pr.descricao||''}</div>
-    <textarea id="pi" rows="20" style="width:100%">${(pr.prompt_individual||'').replace(/</g,'&lt;')}</textarea>
+    <div class="small" style="margin-bottom:8px"><strong>${esc(pr.nome)}</strong> · ${esc(pr.descricao||'')}</div>
+    <textarea id="pi" rows="20">${esc(pr.prompt_individual||'')}</textarea>
     <h3>Comparativo</h3>
-    <textarea id="pc" rows="10" style="width:100%">${(pr.prompt_comparativo||'').replace(/</g,'&lt;')}</textarea>
-    <div style="margin-top:8px;text-align:right"><button class="btn btn-sm" onclick="salvarPrompt('${pr.id}')">Salvar</button></div>
-  `;
+    <textarea id="pc" rows="10">${esc(pr.prompt_comparativo||'')}</textarea>
+    <div style="margin-top:8px;text-align:right"><button class="btn btn-sm" onclick="salvarPrompt('${pr.id}')">Salvar</button></div>`;
 }
 async function salvarPrompt(id){
-  const pi=document.getElementById('pi').value;
-  const pc=document.getElementById('pc').value;
+  const pi=document.getElementById('pi').value,pc=document.getElementById('pc').value;
   await fetch(SU+'/rest/v1/analysis_prompts?id=eq.'+id,{
-    method:'PATCH',
-    headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
-    body:JSON.stringify({prompt_individual:pi,prompt_comparativo:pc})
-  });
+    method:'PATCH',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:JSON.stringify({prompt_individual:pi,prompt_comparativo:pc})});
   alert('Prompt salvo. Rode análise nova para usar.');
 }
 
@@ -566,21 +984,20 @@ function switchTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   document.getElementById('tab-intel').classList.toggle('hidden',t!=='intel');
   document.getElementById('tab-conv').classList.toggle('hidden',t!=='conv');
+  document.getElementById('tab-regras').classList.toggle('hidden',t!=='regras');
   if(t==='conv')loadConversas();
 }
 
 // ============ CONVERSAS ============
 async function loadConversas(){
-  // Popular selects
   const vSel=document.getElementById('conv-vend');
   if(vSel.options.length<=1){
     STATE.vendedores.forEach(v=>{const o=document.createElement('option');o.value=v.email;o.textContent=v.name;vSel.appendChild(o);});
   }
-  const ve=vSel.value;const et=document.getElementById('conv-etapa').value;const q=document.getElementById('conv-search').value.trim();
-  const wl=STATE.week;
-  const wStart=weekBounds(wl).start;
-  const wEnd=weekBounds(wl).end;
-  let path='conversations?select=id,seller_name,seller_email,origin_name,stage_atual,conversation_date,raw_messages&conversation_date=gte.'+wStart+'&conversation_date=lte.'+wEnd+'&order=conversation_date.desc&limit=500';
+  const ve=vSel.value,et=document.getElementById('conv-etapa').value,q=document.getElementById('conv-search').value.trim();
+  const b=weekBounds(STATE.week);
+  let path='conversations?select=id,contact_id,seller_name,seller_email,origin_name,stage_atual,conversation_date,raw_messages'
+    +'&conversation_date=gte.'+b.start+'&conversation_date=lte.'+b.end+'&order=conversation_date.desc&limit=500';
   if(ve)path+='&seller_email=eq.'+encodeURIComponent(ve);
   if(et==='avaliacao')path+='&origin_name=ilike.*avalia*';
   if(et==='closer')path+='&origin_name=ilike.*closer*';
@@ -590,42 +1007,25 @@ async function loadConversas(){
     if(q)convs=convs.filter(c=>(c.raw_messages||[]).some(m=>(m.content||m.transcricao||'').toLowerCase().includes(q.toLowerCase())));
     if(!convs.length){document.getElementById('conv-body').innerHTML='<div class="small">Nenhuma conversa nesta semana com os filtros aplicados.</div>';return;}
     const rows=convs.map(c=>{
-      const et=(c.origin_name||'').toLowerCase().indexOf('closer')>=0?'Closer':'Aval';
-      const nMsgs=(c.raw_messages||[]).length;
-      return `<tr onclick="showConv('${c.id}')" style="cursor:pointer"><td>${c.conversation_date||''}</td><td>${(c.seller_name||'').trim()}</td><td><span class="chip chip-${et==='Closer'?'closer':'aval'}">${et}</span></td><td>${c.stage_atual||'?'}</td><td>${nMsgs}</td></tr>`;
+      const et2=(c.origin_name||'').toLowerCase().indexOf('closer')>=0?'Closer':'Aval';
+      return `<tr onclick="abrirConversaBanco('${c.contact_id}',0)" style="cursor:pointer">
+        <td>${esc(c.conversation_date||'')}</td><td>${esc((c.seller_name||'').trim())}</td>
+        <td><span class="chip chip-${et2==='Closer'?'closer':'aval'}">${et2}</span></td>
+        <td>${esc(c.stage_atual||'?')}</td><td>${(c.raw_messages||[]).length}</td></tr>`;
     }).join('');
     document.getElementById('conv-body').innerHTML=`<table><thead><tr><th>Data</th><th>Vendedor</th><th>Etapa</th><th>Stage</th><th>Msgs</th></tr></thead><tbody>${rows}</tbody></table>`;
-  }catch(e){document.getElementById('conv-body').innerHTML='<div class="err">'+e.message+'</div>';}
+  }catch(e){document.getElementById('conv-body').innerHTML='<div class="err">'+esc(e.message)+'</div>';}
 }
 function weekBounds(wl){
-  const [y,w]=wl.split('-W').map(Number);
-  const jan1=new Date(y,0,1);
-  const dow=jan1.getDay();
-  const daysToMon=(dow===0?-6:1-dow);
+  const [y,w]=String(wl||'').split('-W').map(Number);
+  const jan1=new Date(y,0,1),dow=jan1.getDay(),daysToMon=(dow===0?-6:1-dow);
   const wk1=new Date(jan1);wk1.setDate(jan1.getDate()+daysToMon);
   const s=new Date(wk1);s.setDate(wk1.getDate()+(w-1)*7);
   const e=new Date(s);e.setDate(s.getDate()+6);
   return {start:s.toISOString().split('T')[0],end:e.toISOString().split('T')[0]};
 }
-async function showConv(id){
-  const c=(await sb('conversations?select=*&id=eq.'+id+'&limit=1'))[0];
-  if(!c)return;
-  const msgs=(c.raw_messages||[]).filter(m=>m.content_type&&m.content_type!=='EVENT'&&m.content_type!=='REACTION');
-  const body=msgs.map(m=>{
-    const a=m.type==='USER'?'[V]':'[L]';
-    const t=m.content_type==='AUDIO'?(m.transcricao||'[áudio]'):(m.content||'');
-    const h=m.created_at?String(m.created_at).slice(11,16):'';
-    return `<div style="padding:4px 0;color:${m.type==='USER'?'var(--brand)':'var(--green)'}"><strong>${a} ${h}:</strong> ${(t+'').slice(0,600)}</div>`;
-  }).join('');
-  document.getElementById('modal-content').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
-      <div><h2>${(c.seller_name||'').trim()} · ${c.conversation_date}</h2><div class="small">${c.origin_name} · ${c.stage_atual}</div></div>
-      <button class="close" onclick="closeModal()">×</button>
-    </div>
-    <div style="max-height:60vh;overflow-y:auto">${body}</div>
-  `;
-  document.getElementById('modal').classList.add('on');
-}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
 // ============ INIT ============
 (async()=>{
