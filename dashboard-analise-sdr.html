@@ -191,6 +191,12 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      v4.7: transcrever, gerar lotes, analisar e re-analisar sairam de dentro
      das abas. Sao COMANDOS, nao lugares: valem para a semana selecionada,
      independente da aba aberta. Por isso vivem aqui, sempre visiveis.
+     v4.10 (31/07): cronometro real nos dois comandos de analise (tempo
+     decorrido + analises gravadas apos o clique), janela de espera de 12,5min
+     compativel com o modelo medium (rodada leva 6-8min), aviso de lock de
+     20min, e os 6 criterios da regua v5 (conducao ao fechamento) na tabela
+     de confirmacao e no raio-x do vendedor; avanco_datado marcado como em
+     observacao (contado, fora da nota — quarentena da v5.3).
      ===================================================================== -->
 <div class="topbar">
   <div class="tabs">
@@ -992,7 +998,13 @@ const SINAIS={
   valor_gerado:'Valor gerado',
   chamada_avaliacao:'Chamada para avaliação',
   compromisso_gerado:'Compromisso gerado',
-  confirmacao:'Confirmação'
+  confirmacao:'Confirmação',
+  compromisso_condicional:'Compromisso condicional',
+  concessao_com_contrapartida:'Concessão c/ contrapartida',
+  objecao_isolada:'Objeção isolada',
+  avanco_datado:'Avanço datado (obs.)',
+  friccao_removida:'Fricção removida',
+  reengajou_com_prazo:'Reengajou com prazo'
 };
 function sinalPct(a,k){
   const o=(a.obrigatorios&&a.obrigatorios[k])||(a.etapas_cumpridas&&a.etapas_cumpridas[k]);
@@ -1350,7 +1362,7 @@ function showDetail(email){
     <div class="grid grid-5" style="margin-bottom:16px">
       <div class="kpi"><div class="label">Score geral</div><div class="val ${scoreColor(a.score_geral)}">${a.score_geral??'–'}</div></div>
       <div class="kpi"><div class="label">Processo</div><div class="val ${scoreColor(a.score_processo)}">${a.score_processo??'–'}</div><div class="sub">peso ${Math.round(STATE.pesos.p*100)}%</div></div>
-      <div class="kpi"><div class="label">Técnica</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div><div class="sub">peso ${Math.round(STATE.pesos.t*100)}%</div></div>
+      <div class="kpi"><div class="label">Técnica · condução ao fechamento</div><div class="val ${scoreColor(a.score_tecnica)}">${a.score_tecnica??'–'}</div><div class="sub">peso ${Math.round(STATE.pesos.t*100)}%</div></div>
       <div class="kpi"><div class="label">Objetivo</div><div class="val ${scoreColor(a.score_objetivo)}">${a.score_objetivo??'–'}</div><div class="sub">peso ${Math.round(STATE.pesos.o*100)}%</div></div>
       <div class="kpi"><div class="label">Urgência</div><div class="val ${scoreColor(a.urgencia_score)}">${a.urgencia_score??'–'}</div><div class="sub">urgência real, não pressão</div></div>
     </div>
@@ -1439,7 +1451,10 @@ function renderObrigatoriosCompleto(o,email){
 
 function renderSinaisCompleto(o){
   if(!o||typeof o!=='object')return'<div class="small">Sem dados.</div>';
-  const nomes={abordagem_audio:'Abordagem por áudio',dor_investigada:'Dor investigada',dor_resolvida:'Dor resolvida',valor_gerado:'Valor gerado',chamada_avaliacao:'Chamada para avaliação',compromisso_gerado:'Compromisso gerado',confirmacao:'Confirmação'};
+  const nomes={abordagem_audio:'Abordagem por áudio',dor_investigada:'Dor investigada',dor_resolvida:'Dor resolvida',valor_gerado:'Valor gerado',chamada_avaliacao:'Chamada para avaliação',compromisso_gerado:'Compromisso gerado',confirmacao:'Confirmação',
+    compromisso_condicional:'Compromisso condicional',concessao_com_contrapartida:'Concessão com contrapartida',objecao_isolada:'Objeção isolada',avanco_datado:'Avanço datado — em observação, fora da nota',friccao_removida:'Fricção removida',reengajou_com_prazo:'Reengajou com prazo'};
+  // Os 5 situacionais (tudo menos avanço datado) têm total = conversas em que a
+  // situação surgiu; a chave pode nem existir numa semana sem negociação/objeção.
   return Object.entries(nomes).map(([k,nm])=>{
     const x=o[k];
     if(!x||typeof x!=='object'){
@@ -1472,22 +1487,26 @@ function closeModal(){document.getElementById('modal').classList.remove('on');ST
 async function disparaAnalise(){
   const btn=document.getElementById('btn-analisar');
   const txt=btn.textContent;
+  const t0=Date.now();
   btn.disabled=true;btn.textContent='disparando…';
   await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({week_label:STATE.week})});
-  btn.textContent='análise em curso — acompanhando…';
   let tries=0;
   const iv=setInterval(async()=>{
     tries++;
     await refreshAll();
+    btn.textContent='analisando há '+mmss(Date.now()-t0)+' · '+STATE.analises.length+'/'+(STATE.lotes.length||'?');
     const done=STATE.analises.length>=STATE.lotes.length&&STATE.comp;
-    if(done||tries>60){clearInterval(iv);btn.textContent=txt;btn.disabled=false;renderFila();}
+    if(done||tries>150){clearInterval(iv);btn.textContent=txt;btn.disabled=false;renderFila();}
   },5000);
 }
 
-/* Re-análise: manda force=true e os IDs do contexto que deve entrar no prompt.
-   O disparo é no-cors, então a resposta é opaca — a única prova de que rodou é
-   ai_analyses mudar. Se não mudar, dizemos isso em voz alta em vez de mentir
-   que deu certo. */
+/* Re-análise: manda force=true (o nó honra desde 30/07). O feedback é injetado
+   pelo próprio nó a partir do banco; feedback_ids segue no body só por
+   compatibilidade. O disparo é no-cors, então a resposta é opaca — a única
+   prova de que rodou é ai_analyses mudar. No modelo atual (medium) a semana
+   inteira leva 6 a 8 min; o cronômetro abaixo mostra tempo decorrido e
+   progresso real (análises gravadas depois do clique). */
+function mmss(ms){const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 async function reAnalisar(email){
   const st=document.getElementById('re-status');
   const alvo=email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises;
@@ -1499,6 +1518,8 @@ async function reAnalisar(email){
     ok:'Refazer assim mesmo'}))return;
 
   const antes=alvo.map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
+  const t0=Date.now();
+  const esperados=email?1:(STATE.lotes.length||alvo.length);
   st.textContent='disparando re-análise de '+quem+'…';st.className='fb-status text-mute';
   try{
     await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({
@@ -1507,23 +1528,36 @@ async function reAnalisar(email){
   }catch(e){st.textContent='não consegui disparar: '+e.message;st.className='fb-status text-bad';return;}
 
   let tries=0;
+  const LIMITE=150; // 12,5 min de espera — a rodada no medium leva 6-8 min
   const iv=setInterval(async()=>{
     tries++;
     await refreshAll();
-    const agora=(email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises)
-      .map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
-    if(agora!==antes){
+    const atual=email?STATE.analises.filter(a=>a.seller_email===email):STATE.analises;
+    // progresso real: análises gravadas DEPOIS do clique (2 min de folga p/ relógio do servidor)
+    const novas=atual.filter(a=>a.created_at&&(new Date(a.created_at).getTime()>t0-120000)).length;
+    const agora=atual.map(a=>a.seller_email+':'+a.score_geral+':'+a.revisao+':'+a.created_at).join('|');
+    const rel=mmss(Date.now()-t0);
+    if(agora!==antes&&novas>=esperados){
       clearInterval(iv);
-      st.textContent='re-análise concluída ('+quem+')';st.className='fb-status text-good';
+      st.textContent='re-análise concluída em '+rel+' ('+quem+') — o comparativo grava logo em seguida';
+      st.className='fb-status text-good';
+      setTimeout(refreshAll,20000);
       return;
     }
-    st.textContent='aguardando o servidor… ('+tries*5+'s)';
-    if(tries>=18){
+    if(agora!==antes){
+      st.textContent='rodando há '+rel+' · '+novas+'/'+esperados+' análises gravadas';
+      st.className='fb-status text-mute';
+    }else if(Date.now()-t0>75000){
+      st.textContent='rodando há '+rel+' · nada gravado ainda — se uma rodada anterior morreu no meio, o lock do servidor segura novas por até 20 min; espere e dispare de novo';
+      st.className='fb-status';
+    }else{
+      st.textContent='rodando há '+rel+' — a análise completa leva 6 a 8 min';
+      st.className='fb-status text-mute';
+    }
+    if(tries>=LIMITE){
       clearInterval(iv);
-      st.innerHTML='<span class="text-bad">nada mudou em ai_analyses em 90s.</span> '
-        +'O fluxo do n8n ainda ignora <span class="mono">force</span> e '
-        +'<span class="mono">feedback_ids</span> — falta o passo do servidor. '
-        +'O contexto que você escreveu está salvo e será usado quando o fluxo for atualizado.';
+      st.innerHTML='<span class="text-bad">'+(novas?novas+'/'+esperados+' análises gravadas, mas o restante não chegou em 12 min.':'nada mudou em ai_analyses em 12 min.')+'</span> '
+        +'Confira as execuções do fluxo no n8n — pode ter sido lock (espere 20 min do último disparo) ou falha em um vendedor específico.';
       st.className='fb-status';
     }
   },5000);
