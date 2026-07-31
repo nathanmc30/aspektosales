@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Análise SDR · Grupo Aspekto</title>
+<meta name="description" content="Painel interno de análise comercial do Grupo Aspekto">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#0f1219; --panel:#161a24; --panel2:#1c2130; --border:#252a3a;
@@ -16,7 +20,7 @@
   --purple:#c084fc; --purple-dim:#2d1e3d;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.5}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5}
 button{cursor:pointer;font-family:inherit;font-size:inherit}
 input,select,textarea{font-family:inherit;font-size:inherit;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--brand)}
@@ -197,22 +201,25 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      20min, e os 6 criterios da regua v5 (conducao ao fechamento) na tabela
      de confirmacao e no raio-x do vendedor; avanco_datado marcado como em
      observacao (contado, fora da nota — quarentena da v5.3).
+     v4.11 (31/07): passe de linguagem profissional — emojis removidos de abas,
+     comandos, cards e podio; rotulos neutros; fonte Inter; meta description.
+     Nenhuma mudanca de logica.
      ===================================================================== -->
 <div class="topbar">
   <div class="tabs">
-    <button class="tab on" data-tab="semana" onclick="switchTab('semana')">📅 Semana</button>
-    <button class="tab" data-tab="vendedores" onclick="switchTab('vendedores')">👥 Vendedores</button>
-    <button class="tab" data-tab="regua" onclick="switchTab('regua')">📐 Régua</button>
-    <button class="tab" data-tab="conversas" onclick="switchTab('conversas')">💬 Conversas</button>
+    <button class="tab on" data-tab="semana" onclick="switchTab('semana')">Semana</button>
+    <button class="tab" data-tab="vendedores" onclick="switchTab('vendedores')">Vendedores</button>
+    <button class="tab" data-tab="regua" onclick="switchTab('regua')">Régua</button>
+    <button class="tab" data-tab="conversas" onclick="switchTab('conversas')">Conversas</button>
   </div>
   <div class="actions">
     <select id="week-select" onchange="onWeekChange()"></select>
     <button class="btn btn-2 btn-sm" onclick="refreshAll()">↻ Atualizar</button>
     <span class="act-sep"></span>
     <button id="btn-analisar" class="btn btn-sm" onclick="disparaAnalise()" disabled>▶ Analisar</button>
-    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">🎤 Transcrever áudios</button>
-    <button class="btn btn-2 btn-sm" onclick="gerarLotes()">🔄 Gerar lotes</button>
-    <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar tudo com meus complementos</button>
+    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">Transcrever áudios</button>
+    <button class="btn btn-2 btn-sm" onclick="gerarLotes()">Gerar lotes</button>
+    <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar tudo com meu contexto</button>
     <span id="re-status" class="fb-status"></span>
   </div>
 </div>
@@ -224,7 +231,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 <div class="grid grid-4" id="kpis"></div>
 
 <div class="card">
-  <h2><span class="title">🔍 Fila de análise</span></h2>
+  <h2><span class="title">Fila de análise</span></h2>
   <div id="fila-body" class="load">Carregando…</div>
   <div class="small" style="margin-top:10px">
     Os comandos estão na barra do topo. <strong>Analisar</strong> só libera quando os áudios da semana
@@ -233,21 +240,21 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">🏆 Melhores da semana</span></h2>
+  <h2><span class="title">Melhores da semana</span></h2>
   <div id="melhores-body" class="load">Carregando…</div>
 </div>
 
 <div class="card">
-  <h2><span class="title">📊 Comparativo semanal</span></h2>
+  <h2><span class="title">Comparativo semanal</span></h2>
   <div id="comp-body" class="load">Carregando…</div>
 </div>
 
 <div class="card">
-  <h2><span class="title">💰 Resultado da semana</span></h2>
+  <h2><span class="title">Resultado da semana</span></h2>
   <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do mês; taxas são sobre agendadas/comparecimentos. É a entrada que faz o pódio e o comparativo acima terem o que qualificar.</div>
   <div id="res-body" class="load">Carregando…</div>
   <div style="margin-top:12px;text-align:right">
-    <button class="btn btn-sm" onclick="salvarResultados()">💾 Salvar snapshot</button>
+    <button class="btn btn-sm" onclick="salvarResultados()">Salvar snapshot</button>
   </div>
 </div>
 
@@ -280,7 +287,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">💡 1 · Sugestões da IA sobre o método</span></h2>
+  <h2><span class="title">1 · Sugestões da IA sobre o método</span></h2>
   <div class="small" style="margin-bottom:10px">
     O prompt pede que a IA critique o processo de vendas <strong>e a própria régua</strong> — inclusive dizendo
     que um critério existente está injusto ou incompleto. Nada aqui muda a avaliação sozinho: você aprova, e só
@@ -290,7 +297,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">⚖️ 1b · Proposta de repesagem do score</span></h2>
+  <h2><span class="title">1b · Proposta de repesagem do score</span></h2>
   <div class="small" style="margin-bottom:10px">
     Mesmo estágio das sugestões acima — a IA criticando a régua — mas com um destino diferente:
     isto não vira critério, mexeria nos <strong>pesos</strong> do score composto. O prompt obriga a IA a
@@ -301,7 +308,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">🎯 2 · Critérios de avaliação (a régua)</span></h2>
+  <h2><span class="title">2 · Critérios de avaliação (a régua)</span></h2>
   <div class="small" style="margin-bottom:10px">
     Aqui você muda <strong>o que a IA olha</strong>, não a nota de ninguém. É onde a divergência entre
     score e faturamento deve virar aprendizado: se quem vende mais tira nota baixa, o que falta na régua?
@@ -319,7 +326,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">📌 3 · Regras da operação</span></h2>
+  <h2><span class="title">3 · Regras da operação</span></h2>
   <div class="small" style="margin-bottom:10px">
     O que estiver aqui entra no prompt de <strong>toda</strong> análise, de todos os vendedores, em todas as semanas,
     e tem <strong>precedência sobre a avaliação</strong>: se a regra diz que algo não é possível, a IA não pode cobrar
@@ -337,13 +344,13 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 </div>
 
 <div class="card">
-  <h2><span class="title">🗂️ Correções pontuais registradas</span></h2>
+  <h2><span class="title">Correções pontuais registradas</span></h2>
   <div class="small" style="margin-bottom:10px">Contexto que você escreveu em cima de um ponto específico, no detalhamento do vendedor. Entra na re-análise daquele vendedor e como histórico nas semanas seguintes.</div>
   <div id="pontuais-body" class="load">Carregando…</div>
 </div>
 
 <details>
-  <summary>⚙️ Editor do prompt ativo</summary>
+  <summary>Editor do prompt ativo</summary>
   <div id="prompt-body" class="load" style="margin-top:12px">Carregando…</div>
 </details>
 
@@ -353,7 +360,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      Pergunta que responde: preciso ver um caso. -->
 <div id="pane-conversas" class="hidden">
 <div class="card">
-  <h2><span class="title">💬 Conversas</span></h2>
+  <h2><span class="title">Conversas</span></h2>
   <div class="controls" style="margin-bottom:12px">
     <select id="conv-vend"><option value="">Todos vendedores</option></select>
     <select id="conv-etapa"><option value="">Todas etapas</option><option value="avaliacao">Avaliação</option><option value="closer">Closer</option></select>
@@ -496,7 +503,7 @@ function renderKpis(){
     <div class="kpi"><div class="label">Vendedores</div><div class="val">${lo.length}</div><div class="sub">${analisados} analisados · ${pendentes} pendentes</div></div>
     <div class="kpi"><div class="label">Conversas reais</div><div class="val">${ativ.reais}</div><div class="sub" title="Conversa real = o lead falou nesta semana. Follow-up sem resposta nao conta.">${ativ.mudas} follow-up(s) sem resposta · ${totalLeads} no lote</div></div>
     <div class="kpi"><div class="label">Score médio</div><div class="val">${avg}</div><div class="sub">${STATE.pesos.p*100}p ${STATE.pesos.t*100}t ${STATE.pesos.o*100}o</div></div>
-    <div class="kpi"><div class="label">Meu contexto</div><div class="val">${nfb}</div><div class="sub">${STATE.feedback.filter(f=>f.escopo==='global').length} regra(s) da operação</div></div>
+    <div class="kpi"><div class="label">Contexto da gestão</div><div class="val">${nfb}</div><div class="sub">${STATE.feedback.filter(f=>f.escopo==='global').length} regra(s) da operação</div></div>
   `;
 }
 
@@ -507,7 +514,7 @@ function renderFila(){
   const btn=document.getElementById('btn-analisar');
   if(!pend.length){
     document.getElementById('fila-body').innerHTML='<div class="ok">Todos os vendedores desta semana já foram analisados. Para refazer com o seu contexto, use “Re-analisar”.</div>';
-    btn.disabled=true;btn.textContent='▶ Tudo analisado';
+    btn.disabled=true;btn.textContent='Tudo analisado';
     return;
   }
   const prontoDe=l=>{const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);return ps.length===0||ps.every(p=>p.pronto!==false);};
@@ -516,7 +523,7 @@ function renderFila(){
   const liberados=pend.filter(prontoDe);
   const leads=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
   btn.disabled=liberados.length===0;
-  btn.textContent=liberados.length?`▶ Analisar ${liberados.length} vendedor(es) · ${leads} lead(s)`:'▶ Aguardando transcrição';
+  btn.textContent=liberados.length?`Analisar ${liberados.length} vendedor(es) · ${leads} lead(s)`:'Aguardando transcrição';
 }
 
 // ============ RESULTADOS (form) ============
@@ -598,7 +605,7 @@ function fbBlock(o){
   return `<div class="fb">${list}
     <button class="fb-toggle ${mine.length?'ok':''}" onclick="fbToggle('${id}')">${
       mine.length?'✓ '+mine.length+' enviado'+(mine.length>1?'s':'')+' — adicionar outro'
-                 :'🗒️ Contestar ou complementar'}</button>
+                 :'Contestar ou complementar'}</button>
     <div class="fb-form hidden" id="${id}">
       <textarea id="${id}_t" rows="3" placeholder="${esc(o.hint||'O que a IA não sabia, ou entendeu errado. Escreva como você explicaria para uma pessoa nova no time.')}"></textarea>
       <div class="fb-actions">
@@ -724,7 +731,7 @@ function sugCard(s,eixo,vend){
 function renderSugestoes(a){
   const {proc,crit}=sugsDe(a);
   if(!proc.length&&!crit.length)return '';
-  return '<h3>💡 Sugestões da IA sobre o método</h3>'
+  return '<h3>Sugestões da IA sobre o método</h3>'
     +crit.map(s=>sugCard(s,'criterio','')).join('')
     +proc.map(s=>sugCard(s,'processo','')).join('');
 }
@@ -1053,14 +1060,13 @@ function renderMelhores(){
 
   // pódio pela régua, com o ponto forte confirmado de cada um
   const podio=[...an].filter(a=>a.score_geral!=null).sort((a,b)=>b.score_geral-a.score_geral).slice(0,3);
-  const medalha=['🥇','🥈','🥉'];
-  const cards=podio.map((a,i)=>{
+    const cards=podio.map((a,i)=>{
     const forte=sinais.filter(s=>confirmados.includes(s.k)&&(sinalPct(a,s.k)||0)>=60)
                       .sort((x,y)=>y.delta-x.delta)[0];
     const fraco=sinais.filter(s=>confirmados.includes(s.k)&&(sinalPct(a,s.k)??100)<40)
                       .sort((x,y)=>y.delta-x.delta)[0];
     return `<div class="kpi">
-      <div class="label">${medalha[i]} ${i+1}º pela régua</div>
+      <div class="label">${i+1}º pela régua</div>
       <div class="val" style="font-size:18px">${esc((a.seller_name||'').trim())}</div>
       <div class="sub">score ${a.score_geral} · urgência ${a.urgencia_score??'–'}</div>
       ${forte?`<div class="small" style="margin-top:8px"><span class="text-good">forte:</span> ${esc(forte.nome)} (${sinalPct(a,forte.k)}%)</div>`:''}
