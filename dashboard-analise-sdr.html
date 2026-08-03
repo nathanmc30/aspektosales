@@ -208,6 +208,9 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      semana selecionada (mes da segunda-feira; fallback pelo proprio
      data_medicao); julho fechado em monthly_closings. Sem isso, agosto
      zeraria a coluna de faturamento das semanas de julho.
+     v4.13 (03/08): detector de virada no salvar — faturamento abaixo do
+     ultimo snapshot do mesmo mes abre confirmacao (correcao x semana errada).
+     Ideia do gestor; a ancora de arquivamento segue sendo a semana.
      ===================================================================== -->
 <div class="topbar">
   <div class="tabs">
@@ -578,6 +581,25 @@ async function salvarResultados(){
       data_medicao:today,faturamento:fat,vendas_fechadas:vd,taxa_comparecimento:tc,taxa_conversao:tv});
   });
   if(!body.length){toast('Nada para salvar','info');return;}
+  /* v4.13 · DETECTOR DE VIRADA (ideia do gestor, 03/08): numa serie ACUMULADA,
+     faturamento menor que o ultimo snapshot do mesmo mes = ou correcao (estorno,
+     digitacao) ou o mes virou e a pessoa esta salvando na semana errada. Nao
+     arquivamos sozinhos — perguntamos. A ancora de arquivamento segue sendo a
+     semana selecionada; isto e o alarme que impede o erro humano nos dois lados. */
+  const quedas=body.filter(x=>{
+    if(x.faturamento==null)return false;
+    const u=ultimoResultado(x.seller_email);
+    return u&&u.faturamento!=null&&Number(x.faturamento)<Number(u.faturamento);
+  }).map(x=>({nome:x.seller_name,de:ultimoResultado(x.seller_email).faturamento,para:x.faturamento}));
+  if(quedas.length){
+    const lista=quedas.map(q=>`<div>${esc(q.nome)}: ${brl(q.de)} → <strong>${brl(q.para)}</strong></div>`).join('');
+    const okQueda=await confirmar({titulo:'Faturamento menor que o último deste mês',
+      corpo:`<p style="margin-bottom:8px">O acumulado do mês não costuma cair. Isso acontece em dois casos:</p>${lista}
+        <p style="margin-top:10px"><strong>Se o mês virou</strong>, cancele e selecione a semana do mês novo antes de salvar — senão estes números entram no mês de <strong>${mesDe(STATE.week)}</strong>.<br>
+        <strong>Se é correção</strong> (estorno, erro de digitação), pode confirmar.</p>`,
+      ok:'É correção — salvar assim mesmo'});
+    if(!okQueda)return;
+  }
   try{
     const r=await fetch(SU+'/rest/v1/seller_results?on_conflict=seller_email,data_medicao',{
       method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
