@@ -169,6 +169,7 @@
   .ote-var { font-size: 11px; color: var(--text-3); }
   .ote-vendas { font-size: 11px; }
   .ote-pct { font-size: 11px; margin-top: 1px; }
+  .ote-arcada { font-size: 11px; margin-top: 1px; color: var(--text-3); }
 
   .ating-row { display: flex; flex-direction: column; gap: 3px; }
   .ating-row-pct { font-size: 12px; font-weight: 600; }
@@ -214,12 +215,12 @@
 
   <div class="page-header">
     <h1>Calculadora de comissionamento</h1>
-    <p>Meta do N1 = 37 vendas, crescendo de 3 em 3. Ticket padrão: R$ 4.600.</p>
+    <p>Meta do N1 = 37 arcadas, subindo de 3 em 3. Entre gatilhos, cada arcada extra paga a taxa do gatilho batido (~2,7% do ticket nos 80%, ~3,1% nos 100%); bater o gatilho seguinte salta para o multiplicador cheio.</p>
   </div>
 
   <div class="controls">
     <div class="field">
-      <label>Meta N1 (vendas)</label>
+      <label>Meta N1 (arcadas)</label>
       <div class="input-wrap">
         <span class="prefix">#</span>
         <input type="number" id="meta-n1" value="37" min="1" step="1">
@@ -234,7 +235,7 @@
       </div>
     </div>
     <div class="field">
-      <label>Vendas realizadas</label>
+      <label>Arcadas realizadas</label>
       <div class="input-wrap">
         <span class="prefix">#</span>
         <input type="number" id="vendas" value="0" min="0" step="1">
@@ -272,8 +273,8 @@
 
   <div class="custo-section">
     <div class="custo-title">
-      Custo sobre faturamento — cenário ativo
-      <span id="custo-cenario-label">preencha as vendas para calcular</span>
+      Remuneração atual e custo sobre faturamento
+      <span id="custo-cenario-label">preencha as arcadas para calcular</span>
     </div>
     <div class="custo-grid" id="custo-grid"></div>
   </div>
@@ -292,7 +293,9 @@
     { n: 6, fixo: 3950 },
   ];
 
-  // Multiplicadores: 80% / 100% / 120%
+  const DEGRAU = 3; // crescimento fixo de arcadas por nível
+
+  // Multiplicadores nos gatilhos: 80% / 100% / 120%
   const MULTS = [
     { idx: 0, pct: 80,  m: 1.4,  color: '#f59e0b' },
     { idx: 1, pct: 100, m: 2.0,  color: '#3b82f6' },
@@ -300,24 +303,51 @@
   ];
 
   const fmtBRL   = v => 'R$ ' + Math.round(v).toLocaleString('pt-BR');
-  const fmtShort = v => v >= 1000 ? 'R$ ' + Math.round(v / 1000) + 'k' : 'R$ ' + Math.round(v);
+  const fmtShort = v => v >= 1000 ? 'R$ ' + (Math.round(v / 100) / 10).toLocaleString('pt-BR') + 'k' : 'R$ ' + Math.round(v);
   const fmtPct   = v => v.toFixed(1) + '%';
-
-  function getMetas(meta1) {
-    return NIVEIS.map((_, i) => meta1 + i * 3);
-  }
-
-  function getScenario(ating) {
-    if (ating >= MULTS[2].pct) return MULTS[2];
-    if (ating >= MULTS[1].pct) return MULTS[1];
-    if (ating >= MULTS[0].pct) return MULTS[0];
-    return null;
-  }
 
   function pctClass(pct) {
     if (pct <= 10) return 'pct-low';
     if (pct <= 18) return 'pct-mid';
     return 'pct-high';
+  }
+
+  // Escada: faixas ancoradas no N1 (arredondadas) subindo de 3 em 3,
+  // igual à meta — todas as colunas mantêm o degrau de 3 arcadas.
+  const baseDe = (meta1, pct) => Math.round(meta1 * pct / 100);
+  const alvoDe = (meta1, pct, i) => baseDe(meta1, pct) + i * DEGRAU;
+
+  function getMetas(meta1) {
+    return NIVEIS.map((_, i) => meta1 + i * DEGRAU);
+  }
+
+  // Comissão por arcada em cada trecho = valor médio por arcada NO gatilho
+  // recém-batido (OTE do gatilho ÷ arcadas do alvo). Em % do ticket, é o
+  // mesmo custo/faturamento daquele gatilho (~2,7% nos 80%, ~3,1% nos 100%).
+  function comissoes(fixo, meta1, i) {
+    const a80  = alvoDe(meta1, 80,  i);
+    const a100 = alvoDe(meta1, 100, i);
+    return {
+      c1: a80  > 0 ? (fixo * MULTS[0].m) / a80  : 0,  // trecho 80% -> 100%
+      c2: a100 > 0 ? (fixo * MULTS[1].m) / a100 : 0,  // trecho 100% -> 120%
+    };
+  }
+
+  // Remuneração total dado o nº de arcadas realizadas:
+  // < 80%: só o fixo
+  // 80–100%: 1,4x + c1 por arcada extra (bater 100% exato salta para o 2x cheio)
+  // 100–120%: 2x + c2 por arcada extra (bater 120% exato salta para o 2,55x)
+  // >= 120%: trava no teto de 2,55x
+  function remuneracao(fixo, meta1, i, arcadas) {
+    const a80  = alvoDe(meta1, 80,  i);
+    const a100 = alvoDe(meta1, 100, i);
+    const a120 = alvoDe(meta1, 120, i);
+    const { c1, c2 } = comissoes(fixo, meta1, i);
+
+    if (arcadas < a80)  return { ote: fixo, sc: null };
+    if (arcadas < a100) return { ote: fixo * MULTS[0].m + (arcadas - a80)  * c1, sc: MULTS[0] };
+    if (arcadas < a120) return { ote: fixo * MULTS[1].m + (arcadas - a100) * c2, sc: MULTS[1] };
+    return { ote: fixo * MULTS[2].m, sc: MULTS[2] }; // teto
   }
 
   function buildSummary() {
@@ -343,7 +373,7 @@
       const th = document.createElement('th');
       th.style.textAlign = 'right';
       th.style.color = mult.color;
-      th.innerHTML = `OTE ${mult.pct}%<br><span style="font-weight:400;opacity:.5;font-size:10px">var · meta · % fat.</span>`;
+      th.innerHTML = `OTE ${mult.pct}%<br><span style="font-weight:400;opacity:.5;font-size:10px">var · alvo · R$/arcada</span>`;
       tr.appendChild(th);
     });
   }
@@ -385,34 +415,44 @@
     });
   }
 
-  function renderOteCell(fixo, mult, meta, volume) {
+  function renderOteCell(fixo, mult, meta1, i, ticket) {
     const ote  = fixo * mult.m;
     const varv = ote - fixo;
-    const metaVendas = meta ? Math.ceil(meta * (mult.pct / 100)) : null;
-    const pctFat = volume > 0 ? (ote / volume) * 100 : null;
+    const alvo = isNaN(meta1) ? null : alvoDe(meta1, mult.pct, i);
+    const { c1, c2 } = isNaN(meta1) ? { c1: 0, c2: 0 } : comissoes(fixo, meta1, i);
 
-    const metaLine = metaVendas != null
-      ? `<span style="color:${mult.color};opacity:.8">${metaVendas} vendas p/ ${mult.pct}%</span>`
-      : `<span style="color:var(--text-3)">meta: —</span>`;
+    const alvoLine = alvo != null
+      ? `<span style="color:${mult.color};opacity:.8">${alvo} arcadas p/ ${mult.pct}%</span>`
+      : `<span style="color:var(--text-3)">alvo: —</span>`;
 
-    const pctLine = pctFat != null
-      ? `<span class="${pctClass(pctFat)}">${fmtPct(pctFat)} do fat.</span>`
-      : `<span style="color:var(--text-3)">—% do fat.</span>`;
+    // Comissão por arcada no trecho que COMEÇA neste gatilho
+    let arcadaLine;
+    if (alvo == null) {
+      arcadaLine = `<span style="color:var(--text-3)">—</span>`;
+    } else if (mult.idx === 0) {
+      const pctTicket = ticket > 0 ? ' · ' + fmtPct((c1 / ticket) * 100) + ' do ticket' : '';
+      arcadaLine = `<span>+${fmtBRL(c1)}/arcada até 100%${pctTicket}</span>`;
+    } else if (mult.idx === 1) {
+      const pctTicket = ticket > 0 ? ' · ' + fmtPct((c2 / ticket) * 100) + ' do ticket' : '';
+      arcadaLine = `<span>+${fmtBRL(c2)}/arcada até 120%${pctTicket}</span>`;
+    } else {
+      arcadaLine = `<span>teto — trava no 2,55×</span>`;
+    }
 
     return `
       <div class="ote-block">
         <span class="ote-val" style="color:${mult.color}">${fmtBRL(ote)}</span>
         <span class="ote-var">+${fmtBRL(varv)} variável</span>
-        <span class="ote-vendas" style="margin-top:2px">${metaLine}</span>
-        <span class="ote-pct">${pctLine}</span>
+        <span class="ote-vendas" style="margin-top:2px">${alvoLine}</span>
+        <span class="ote-arcada">${arcadaLine}</span>
       </div>`;
   }
 
   function update() {
-    const meta1  = parseFloat(document.getElementById('meta-n1').value);
-    const ticket = parseFloat(document.getElementById('ticket').value) || 0;
-    const vendas = parseFloat(document.getElementById('vendas').value) || 0;
-    const volume = vendas * ticket;
+    const meta1   = parseFloat(document.getElementById('meta-n1').value);
+    const ticket  = parseFloat(document.getElementById('ticket').value) || 0;
+    const arcadas = parseFloat(document.getElementById('vendas').value) || 0;
+    const volume  = arcadas * ticket;
 
     document.getElementById('volume-out').value = volume > 0
       ? Math.round(volume).toLocaleString('pt-BR') : '';
@@ -426,15 +466,15 @@
       document.getElementById('hint-metas').textContent = '';
     }
 
-    // Bar global ref N1
+    // Barra global, referência N1
     const meta1Val = metas[0];
-    const atingN1  = meta1Val && vendas > 0 ? (vendas / meta1Val) * 100 : null;
+    const atingN1  = meta1Val && arcadas > 0 ? (arcadas / meta1Val) * 100 : null;
     const barFill  = document.getElementById('bar-fill');
     const barPct   = document.getElementById('bar-pct');
     const barPill  = document.getElementById('bar-pill');
 
     if (atingN1 != null) {
-      const sc = getScenario(atingN1);
+      const { sc } = remuneracao(NIVEIS[0].fixo, meta1, 0, arcadas);
       const color = sc ? sc.color : '#ef4444';
       barFill.style.width = Math.min(atingN1, 135) + '%';
       barFill.style.background = color;
@@ -452,14 +492,14 @@
       barPill.style.color = 'var(--text-3)';
     }
 
-    // Rows
+    // Linhas
     NIVEIS.forEach(({ n, fixo }, i) => {
       const meta  = metas[i] || null;
-      const ating = meta && vendas > 0 ? (vendas / meta) * 100 : null;
-      const sc    = ating != null ? getScenario(ating) : null;
+      const ating = meta && arcadas > 0 ? (arcadas / meta) * 100 : null;
+      const sc    = ating != null ? remuneracao(fixo, meta1, i, arcadas).sc : null;
 
       document.getElementById('row-' + n).className = sc ? 'ga' + sc.idx : '';
-      document.getElementById('meta-label-' + n).textContent = meta ? 'meta: ' + meta + ' vendas' : 'meta: —';
+      document.getElementById('meta-label-' + n).textContent = meta ? 'meta: ' + meta + ' arcadas' : 'meta: —';
 
       const pctEl = document.getElementById('ating-pct-' + n);
       const barEl = document.getElementById('ating-bar-' + n);
@@ -477,47 +517,44 @@
 
       MULTS.forEach(mult => {
         const el = document.getElementById('ote-' + mult.idx + '-' + n);
-        if (el) el.innerHTML = renderOteCell(fixo, mult, meta, volume);
+        if (el) el.innerHTML = renderOteCell(fixo, mult, meta1, i, ticket);
       });
     });
 
-    buildCusto(metas, vendas, volume);
+    buildCusto(meta1, metas, arcadas, volume);
   }
 
-  function buildCusto(metas, vendas, volume) {
+  function buildCusto(meta1, metas, arcadas, volume) {
     const grid  = document.getElementById('custo-grid');
     const label = document.getElementById('custo-cenario-label');
     grid.innerHTML = '';
 
-    if (!metas.length || vendas === 0 || volume === 0) {
-      label.textContent = 'preencha as vendas para calcular';
+    if (!metas.length || arcadas === 0 || volume === 0) {
+      label.textContent = 'preencha as arcadas para calcular';
       return;
     }
 
     let hasSc = false;
     NIVEIS.forEach(({ n, fixo }, i) => {
-      const meta   = metas[i];
-      const ating  = meta ? (vendas / meta) * 100 : 0;
-      const sc     = getScenario(ating);
+      const { ote, sc } = remuneracao(fixo, meta1, i, arcadas);
       if (sc) hasSc = true;
 
-      const ote    = sc ? fixo * sc.m : fixo;
       const pctFat = (ote / volume) * 100;
 
       const card = document.createElement('div');
       card.className = 'custo-card';
       card.innerHTML = `
-        <div class="custo-card-label">custo / faturamento</div>
-        <div class="custo-card-nivel">N${n} · ${sc ? 'gatilho ' + sc.pct + '%' : 'sem gatilho'}</div>
-        <div class="custo-card-pct ${pctClass(pctFat)}" style="color:${sc ? sc.color : 'var(--text-3)'}">${fmtPct(pctFat)}</div>
-        <div class="custo-card-detail">${fmtBRL(ote)} ÷ ${fmtBRL(volume)}</div>
+        <div class="custo-card-label">remuneração atual</div>
+        <div class="custo-card-nivel">N${n} · ${sc ? 'faixa ' + sc.pct + '%' : 'abaixo de 80%'}</div>
+        <div class="custo-card-pct" style="color:${sc ? sc.color : 'var(--text-3)'}">${fmtBRL(ote)}</div>
+        <div class="custo-card-detail">${fmtPct(pctFat)} do fat. · ${fmtBRL(volume)}</div>
       `;
       grid.appendChild(card);
     });
 
     label.textContent = hasSc
-      ? '— ' + vendas + ' vendas · R$ ' + Math.round(volume).toLocaleString('pt-BR') + ' gerados'
-      : 'abaixo de 80% da meta — sem gatilho ativo';
+      ? '— ' + arcadas + ' arcadas · R$ ' + Math.round(volume).toLocaleString('pt-BR') + ' gerados'
+      : 'abaixo do gatilho de 80% — só o fixo';
   }
 
   buildSummary();
