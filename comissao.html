@@ -173,6 +173,7 @@
 
   .ating-row { display: flex; flex-direction: column; gap: 3px; }
   .ating-row-pct { font-size: 12px; font-weight: 600; }
+  .ating-row-remun { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
   .mini-bar { width: 52px; height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
   .mini-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
 
@@ -255,6 +256,7 @@
     <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
     <div class="bar-pct" id="bar-pct">—</div>
     <div class="bar-pill" id="bar-pill">sem meta</div>
+    <div class="bar-pill" id="bar-remun" style="font-family:'JetBrains Mono',monospace">R$ —</div>
   </div>
 
   <div class="summary" id="summary"></div>
@@ -264,7 +266,7 @@
       <thead>
         <tr id="thead-row">
           <th style="width:170px">Nível</th>
-          <th style="text-align:right">Ating.</th>
+          <th style="text-align:right">Ating. · Remun. atual</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -402,6 +404,7 @@
         <div class="ating-row">
           <span class="ating-row-pct" id="ating-pct-${n}" style="color:var(--text-3)">—</span>
           <div class="mini-bar"><div class="mini-fill" id="ating-bar-${n}"></div></div>
+          <span class="ating-row-remun" id="ating-remun-${n}" style="color:var(--text-3)">—</span>
         </div>`;
       tr.appendChild(tdAting);
 
@@ -474,7 +477,8 @@
     const barPill  = document.getElementById('bar-pill');
 
     if (atingN1 != null) {
-      const { sc } = remuneracao(NIVEIS[0].fixo, meta1, 0, arcadas);
+      const remN1 = remuneracao(NIVEIS[0].fixo, meta1, 0, arcadas);
+      const sc = remN1.sc;
       const color = sc ? sc.color : '#ef4444';
       barFill.style.width = Math.min(atingN1, 135) + '%';
       barFill.style.background = color;
@@ -483,6 +487,10 @@
       barPill.textContent = sc ? 'Gatilho ' + sc.pct + '%' : '< 80%';
       barPill.style.background = sc ? sc.color + '20' : 'var(--red-bg)';
       barPill.style.color = sc ? sc.color : 'var(--red)';
+      const barRemun = document.getElementById('bar-remun');
+      barRemun.textContent = fmtBRL(remN1.ote) + ' no N1';
+      barRemun.style.background = sc ? sc.color + '20' : 'var(--surface-3)';
+      barRemun.style.color = sc ? sc.color : 'var(--text-2)';
     } else {
       barFill.style.width = '0%';
       barPct.textContent = '—';
@@ -490,29 +498,39 @@
       barPill.textContent = 'sem meta';
       barPill.style.background = 'var(--surface-3)';
       barPill.style.color = 'var(--text-3)';
+      const barRemun = document.getElementById('bar-remun');
+      barRemun.textContent = 'R$ —';
+      barRemun.style.background = 'var(--surface-3)';
+      barRemun.style.color = 'var(--text-3)';
     }
 
     // Linhas
     NIVEIS.forEach(({ n, fixo }, i) => {
       const meta  = metas[i] || null;
       const ating = meta && arcadas > 0 ? (arcadas / meta) * 100 : null;
-      const sc    = ating != null ? remuneracao(fixo, meta1, i, arcadas).sc : null;
+      const rem   = ating != null ? remuneracao(fixo, meta1, i, arcadas) : null;
+      const sc    = rem ? rem.sc : null;
 
       document.getElementById('row-' + n).className = sc ? 'ga' + sc.idx : '';
       document.getElementById('meta-label-' + n).textContent = meta ? 'meta: ' + meta + ' arcadas' : 'meta: —';
 
-      const pctEl = document.getElementById('ating-pct-' + n);
-      const barEl = document.getElementById('ating-bar-' + n);
+      const pctEl   = document.getElementById('ating-pct-' + n);
+      const barEl   = document.getElementById('ating-bar-' + n);
+      const remunEl = document.getElementById('ating-remun-' + n);
       if (ating != null) {
         const c = sc ? sc.color : '#ef4444';
         pctEl.textContent = Math.round(ating) + '%';
         pctEl.style.color = c;
         barEl.style.width = Math.min(ating, 135) + '%';
         barEl.style.background = c;
+        remunEl.textContent = fmtBRL(rem.ote);
+        remunEl.style.color = sc ? c : 'var(--text-2)';
       } else {
         pctEl.textContent = '—';
         pctEl.style.color = 'var(--text-3)';
         barEl.style.width = '0%';
+        remunEl.textContent = '—';
+        remunEl.style.color = 'var(--text-3)';
       }
 
       MULTS.forEach(mult => {
