@@ -204,6 +204,10 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      v4.11 (31/07): passe de linguagem profissional — emojis removidos de abas,
      comandos, cards e podio; rotulos neutros; fonte Inter; meta description.
      Nenhuma mudanca de logica.
+     v4.12 (31/07): virada de mes — ultimoResultado escopado pelo mes da
+     semana selecionada (mes da segunda-feira; fallback pelo proprio
+     data_medicao); julho fechado em monthly_closings. Sem isso, agosto
+     zeraria a coluna de faturamento das semanas de julho.
      ===================================================================== -->
 <div class="topbar">
   <div class="tabs">
@@ -251,7 +255,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
 
 <div class="card">
   <h2><span class="title">Resultado da semana</span></h2>
-  <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do mês; taxas são sobre agendadas/comparecimentos. É a entrada que faz o pódio e o comparativo acima terem o que qualificar.</div>
+  <div class="small" style="margin-bottom:8px">Snapshot datado — grava em <span class="mono">seller_results</span> com <span class="mono">data_medicao=hoje</span>. Faturamento e vendas são acumulados do <strong>mês da semana selecionada</strong> — na virada, o mês novo começa zerado aqui e o anterior fica preservado nos snapshots antigos e no fechamento mensal (<span class="mono">monthly_closings</span>). É a entrada que faz o pódio e o comparativo acima terem o que qualificar.</div>
   <div id="res-body" class="load">Carregando…</div>
   <div style="margin-top:12px;text-align:right">
     <button class="btn btn-sm" onclick="salvarResultados()">Salvar snapshot</button>
@@ -467,9 +471,20 @@ async function refreshAll(){
   }
 }
 
-/* último snapshot de resultado por vendedor */
+/* =====================================================================
+   v4.12 · VIRADA DE MÊS
+   Faturamento e vendas são ACUMULADOS DO MÊS e zeram na virada. O mês
+   operacional de uma semana é o mês da segunda-feira dela (W31, 27/07-02/08,
+   pertence a julho). Sem este escopo, em agosto a W31 mostraria os números
+   zerados de agosto como "faturamento do mês" — e a auditoria da régua
+   (divergência, tabela de confirmação) quebraria. O número final de cada mês
+   fica preservado em monthly_closings, fora do alcance da virada.
+   ===================================================================== */
+function mesDe(wl){return weekBounds(wl).start.slice(0,7);}
 function ultimoResultado(email){
-  return STATE.resultados.filter(r=>r.seller_email===email)
+  const mes=mesDe(STATE.week);
+  const mesLinha=r=>r.week_label?mesDe(r.week_label):String(r.data_medicao||'').slice(0,7);
+  return STATE.resultados.filter(r=>r.seller_email===email&&mesLinha(r)===mes)
     .sort((a,b)=>String(b.data_medicao).localeCompare(String(a.data_medicao)))[0]||null;
 }
 
