@@ -127,6 +127,28 @@
   .table-wrap { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; }
 
+  .nivel-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .nivel-tab {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .nivel-tab:hover { background: var(--surface-3); color: var(--text-2); }
+  .nivel-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
   thead th {
     background: var(--surface);
     font-size: 11px; font-weight: 500;
@@ -252,7 +274,7 @@
   </div>
 
   <div class="ating-bar">
-    <span class="ating-bar-label">Atingimento (ref. N1)</span>
+    <span class="ating-bar-label" id="ating-bar-label">Atingimento (ref. N1)</span>
     <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
     <div class="bar-pct" id="bar-pct">—</div>
     <div class="bar-pill" id="bar-pill">sem meta</div>
@@ -260,6 +282,8 @@
   </div>
 
   <div class="summary" id="summary"></div>
+
+  <div class="nivel-tabs" id="nivel-tabs"></div>
 
   <div class="table-wrap">
     <table>
@@ -352,18 +376,59 @@
     return { ote: fixo * MULTS[2].m, sc: MULTS[2] }; // teto
   }
 
+  // Filtro de nível: null = todos, ou o nº do nível selecionado
+  let nivelAtivo = null;
+
+  function buildTabs() {
+    const wrap = document.getElementById('nivel-tabs');
+    wrap.innerHTML = '';
+
+    const mkTab = (label, valor) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'nivel-tab' + ((valor === nivelAtivo) ? ' active' : '');
+      b.textContent = label;
+      b.addEventListener('click', () => {
+        nivelAtivo = valor;
+        buildTabs();
+        applyFiltro();
+      });
+      return b;
+    };
+
+    wrap.appendChild(mkTab('Todos', null));
+    NIVEIS.forEach(({ n }) => wrap.appendChild(mkTab('N' + n, n)));
+  }
+
+  function applyFiltro() {
+    applyFiltroRows();
+    buildSummary();
+    // Recalcula tudo: barra do topo passa a referenciar o nível
+    // selecionado e os cards de baixo respeitam o filtro.
+    update();
+  }
+
   function buildSummary() {
     const summary = document.getElementById('summary');
     summary.innerHTML = '';
     MULTS.forEach((mult, i) => {
-      const otes = NIVEIS.map(({ fixo }) => fixo * mult.m);
       const card = document.createElement('div');
       card.className = 'scard s' + i;
-      card.innerHTML = `
-        <div class="scard-label">${mult.pct}% — mult. ${mult.m.toFixed(2).replace('.', ',')}×</div>
-        <div class="scard-val">${fmtShort(Math.min(...otes))} → ${fmtShort(Math.max(...otes))}</div>
-        <div class="scard-sub">OTE N1 → N6</div>
-      `;
+      if (nivelAtivo === null) {
+        const otes = NIVEIS.map(({ fixo }) => fixo * mult.m);
+        card.innerHTML = `
+          <div class="scard-label">${mult.pct}% — mult. ${mult.m.toFixed(2).replace('.', ',')}×</div>
+          <div class="scard-val">${fmtShort(Math.min(...otes))} → ${fmtShort(Math.max(...otes))}</div>
+          <div class="scard-sub">OTE N1 → N6</div>
+        `;
+      } else {
+        const { fixo } = NIVEIS[nivelAtivo - 1];
+        card.innerHTML = `
+          <div class="scard-label">${mult.pct}% — mult. ${mult.m.toFixed(2).replace('.', ',')}×</div>
+          <div class="scard-val">${fmtBRL(fixo * mult.m)}</div>
+          <div class="scard-sub">OTE do N${nivelAtivo}</div>
+        `;
+      }
       summary.appendChild(card);
     });
   }
@@ -469,26 +534,30 @@
       document.getElementById('hint-metas').textContent = '';
     }
 
-    // Barra global, referência N1
-    const meta1Val = metas[0];
-    const atingN1  = meta1Val && arcadas > 0 ? (arcadas / meta1Val) * 100 : null;
+    // Barra global — referência: nível selecionado na aba (ou N1 no "Todos")
+    const refIdx  = nivelAtivo != null ? nivelAtivo - 1 : 0;
+    const refN    = NIVEIS[refIdx];
+    document.getElementById('ating-bar-label').textContent = 'Atingimento (ref. N' + refN.n + ')';
+
+    const metaRef  = metas[refIdx];
+    const atingRef = metaRef && arcadas > 0 ? (arcadas / metaRef) * 100 : null;
     const barFill  = document.getElementById('bar-fill');
     const barPct   = document.getElementById('bar-pct');
     const barPill  = document.getElementById('bar-pill');
 
-    if (atingN1 != null) {
-      const remN1 = remuneracao(NIVEIS[0].fixo, meta1, 0, arcadas);
-      const sc = remN1.sc;
+    if (atingRef != null) {
+      const remRef = remuneracao(refN.fixo, meta1, refIdx, arcadas);
+      const sc = remRef.sc;
       const color = sc ? sc.color : '#ef4444';
-      barFill.style.width = Math.min(atingN1, 135) + '%';
+      barFill.style.width = Math.min(atingRef, 135) + '%';
       barFill.style.background = color;
       barPct.style.color = color;
-      barPct.textContent = Math.round(atingN1) + '%';
+      barPct.textContent = Math.round(atingRef) + '%';
       barPill.textContent = sc ? 'Gatilho ' + sc.pct + '%' : '< 80%';
       barPill.style.background = sc ? sc.color + '20' : 'var(--red-bg)';
       barPill.style.color = sc ? sc.color : 'var(--red)';
       const barRemun = document.getElementById('bar-remun');
-      barRemun.textContent = fmtBRL(remN1.ote) + ' no N1';
+      barRemun.textContent = fmtBRL(remRef.ote) + ' no N' + refN.n;
       barRemun.style.background = sc ? sc.color + '20' : 'var(--surface-3)';
       barRemun.style.color = sc ? sc.color : 'var(--text-2)';
     } else {
@@ -561,6 +630,8 @@
 
       const card = document.createElement('div');
       card.className = 'custo-card';
+      card.id = 'custo-card-' + n;
+      if (nivelAtivo !== null && nivelAtivo !== n) card.style.display = 'none';
       card.innerHTML = `
         <div class="custo-card-label">remuneração atual</div>
         <div class="custo-card-nivel">N${n} · ${sc ? 'faixa ' + sc.pct + '%' : 'abaixo de 80%'}</div>
@@ -578,7 +649,16 @@
   buildSummary();
   buildTableHeader();
   buildTableRows();
+  buildTabs();
   update();
+  applyFiltroRows();
+
+  function applyFiltroRows() {
+    NIVEIS.forEach(({ n }) => {
+      const row = document.getElementById('row-' + n);
+      if (row) row.style.display = (nivelAtivo === null || nivelAtivo === n) ? '' : 'none';
+    });
+  }
 
   ['meta-n1', 'ticket', 'vendas'].forEach(id => {
     document.getElementById(id).addEventListener('input', update);
