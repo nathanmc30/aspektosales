@@ -211,6 +211,10 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
      v4.13 (03/08): detector de virada no salvar — faturamento abaixo do
      ultimo snapshot do mesmo mes abre confirmacao (correcao x semana errada).
      Ideia do gestor; a ancora de arquivamento segue sendo a semana.
+     v4.14 (03/08): aba MES (ideia do gestor) — fechamento oficial editavel
+     (monthly_closings, upsert mes+vendedor) + performance mensal da regua
+     (media dos scores das semanas do mes x fechamento, com divergencia e
+     correlacao). Semana pertence ao mes da segunda-feira dela.
      ===================================================================== -->
 <div class="topbar">
   <div class="tabs">
@@ -218,6 +222,7 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
     <button class="tab" data-tab="vendedores" onclick="switchTab('vendedores')">Vendedores</button>
     <button class="tab" data-tab="regua" onclick="switchTab('regua')">Régua</button>
     <button class="tab" data-tab="conversas" onclick="switchTab('conversas')">Conversas</button>
+    <button class="tab" data-tab="mes" onclick="switchTab('mes')">Mês</button>
   </div>
   <div class="actions">
     <select id="week-select" onchange="onWeekChange()"></select>
@@ -376,6 +381,27 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
   </div>
   <div id="conv-resumo" class="grid grid-3" style="margin-bottom:14px"></div>
   <div id="conv-body" class="load">Carregando…</div>
+</div>
+</div>
+
+<!-- ================= ABA MÊS =================
+     Pergunta que responde: como foi o mês, oficialmente?
+     v4.14 (ideia do gestor, 03/08): o mês tem casa própria. Aqui vive o número
+     FINAL (monthly_closings) e a performance da régua agregada nas semanas do
+     mês. O card "Resultado da semana" segue sendo a série de fotos semanais;
+     isto aqui é o fechamento e a leitura mensal. -->
+<div id="pane-mes" class="hidden">
+<div class="card">
+  <h2><span class="title">Fechamento do mês</span>
+    <span class="controls"><select id="mes-select" onchange="loadMes()"></select></span></h2>
+  <div class="small" style="margin-bottom:8px">Número oficial e final do mês, por vendedor — independente das fotos semanais. Grava em <span class="mono">monthly_closings</span>; salvar de novo sobrescreve o fechamento do mês selecionado.</div>
+  <div id="mes-fech-body" class="load">Carregando…</div>
+  <div style="margin-top:12px;text-align:right"><button class="btn btn-sm" onclick="salvarFechamento()">Salvar fechamento</button> <span id="mes-status" class="fb-status"></span></div>
+</div>
+<div class="card">
+  <h2><span class="title">Performance do mês pela régua</span></h2>
+  <div class="small" style="margin-bottom:8px">Média dos scores das semanas do mês (semana pertence ao mês da sua segunda-feira) cruzada com o fechamento oficial. A divergência aqui é a auditoria mensal da régua — mesma lógica do comparativo semanal, com mais chão embaixo.</div>
+  <div id="mes-perf-body" class="load">Carregando…</div>
 </div>
 </div>
 
@@ -1639,7 +1665,7 @@ async function salvarPrompt(id){
 // ============ TABS ============
 // v4.7 — 4 abas. A lista e a fonte unica: aba nova entra aqui e no markup,
 // em mais lugar nenhum.
-const PANES=['semana','vendedores','regua','conversas'];
+const PANES=['semana','vendedores','regua','conversas','mes'];
 function switchTab(t){
   if(!PANES.includes(t))t=PANES[0];
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
@@ -1648,6 +1674,7 @@ function switchTab(t){
     if(el)el.classList.toggle('hidden',p!==t);
   });
   if(t==='conversas')loadConversas();
+  if(t==='mes')loadMes();
 }
 
 // ============ DIALOGOS DO PROPRIO HTML ============
@@ -1680,6 +1707,109 @@ function toast(msg,tipo){
   t.textContent=msg;
   c.appendChild(t);
   setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),320);},3400);
+}
+
+// ============ MÊS ============
+let MES={sel:null,closings:[],an:[]};
+function mesesDisponiveis(){return [...new Set(STATE.weeks.map(w=>mesDe(w)))].sort().reverse();}
+async function loadMes(){
+  const sel=document.getElementById('mes-select');
+  if(!sel.options.length){
+    mesesDisponiveis().forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+  }
+  MES.sel=sel.value||(sel.options[0]||{}).value;
+  if(!MES.sel){document.getElementById('mes-fech-body').innerHTML='<div class="small">Sem semanas no sistema ainda.</div>';document.getElementById('mes-perf-body').innerHTML='';return;}
+  sel.value=MES.sel;
+  const semanas=STATE.weeks.filter(w=>mesDe(w)===MES.sel);
+  document.getElementById('mes-fech-body').innerHTML='<div class="load">Carregando…</div>';
+  document.getElementById('mes-perf-body').innerHTML='<div class="load">Carregando…</div>';
+  try{
+    const [cl,an]=await Promise.all([
+      sb('monthly_closings?select=*&mes=eq.'+MES.sel),
+      semanas.length?sb('ai_analyses?select=seller_email,seller_name,week_label,score_geral,score_processo,score_tecnica&week_label=in.('+semanas.map(w=>'"'+w+'"').join(',')+')'):Promise.resolve([])
+    ]);
+    MES.closings=cl;MES.an=an;
+    renderMesFech();renderMesPerf();
+  }catch(e){document.getElementById('mes-fech-body').innerHTML='<div class="err">'+esc(e.message)+'</div>';}
+}
+function vendedoresDoMes(){
+  const v=new Map();
+  MES.an.forEach(a=>v.set(a.seller_email,(a.seller_name||'').trim()));
+  MES.closings.forEach(c=>v.set(c.seller_email,(c.seller_name||'').trim()));
+  STATE.vendedores.forEach(x=>{if(!v.has(x.email))v.set(x.email,x.name);});
+  return [...v.entries()].map(([e,n])=>({email:e,name:n})).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function renderMesFech(){
+  const rows=vendedoresDoMes().map(v=>{
+    const c=MES.closings.find(x=>x.seller_email===v.email)||{};
+    return `<div class="res-row" data-email="${esc(v.email)}" data-name="${esc(v.name)}">
+      <div class="res-name">${esc(v.name)}</div>
+      <div><input class="res-input mf-fat" type="number" step="0.01" placeholder="R$" value="${c.faturamento??''}"></div>
+      <div><input class="res-input mf-vd" type="number" placeholder="Vendas" value="${c.vendas_fechadas??''}"></div>
+      <div><input class="res-input mf-tc" type="number" step="0.1" placeholder="% compar." value="${c.taxa_comparecimento??''}"></div>
+      <div><input class="res-input mf-tv" type="number" step="0.1" placeholder="% conversão" value="${c.taxa_conversao??''}"></div>
+      <div class="res-calc">${c.fechado_em?'fechado '+String(c.fechado_em).slice(0,10):'—'}</div>
+    </div>`;}).join('');
+  document.getElementById('mes-fech-body').innerHTML=`
+    <div class="res-row" style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px">
+      <div>Vendedor</div><div>Faturamento final</div><div>Vendas</div><div>Compar. (%)</div><div>Conversão (%)</div><div>Status</div>
+    </div>${rows}`;
+}
+async function salvarFechamento(){
+  const st=document.getElementById('mes-status');
+  const nn=v=>(v===''||v==null||isNaN(+v))?null:+v;
+  const body=[];
+  document.querySelectorAll('#mes-fech-body .res-row[data-email]').forEach(r=>{
+    const fat=nn(r.querySelector('.mf-fat').value),vd=nn(r.querySelector('.mf-vd').value),
+          tc=nn(r.querySelector('.mf-tc').value),tv=nn(r.querySelector('.mf-tv').value);
+    if(fat==null&&vd==null&&tc==null&&tv==null)return;
+    body.push({mes:MES.sel,seller_email:r.dataset.email,seller_name:r.dataset.name,
+      faturamento:fat,vendas_fechadas:vd,taxa_comparecimento:tc,taxa_conversao:tv,fechado_em:new Date().toISOString()});
+  });
+  if(!body.length){toast('Nada para salvar','info');return;}
+  st.textContent='salvando…';st.className='fb-status text-mute';
+  try{
+    const r=await fetch(SU+'/rest/v1/monthly_closings?on_conflict=mes,seller_email',{
+      method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,200));
+    st.textContent='fechamento de '+MES.sel+' salvo ('+body.length+' vendedores)';st.className='fb-status text-good';
+    toast('Fechamento salvo');
+    loadMes();
+  }catch(e){st.textContent='erro: '+e.message;st.className='fb-status text-bad';}
+}
+function renderMesPerf(){
+  if(!MES.an.length){document.getElementById('mes-perf-body').innerHTML='<div class="small">Nenhuma análise nas semanas deste mês ainda.</div>';return;}
+  const por={};
+  MES.an.forEach(a=>{
+    const p=por[a.seller_email]||(por[a.seller_email]={nome:(a.seller_name||'').trim(),semanas:[],g:[],pr:[],tc:[]});
+    p.semanas.push(a.week_label);
+    if(a.score_geral!=null)p.g.push(+a.score_geral);
+    if(a.score_processo!=null)p.pr.push(+a.score_processo);
+    if(a.score_tecnica!=null)p.tc.push(+a.score_tecnica);
+  });
+  const med=v=>v.length?+(v.reduce((s,x)=>s+x,0)/v.length).toFixed(2):null;
+  const linhas=Object.entries(por).map(([e,p])=>({email:e,nome:p.nome,n:p.semanas.length,g:med(p.g),pr:med(p.pr),tc:med(p.tc),
+    fat:(MES.closings.find(c=>c.seller_email===e)||{}).faturamento??null}));
+  const posG=posicoes(linhas.map(l=>({k:l.email,v:l.g})));
+  const posF=posicoes(linhas.map(l=>({k:l.email,v:l.fat})));
+  linhas.sort((a,b)=>(posF[a.email]||99)-(posF[b.email]||99));
+  const rows=linhas.map(l=>{
+    const pg=posG[l.email],pf=posF[l.email];
+    const div=(pg&&pf)?Math.abs(pg-pf):null;
+    return `<tr class="${div!=null&&div>=2?'div-alto':''}">
+      <td>${esc(l.nome)}<span class="cmp-pos">${l.n} semana(s)</span></td>
+      <td class="cmp-num ${scoreColor(l.g)}">${l.g??'–'}<span class="cmp-pos">${pg?pg+'º':''}</span></td>
+      <td class="cmp-num">${l.pr??'–'}</td>
+      <td class="cmp-num">${l.tc??'–'}</td>
+      <td class="cmp-num text-mute">${l.fat!=null?brl(l.fat):'–'}<span class="cmp-pos">${pf?pf+'º':''}</span></td>
+      <td>${div!=null&&div>=2?'<span class="chip chip-orange">'+div+' posições</span>':'<span class="small">—</span>'}</td>
+    </tr>`;}).join('');
+  const pares=linhas.filter(l=>posG[l.email]&&posF[l.email]).map(l=>[posG[l.email],posF[l.email]]);
+  const rho=spearman(pares);
+  document.getElementById('mes-perf-body').innerHTML=`
+    <table class="cmp-table"><thead><tr><th>Vendedor</th><th>Score médio (mês)</th><th>Processo</th><th>Técnica</th><th>Fechamento</th><th>Divergência</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="legenda">Aderência mensal da régua ao resultado (correlação de ordem): <strong>${rho==null?'–':rho.toFixed(2)}</strong>. Semana pertence ao mês da sua segunda-feira; o fechamento vem do card acima. Divergência ≥2 posições merece revisão de critério — use o comparativo semanal para transformar em texto.</div>`;
 }
 
 // ============ CONVERSAS ============
