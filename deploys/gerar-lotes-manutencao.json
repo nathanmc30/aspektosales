@@ -1,0 +1,121 @@
+{
+ "name": "SDR - Software - Manutencao Diaria (ex-Gerar Lotes)",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "30 23 * * *"
+      }
+     ]
+    }
+   },
+   "id": "cron",
+   "name": "Schedule Trigger",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    -100
+   ]
+  },
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "sdr-gerar-lotes",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "id": "hook",
+   "name": "Webhook Manual",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    100
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// v5 (12/08/2026): Gerar Lotes APOSENTADO — o dashboard agora trabalha com acumulado\n// continuo (fila_v5 + analisador v6 monta o transcript direto de conversations).\n// Este workflow virou MANUTENCAO DIARIA: so roda a purga de conversas sem negociacao.\n// weekly_batches nao recebe mais gravacoes (historico preservado). O webhook\n// sdr-gerar-lotes continua respondendo para HTML antigo em cache nao quebrar.\nconst SU='https://mwlxudtdvflygvewuwal.supabase.co';\nconst SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bHh1ZHRkdmZseWd2ZXd1d2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MTI5NDgsImV4cCI6MjEwMDM4ODk0OH0.Hwix2vzrTiAfQwa993TVQTTE8ndCnlXKSew3qh4D57Q';\nconst H={apikey:SK,Authorization:'Bearer '+SK,'Content-Type':'application/json'};\nlet purgadas=0;\ntry{\n  const pg=await this.helpers.httpRequest({method:'POST',url:SU+'/rest/v1/rpc/purgar_sem_negociacao',headers:H,body:{horas_min:48},json:true});\n  purgadas=Number(pg)||0;\n}catch(err){}\nreturn[{json:{ok:true,success:true,modo:'manutencao-v5',purgadas_sem_negociacao:purgadas,\n  aviso:'Lotes semanais aposentados no v5. As conversas acumulam por vendedor ate a analise (fila_v5).'}}];\n"
+   },
+   "id": "gerar",
+   "name": "Purga Diaria",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "options": {
+     "responseHeaders": {
+      "entries": [
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "name": "Access-Control-Allow-Origin",
+        "value": "*"
+       }
+      ]
+     }
+    }
+   },
+   "id": "resp",
+   "name": "Resposta Webhook",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    480,
+    0
+   ]
+  }
+ ],
+ "connections": {
+  "Schedule Trigger": {
+   "main": [
+    [
+     {
+      "node": "Purga Diaria",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Webhook Manual": {
+   "main": [
+    [
+     {
+      "node": "Purga Diaria",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Purga Diaria": {
+   "main": [
+    [
+     {
+      "node": "Resposta Webhook",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "callerPolicy": "workflowsFromSameOwner",
+  "availableInMCP": true,
+  "executionOrder": "v1",
+  "timezone": "America/Sao_Paulo"
+ }
+}
