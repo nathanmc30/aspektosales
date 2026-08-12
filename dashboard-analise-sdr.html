@@ -228,8 +228,9 @@ mark{background:var(--yellow);color:#1a1400;border-radius:3px;padding:0 2px}
     <select id="week-select" onchange="onWeekChange()"></select>
     <button class="btn btn-2 btn-sm" onclick="refreshAll()">↻ Atualizar</button>
     <span class="act-sep"></span>
+    <!-- v4.15: o botão "Transcrever áudios" foi removido — a transcrição virou
+         a primeira etapa da cadeia do próprio ▶ Analisar (disparaAnalise) -->
     <button id="btn-analisar" class="btn btn-sm" onclick="disparaAnalise()" disabled>▶ Analisar</button>
-    <button class="btn btn-2 btn-sm" onclick="disparaTranscricao()">Transcrever áudios</button>
     <button class="btn btn-2 btn-sm" onclick="gerarLotes()">Gerar lotes</button>
     <button class="btn btn-2 btn-sm" onclick="reAnalisar(null)">↻ Re-analisar tudo com meu contexto</button>
     <span id="re-status" class="fb-status"></span>
@@ -564,10 +565,25 @@ function renderFila(){
   const prontoDe=l=>{const ps=STATE.prontos.filter(p=>p.seller_email===l.seller_email);return ps.length===0||ps.every(p=>p.pronto!==false);};
   const rows=pend.map(l=>`<tr><td>${esc((l.seller_name||'').trim())}</td><td>${l.total_conversas}</td><td>${prontoDe(l)?'<span class="chip chip-green">pronto</span>':'<span class="chip chip-yellow">áudio pendente</span>'}</td></tr>`).join('');
   document.getElementById('fila-body').innerHTML=`<table><thead><tr><th>Vendedor</th><th>Conversas</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const liberados=pend.filter(prontoDe);
-  const leads=liberados.reduce((s,l)=>s+(l.total_conversas||0),0);
-  btn.disabled=liberados.length===0;
-  btn.textContent=liberados.length?`Analisar ${liberados.length} vendedor(es) · ${leads} lead(s)`:'Aguardando transcrição';
+  const leads=pend.reduce((s,l)=>s+(l.total_conversas||0),0);
+  const aud=audiosPendentesFila();
+  /* v4.15: botão único "Transcrever e analisar". Sempre habilitado quando há
+     vendedor pendente — o rótulo diz o que a cadeia vai fazer. O estado morto
+     "Aguardando transcrição" (botão desabilitado) deixou de existir. */
+  btn.disabled=false;
+  btn.textContent=aud>0
+    ?`Transcrever e analisar · ${aud} áudio(s) pendente(s)`
+    :`Analisar ${pend.length} vendedor(es) · ${leads} lead(s)`;
+}
+
+/* v4.15: soma os áudios pendentes (view lotes_prontos) apenas dos vendedores
+   AINDA NÃO analisados na semana — vendedor analisado não volta para a fila,
+   então áudio pendente dele não deve segurar a cadeia. */
+function audiosPendentesFila(){
+  const analisados=new Set(STATE.analises.map(a=>a.seller_email));
+  return STATE.prontos
+    .filter(p=>!analisados.has(p.seller_email))
+    .reduce((s,p)=>s+(p.audios_pendentes||0),0);
 }
 
 // ============ RESULTADOS (form) ============
@@ -1553,9 +1569,40 @@ function renderRef(kind,title,r,email,nome,tt){
 function closeModal(){document.getElementById('modal').classList.remove('on');STATE.openDetail=null;}
 
 // ============ AÇÕES ============
+/* v4.15: cadeia única "Transcrever e analisar". Se há áudio pendente nos
+   vendedores da fila, dispara a transcrição (WH_TRANSCR, no-cors e SEM
+   Content-Type — requisição simples, sem preflight), observa lotes_prontos a
+   cada 15s por até 15min e, ao zerar, EMENDA a análise sozinho. Se não zerar
+   em 15min, devolve o botão com toast — o cron do n8n segue em paralelo.
+   ATENÇÃO: cada tick reafirma btn.disabled=true, porque refreshAll →
+   renderFila reabilita o botão no meio da cadeia. */
 async function disparaAnalise(){
   const btn=document.getElementById('btn-analisar');
-  const txt=btn.textContent;
+  if(audiosPendentesFila()>0){
+    btn.disabled=true;btn.textContent='disparando transcrição…';
+    await fetch(WH_TRANSCR,{method:'POST',mode:'no-cors'});
+    const t0=Date.now();
+    let ticks=0;
+    const ivt=setInterval(async()=>{
+      ticks++;
+      await refreshAll();
+      btn.disabled=true; // renderFila reabilitou; reafirmar
+      const falta=audiosPendentesFila();
+      btn.textContent='transcrevendo há '+mmss(Date.now()-t0)+' · faltam '+falta+' áudio(s)';
+      if(falta===0){clearInterval(ivt);iniciaAnalise(btn);return;}
+      if(ticks>=60){ // 60 ticks de 15s = 15 min
+        clearInterval(ivt);
+        btn.disabled=false;renderFila();
+        toast('Transcrição ainda não terminou — o cron do n8n continua em segundo plano. Tente de novo em alguns minutos.','info');
+      }
+    },15000);
+    return;
+  }
+  iniciaAnalise(btn);
+}
+
+/* fluxo de análise em si, intacto do v4.14 (WH_ANALISAR + polling de 5s) */
+async function iniciaAnalise(btn){
   const t0=Date.now();
   btn.disabled=true;btn.textContent='disparando…';
   await fetch(WH_ANALISAR,{method:'POST',mode:'no-cors',body:JSON.stringify({week_label:STATE.week})});
@@ -1563,9 +1610,10 @@ async function disparaAnalise(){
   const iv=setInterval(async()=>{
     tries++;
     await refreshAll();
+    btn.disabled=true; // renderFila reabilitou; reafirmar
     btn.textContent='analisando há '+mmss(Date.now()-t0)+' · '+STATE.analises.length+'/'+(STATE.lotes.length||'?');
     const done=STATE.analises.length>=STATE.lotes.length&&STATE.comp;
-    if(done||tries>150){clearInterval(iv);btn.textContent=txt;btn.disabled=false;renderFila();}
+    if(done||tries>150){clearInterval(iv);btn.disabled=false;renderFila();}
   },5000);
 }
 
@@ -1632,10 +1680,8 @@ async function reAnalisar(email){
   },5000);
 }
 
-async function disparaTranscricao(){
-  await fetch(WH_TRANSCR,{method:'POST',mode:'no-cors'});
-  toast('Transcrição disparada — aguarde alguns minutos e atualize','info');
-}
+/* v4.15: disparaTranscricao() foi removida — a transcrição é a 1ª etapa da
+   cadeia de disparaAnalise(). WH_TRANSCR continua em uso lá. */
 async function gerarLotes(){
   await fetch(WH_LOTES,{method:'POST',mode:'no-cors'});
   toast('Geração de lotes disparada — atualize em ~10s','info');
