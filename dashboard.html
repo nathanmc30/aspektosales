@@ -221,9 +221,9 @@
         <div class="sec-label">Meta Ads — distribuição hoje</div>
       </div>
       <div class="ads-total-block">
-        <div class="ads-total-lbl">Total Meta Ads</div>
-        <div class="ads-total-val" id="v-meta-total">—</div>
-        <div class="ads-total-desc">leads via Meta Ads hoje</div>
+        <div class="ads-total-lbl">Meta SP</div>
+        <div class="ads-total-val" id="v-meta-sp">—</div>
+        <div class="ads-total-desc">leads gerados hoje em Meta SP</div>
       </div>
       <div class="ads-grid">
         <div class="ads-region">
@@ -256,6 +256,7 @@
   var N8N_LEADS          = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads';
   var N8N_PIPE           = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-pipe';
   var N8N_LEADS_VENDEDOR = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads-vendedor';
+  var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
 
   // ─── Mapa nome → email ───────────────────────────────────────────────────────
   var EMAIL_MAP = {
@@ -264,7 +265,7 @@
     'Marcos Brant':      'marcos.brant@grupoaspekto.com',
     'Davi Guimaraes':    'davi.guimaraes@grupoaspekto.com',
     'Breno Goncalves':   'breno.goncalves@grupoaspekto.com',
-    'Lucas Moreira':     'lucas.moreira@grupoaspekto.com'
+    'Antonio Vilaca':    'antonio.vilaca@grupoaspekto.com'
   };
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -439,7 +440,6 @@
     set('v-disparo-hj',       num(dn['disparo hj']         || dn['disparo_hj']         || 0));
     set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
     set('v-remarketing-hoje', num(dn['remarketing hoje']   || dn['remarketing_hoje']   || 0));
-    set('v-meta-total', metaTot);
     set('v-meta-bh',    metaBH);
     set('v-meta-interior', metaInt);
     set('v-meta-fora',  metaFora);
@@ -467,10 +467,20 @@
       .catch(function(e) { console.error('Erro loadPipe:', e); setTimeout(loadPipe, 10000); });
   }
 
+  // Leads do dia na origem Meta SP (abertos + ganhos + perdidos), direto do Clint via n8n
+  function loadMetaSP() {
+    fetch(N8N_META_SP, { cache: 'no-store' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(json) { if (json && typeof json.total === 'number') set('v-meta-sp', json.total); })
+      .catch(function(e) { console.error('Erro loadMetaSP:', e); setTimeout(loadMetaSP, 15000); });
+  }
+
   loadLeads();
   loadPipe();
+  loadMetaSP();
   setInterval(loadLeads, 120000);
   setInterval(loadPipe,   10000);
+  setInterval(loadMetaSP, 120000);
 </script>
 
 <script>
