@@ -220,10 +220,17 @@
       <div class="ads-header">
         <div class="sec-label">Meta Ads — distribuição hoje</div>
       </div>
-      <div class="ads-total-block">
-        <div class="ads-total-lbl">Meta SP</div>
-        <div class="ads-total-val" id="v-meta-sp">—</div>
-        <div class="ads-total-desc">leads gerados hoje em Meta SP</div>
+      <div style="display:flex;gap:8px;flex:1;">
+        <div class="ads-total-block">
+          <div class="ads-total-lbl">Total Meta Ads</div>
+          <div class="ads-total-val" id="v-meta-total">—</div>
+          <div class="ads-total-desc">leads via Meta Ads hoje</div>
+        </div>
+        <div class="ads-total-block">
+          <div class="ads-total-lbl">Meta SP</div>
+          <div class="ads-total-val" id="v-meta-sp">—</div>
+          <div class="ads-total-desc">leads gerados hoje em Meta SP</div>
+        </div>
       </div>
       <div class="ads-grid">
         <div class="ads-region">
@@ -440,6 +447,7 @@
     set('v-disparo-hj',       num(dn['disparo hj']         || dn['disparo_hj']         || 0));
     set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
     set('v-remarketing-hoje', num(dn['remarketing hoje']   || dn['remarketing_hoje']   || 0));
+    set('v-meta-total', metaTot);
     set('v-meta-bh',    metaBH);
     set('v-meta-interior', metaInt);
     set('v-meta-fora',  metaFora);
