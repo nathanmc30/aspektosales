@@ -264,6 +264,7 @@
   var N8N_PIPE           = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-pipe';
   var N8N_LEADS_VENDEDOR = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads-vendedor';
   var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
+  var N8N_META_BH        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-bh';
 
   // ─── Mapa nome → email ───────────────────────────────────────────────────────
   var EMAIL_MAP = {
@@ -436,10 +437,6 @@
   function renderLeads(d) {
     var dn = {};
     Object.keys(d).forEach(function(k) { dn[k.toLowerCase().trim()] = d[k]; });
-    var metaBH   = num(dn['metaads bh']        || dn['metaads_bh']        || 0);
-    var metaInt  = num(dn['metaads interior']   || dn['metaads_interior']  || 0);
-    var metaFora = num(dn['metaads fora de mg'] || dn['metaads_fora_de_mg']|| 0);
-    var metaTot  = metaBH + metaInt + metaFora;
     set('v-leads-mes',        num(dn['total leads mes']    || dn['total_leads_mes']    || 0));
     set('v-conv-bh',          formatPct(dn['conversão bh']      || dn['conversao bh']      || dn['conversão_bh']      || ''));
     set('v-conv-interior',    formatPct(dn['conversão interior'] || dn['conversao interior'] || dn['conversão_interior'] || ''));
@@ -447,14 +444,18 @@
     set('v-disparo-hj',       num(dn['disparo hj']         || dn['disparo_hj']         || 0));
     set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
     set('v-remarketing-hoje', num(dn['remarketing hoje']   || dn['remarketing_hoje']   || 0));
-    set('v-meta-total', metaTot);
-    set('v-meta-bh',    metaBH);
-    set('v-meta-interior', metaInt);
-    set('v-meta-fora',  metaFora);
-    document.getElementById('pct-bh').textContent       = pct(metaBH,  metaTot);
-    document.getElementById('pct-interior').textContent = pct(metaInt, metaTot);
-    document.getElementById('pct-fora').textContent     = pct(metaFora, metaTot);
     document.getElementById('update-time').textContent  = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // Meta BH direto do Clint (via n8n): leads do dia por região, DDD 31 = BH, 32-38 = interior MG
+  function renderMetaBH(d) {
+    set('v-meta-total',    d.total);
+    set('v-meta-bh',       d.bh);
+    set('v-meta-interior', d.interior);
+    set('v-meta-fora',     d.fora);
+    document.getElementById('pct-bh').textContent       = pct(d.bh,       d.total);
+    document.getElementById('pct-interior').textContent = pct(d.interior, d.total);
+    document.getElementById('pct-fora').textContent     = pct(d.fora,     d.total);
   }
 
   // ─── Controle de loading ──────────────────────────────────────────────────────
@@ -483,12 +484,21 @@
       .catch(function(e) { console.error('Erro loadMetaSP:', e); setTimeout(loadMetaSP, 15000); });
   }
 
+  function loadMetaBH() {
+    fetch(N8N_META_BH, { cache: 'no-store' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(json) { if (json && typeof json.total === 'number') renderMetaBH(json); })
+      .catch(function(e) { console.error('Erro loadMetaBH:', e); setTimeout(loadMetaBH, 15000); });
+  }
+
   loadLeads();
   loadPipe();
   loadMetaSP();
+  loadMetaBH();
   setInterval(loadLeads, 120000);
   setInterval(loadPipe,   10000);
   setInterval(loadMetaSP, 120000);
+  setInterval(loadMetaBH, 120000);
 </script>
 
 <script>
