@@ -34,19 +34,18 @@
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #4fc3f7; animation: pulse 1.6s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
 
-    /* ── Linha 2: Métricas (esquerda) + Meta Ads (direita) ── */
+    /* ── Linha 2: faixa mensal + painéis Meta BH / Meta SP ── */
     .row-metricas {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      align-items: stretch;
-      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
     }
-
-    /* bloco esquerdo de métricas */
-    .metricas-bloco { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-    .metricas-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; flex: 1; }
-    .metricas-hoje { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; flex: 1; }
+    .mensal-strip { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
+    .meta-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-height: 0; }
+    .meta-row { display: flex; gap: 8px; flex: 1; min-height: 0; }
+    .meta-row .ads-total-block { flex: 1.15; }
+    .meta-row .ads-grid { flex: 2.2; }
 
     /* cards */
     .card-hero { background: #0d1f2d; border: 0.5px solid #1a3a52; border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; }
@@ -64,7 +63,7 @@
     .ads-header { display: flex; align-items: center; justify-content: space-between; }
     .ads-total-block { background: #0d1f2d; border: 0.5px solid #1a3a52; border-radius: 10px; padding: 10px 14px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .ads-total-lbl { font-size: 10px; font-weight: 500; letter-spacing: 0.7px; text-transform: uppercase; color: #8b9aaa; margin-bottom: 6px; }
-    .ads-total-val { font-size: 44px; font-weight: 500; color: #e6edf3; letter-spacing: -2px; line-height: 1; }
+    .ads-total-val { font-size: 40px; font-weight: 500; color: #e6edf3; letter-spacing: -2px; line-height: 1; }
     .ads-total-desc { font-size: 11px; color: #5ba3c9; margin-top: 6px; }
     .ads-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; flex: 1; }
     .ads-region { background: #161b22; border: 0.5px solid #1e2d3d; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; }
@@ -163,92 +162,96 @@
     <div class="live"><span class="dot"></span>Ao vivo</div>
   </div>
 
-  <!-- LINHA 2: Métricas + Meta Ads -->
+  <!-- LINHA 2: faixa mensal + painéis Meta BH / Meta SP -->
   <div class="row-metricas">
 
-    <!-- Esquerda: métricas de leads -->
-    <div class="metricas-bloco">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div class="sec-label">Visão mensal</div>
+    <!-- Faixa: visão mensal + orgânico -->
+    <div class="mensal-strip">
+      <div class="card-hero">
+        <div class="lbl">Total Leads mês</div>
+        <div class="hero-num" id="v-leads-mes">—</div>
+        <div class="sub">leads captados neste mês</div>
       </div>
-      <div class="metricas-top">
-        <div class="card-hero">
-          <div class="lbl">Total Leads mês</div>
-          <div class="hero-num" id="v-leads-mes">—</div>
-          <div class="sub">leads captados neste mês</div>
-        </div>
-        <div class="card">
-          <div class="lbl">Conversão BH</div>
-          <div class="val-pct" id="v-conv-bh">—</div>
-          <div class="sub">meta de conversão</div>
-        </div>
-        <div class="card">
-          <div class="lbl">Conversão Interior</div>
-          <div class="val-pct" id="v-conv-interior">—</div>
-          <div class="sub">meta de conversão</div>
-        </div>
+      <div class="card">
+        <div class="lbl">Conversão BH</div>
+        <div class="val-pct" id="v-conv-bh">—</div>
+        <div class="sub">meta de conversão</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div class="badge-hoje"><i class="ti ti-calendar"></i>Hoje</div>
+      <div class="card">
+        <div class="lbl">Conversão Interior</div>
+        <div class="val-pct" id="v-conv-interior">—</div>
+        <div class="sub">meta de conversão</div>
       </div>
-      <div class="metricas-hoje">
-        <div class="card">
-          <div class="lbl">Total Leads</div>
-          <div class="val-md" id="v-leads-hoje">—</div>
-          <div class="sub">leads hoje</div>
-        </div>
-        <div class="card">
-          <div class="lbl">Disparos</div>
-          <div class="val-md" id="v-disparo-hj">—</div>
-          <div class="sub">realizados hoje</div>
-        </div>
-        <div class="card">
-          <div class="lbl">Orgânico</div>
-          <div class="val-md" id="v-organico-hoje">—</div>
-          <div class="sub">leads orgânicos</div>
-        </div>
-        <div class="card">
-          <div class="lbl">Remarketing</div>
-          <div class="val-md" id="v-remarketing-hoje">—</div>
-          <div class="sub">leads remarketing</div>
-        </div>
+      <div class="card">
+        <div class="lbl">Orgânico hoje</div>
+        <div class="val-pct" id="v-organico-hoje">—</div>
+        <div class="sub">leads orgânicos</div>
       </div>
     </div>
 
-    <!-- Direita: Meta Ads -->
-    <div class="ads-card">
-      <div class="ads-header">
-        <div class="sec-label">Meta Ads — distribuição hoje</div>
-      </div>
-      <div style="display:flex;gap:8px;flex:1;">
-        <div class="ads-total-block">
-          <div class="ads-total-lbl">Total Meta Ads</div>
-          <div class="ads-total-val" id="v-meta-total">—</div>
-          <div class="ads-total-desc">leads via Meta Ads hoje</div>
+    <!-- Painéis Meta lado a lado, mesma anatomia -->
+    <div class="meta-panels">
+
+      <div class="ads-card">
+        <div class="ads-header">
+          <div class="sec-label">Meta BH — leads hoje</div>
         </div>
-        <div class="ads-total-block">
-          <div class="ads-total-lbl">Meta SP</div>
-          <div class="ads-total-val" id="v-meta-sp">—</div>
-          <div class="ads-total-desc">leads gerados hoje em Meta SP</div>
-        </div>
-      </div>
-      <div class="ads-grid">
-        <div class="ads-region">
-          <div class="ads-rlbl">BH</div>
-          <div class="ads-rval" id="v-meta-bh">—</div>
-          <div class="ads-rpct" id="pct-bh">—</div>
-        </div>
-        <div class="ads-region">
-          <div class="ads-rlbl">Interior MG</div>
-          <div class="ads-rval" id="v-meta-interior">—</div>
-          <div class="ads-rpct" id="pct-interior">—</div>
-        </div>
-        <div class="ads-region">
-          <div class="ads-rlbl">Fora de MG</div>
-          <div class="ads-rval" id="v-meta-fora">—</div>
-          <div class="ads-rpct" id="pct-fora">—</div>
+        <div class="meta-row">
+          <div class="ads-total-block">
+            <div class="ads-total-lbl">Total</div>
+            <div class="ads-total-val" id="v-meta-total">—</div>
+            <div class="ads-total-desc">gerados hoje</div>
+          </div>
+          <div class="ads-grid">
+            <div class="ads-region">
+              <div class="ads-rlbl">BH</div>
+              <div class="ads-rval" id="v-meta-bh">—</div>
+              <div class="ads-rpct" id="pct-bh">—</div>
+            </div>
+            <div class="ads-region">
+              <div class="ads-rlbl">Interior MG</div>
+              <div class="ads-rval" id="v-meta-interior">—</div>
+              <div class="ads-rpct" id="pct-interior">—</div>
+            </div>
+            <div class="ads-region">
+              <div class="ads-rlbl">Fora de MG</div>
+              <div class="ads-rval" id="v-meta-fora">—</div>
+              <div class="ads-rpct" id="pct-fora">—</div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <div class="ads-card">
+        <div class="ads-header">
+          <div class="sec-label">Meta SP — leads hoje</div>
+        </div>
+        <div class="meta-row">
+          <div class="ads-total-block">
+            <div class="ads-total-lbl">Total</div>
+            <div class="ads-total-val" id="v-meta-sp">—</div>
+            <div class="ads-total-desc">gerados hoje</div>
+          </div>
+          <div class="ads-grid">
+            <div class="ads-region">
+              <div class="ads-rlbl">Capital</div>
+              <div class="ads-rval" id="v-meta-sp-cap">—</div>
+              <div class="ads-rpct" id="pct-sp-cap">—</div>
+            </div>
+            <div class="ads-region">
+              <div class="ads-rlbl">Interior SP</div>
+              <div class="ads-rval" id="v-meta-sp-int">—</div>
+              <div class="ads-rpct" id="pct-sp-int">—</div>
+            </div>
+            <div class="ads-region">
+              <div class="ads-rlbl">Fora de SP</div>
+              <div class="ads-rval" id="v-meta-sp-fora">—</div>
+              <div class="ads-rpct" id="pct-sp-fora">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -440,10 +443,7 @@
     set('v-leads-mes',        num(dn['total leads mes']    || dn['total_leads_mes']    || 0));
     set('v-conv-bh',          formatPct(dn['conversão bh']      || dn['conversao bh']      || dn['conversão_bh']      || ''));
     set('v-conv-interior',    formatPct(dn['conversão interior'] || dn['conversao interior'] || dn['conversão_interior'] || ''));
-    set('v-leads-hoje',       num(dn['leads hoje']         || dn['leads_hoje']         || 0));
-    set('v-disparo-hj',       num(dn['disparo hj']         || dn['disparo_hj']         || 0));
     set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
-    set('v-remarketing-hoje', num(dn['remarketing hoje']   || dn['remarketing_hoje']   || 0));
     document.getElementById('update-time').textContent  = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
@@ -476,11 +476,20 @@
       .catch(function(e) { console.error('Erro loadPipe:', e); setTimeout(loadPipe, 10000); });
   }
 
-  // Leads do dia na origem Meta SP (abertos + ganhos + perdidos), direto do Clint via n8n
+  // Meta SP direto do Clint (via n8n): leads do dia por região, DDD 11 = capital, 12-19 = interior SP
+  function renderMetaSP(d) {
+    set('v-meta-sp',      d.total);
+    set('v-meta-sp-cap',  d.capital);
+    set('v-meta-sp-int',  d.interior);
+    set('v-meta-sp-fora', d.fora);
+    document.getElementById('pct-sp-cap').textContent  = pct(d.capital,  d.total);
+    document.getElementById('pct-sp-int').textContent  = pct(d.interior, d.total);
+    document.getElementById('pct-sp-fora').textContent = pct(d.fora,     d.total);
+  }
   function loadMetaSP() {
     fetch(N8N_META_SP, { cache: 'no-store' })
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(json) { if (json && typeof json.total === 'number') set('v-meta-sp', json.total); })
+      .then(function(json) { if (json && typeof json.total === 'number') renderMetaSP(json); })
       .catch(function(e) { console.error('Erro loadMetaSP:', e); setTimeout(loadMetaSP, 15000); });
   }
 
