@@ -126,6 +126,7 @@
     .lead-info { flex: 1; min-width: 0; }
     .lead-nome { font-size: 13px; font-weight: 500; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lead-tel { font-size: 11px; color: #5ba3c9; margin-top: 2px; letter-spacing: 0.3px; }
+    .lead-fila { font-size: 10px; color: #5ba3c9; background: #0d1f2d; border: 0.5px solid #1a3a52; border-radius: 6px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
     .btn-leads { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 0.5px solid #1a3a52; background: #0d2233; color: #4fc3f7; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
     .btn-leads:hover { background: #0d3048; }
   </style>
@@ -284,6 +285,13 @@
   }
   function fmt(n) { return Number(n).toLocaleString('pt-BR'); }
   function pct(a, t) { return t > 0 ? (a / t * 100).toFixed(1) + '%' : '—'; }
+  // Nome de lead vem do perfil do WhatsApp e aceita qualquer coisa — sem
+  // escapar, um nome com "<" quebra a linha do modal (ou pior).
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
   function set(id, val) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -414,7 +422,13 @@
           var nomeLead = lead.nome || '—';
           var tel = lead.telefone || '—';
           var telFmt = tel !== '—' ? '(' + tel.slice(0,2) + ') ' + tel.slice(2,7) + '-' + tel.slice(7) : '—';
-          row.innerHTML = '<span class="lead-idx">' + (i + 1) + '</span><div class="lead-info"><div class="lead-nome">' + nomeLead + '</div><div class="lead-tel"><i class="ti ti-phone" style="font-size:10px;margin-right:3px;"></i>' + telFmt + '</div></div>';
+          // Selo da fila: some quando o lead nao tem conversa ou o canal nao
+          // esta mapeado no CanalFila__mdt — melhor sem selo do que com rotulo
+          // vazio ocupando a linha.
+          var fila = lead.fila
+            ? '<span class="lead-fila">' + esc(lead.fila) + '</span>'
+            : '';
+          row.innerHTML = '<span class="lead-idx">' + (i + 1) + '</span><div class="lead-info"><div class="lead-nome">' + esc(nomeLead) + '</div><div class="lead-tel"><i class="ti ti-phone" style="font-size:10px;margin-right:3px;"></i>' + telFmt + '</div></div>' + fila;
           lista.appendChild(row);
         });
       })
