@@ -53,7 +53,7 @@
     .lbl { font-size: 10px; font-weight: 500; letter-spacing: 0.7px; text-transform: uppercase; color: #8b9aaa; margin-bottom: 6px; }
     .sub { font-size: 11px; color: #5ba3c9; margin-top: 6px; }
     .hero-num { font-size: 52px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -2px; }
-    .val-pct { font-size: 34px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1px; }
+    .val-pct, .val-num { font-size: 34px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1px; }
     .val-md { font-size: 28px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1px; }
     .badge-hoje { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: #4fc3f7; background: #0d2233; border: 0.5px solid #1a3a52; padding: 3px 10px; border-radius: 20px; }
     .sec-label { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #6e8394; }
@@ -170,17 +170,17 @@
       <div class="card-hero">
         <div class="lbl">Total Leads mês</div>
         <div class="hero-num" id="v-leads-mes">—</div>
-        <div class="sub">leads captados neste mês</div>
+        <div class="sub">BH + SP captados neste mês</div>
       </div>
       <div class="card">
-        <div class="lbl">Conversão BH</div>
-        <div class="val-pct" id="v-conv-bh">—</div>
-        <div class="sub">meta de conversão</div>
+        <div class="lbl">Total Leads BH mês</div>
+        <div class="val-num" id="v-leads-bh-mes">—</div>
+        <div class="sub">leads captados em BH</div>
       </div>
       <div class="card">
-        <div class="lbl">Conversão Interior</div>
-        <div class="val-pct" id="v-conv-interior">—</div>
-        <div class="sub">meta de conversão</div>
+        <div class="lbl">Total Leads SP mês</div>
+        <div class="val-num" id="v-leads-sp-mes">—</div>
+        <div class="sub">leads captados em SP</div>
       </div>
       <div class="card">
         <div class="lbl">Orgânico hoje</div>
@@ -268,6 +268,7 @@
   var N8N_LEADS_VENDEDOR = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads-vendedor';
   var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
   var N8N_META_BH        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-bh';
+  var N8N_TOTAIS         = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-totais';
 
   // ─── Mapa nome → email ───────────────────────────────────────────────────────
   var EMAIL_MAP = {
@@ -440,9 +441,9 @@
   function renderLeads(d) {
     var dn = {};
     Object.keys(d).forEach(function(k) { dn[k.toLowerCase().trim()] = d[k]; });
-    set('v-leads-mes',        num(dn['total leads mes']    || dn['total_leads_mes']    || 0));
-    set('v-conv-bh',          formatPct(dn['conversão bh']      || dn['conversao bh']      || dn['conversão_bh']      || ''));
-    set('v-conv-interior',    formatPct(dn['conversão interior'] || dn['conversao interior'] || dn['conversão_interior'] || ''));
+    // Leads do mes e o split BH/SP saem do Salesforce (dashboard-totais), nao
+    // mais da planilha: a captacao agora e contada pela fila de cada numero.
+    // Da planilha sobrou so o organico, que o Salesforce ainda nao sabe separar.
     set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
     document.getElementById('update-time').textContent  = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
@@ -500,14 +501,30 @@
       .catch(function(e) { console.error('Erro loadMetaBH:', e); setTimeout(loadMetaBH, 15000); });
   }
 
+  // Faixa mensal: captacao do mes por praca, direto do Salesforce. O total ja
+  // vem somado do n8n para o numero grande fechar com os dois cards do lado.
+  function renderTotais(d) {
+    set('v-leads-mes',      num(d.total));
+    set('v-leads-bh-mes',   num(d.bh));
+    set('v-leads-sp-mes',   num(d.sp));
+  }
+  function loadTotais() {
+    fetch(N8N_TOTAIS, { cache: 'no-store' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(json) { if (json && typeof json.total === 'number') renderTotais(json); })
+      .catch(function(e) { console.error('Erro loadTotais:', e); setTimeout(loadTotais, 15000); });
+  }
+
   loadLeads();
   loadPipe();
   loadMetaSP();
   loadMetaBH();
+  loadTotais();
   setInterval(loadLeads, 120000);
   setInterval(loadPipe,   10000);
   setInterval(loadMetaSP, 120000);
   setInterval(loadMetaBH, 120000);
+  setInterval(loadTotais, 120000);
 </script>
 
 <script>
