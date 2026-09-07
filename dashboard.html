@@ -41,7 +41,7 @@
       gap: 12px;
       min-height: 0;
     }
-    .mensal-strip { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
+    .mensal-strip { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
     .meta-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-height: 0; }
     .meta-row { display: flex; gap: 8px; flex: 1; min-height: 0; }
     .meta-row .ads-total-block { flex: 1.15; }
@@ -182,11 +182,6 @@
         <div class="val-num" id="v-leads-sp-mes">—</div>
         <div class="sub">leads captados em SP</div>
       </div>
-      <div class="card">
-        <div class="lbl">Orgânico hoje</div>
-        <div class="val-pct" id="v-organico-hoje">—</div>
-        <div class="sub">leads orgânicos</div>
-      </div>
     </div>
 
     <!-- Painéis Meta lado a lado, mesma anatomia -->
@@ -263,7 +258,9 @@
 
 <script>
   // ─── Endpoints n8n ───────────────────────────────────────────────────────────
-  var N8N_LEADS          = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads';
+  // Tudo abaixo e servido pelo workflow "Vendas - Dashboard - Pipe (Salesforce)",
+  // que recebe o push do TermometroVendedores. A planilha e o Clint sairam do
+  // circuito em 07/09/2026 -- nao ha mais nenhuma fonte alem do Salesforce.
   var N8N_PIPE           = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-pipe';
   var N8N_LEADS_VENDEDOR = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-leads-vendedor';
   var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
@@ -428,27 +425,8 @@
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') fecharModalBtn(); });
 
   // ─── Render métricas de leads ─────────────────────────────────────────────────
-  function formatPct(v) {
-    if (!v && v !== 0) return '—';
-    var s = String(v).trim();
-    if (s === '' || s === '—') return '—';
-    if (s.indexOf('%') !== -1) return s;
-    var n = parseFloat(s.replace(',', '.'));
-    if (isNaN(n)) return s;
-    if (n > 0 && n < 1) return (n * 100).toFixed(2).replace('.', ',') + '%';
-    return n.toFixed(2).replace('.', ',') + '%';
-  }
-  function renderLeads(d) {
-    var dn = {};
-    Object.keys(d).forEach(function(k) { dn[k.toLowerCase().trim()] = d[k]; });
-    // Leads do mes e o split BH/SP saem do Salesforce (dashboard-totais), nao
-    // mais da planilha: a captacao agora e contada pela fila de cada numero.
-    // Da planilha sobrou so o organico, que o Salesforce ainda nao sabe separar.
-    set('v-organico-hoje',    num(dn['organico hoje']      || dn['organico_hoje']      || 0));
-    document.getElementById('update-time').textContent  = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-
-  // Meta BH direto do Clint (via n8n): leads do dia por região, DDD 31 = BH, 32-38 = interior MG
+  // Meta BH: leads do dia pela fila de BH, direto do Salesforce (via n8n).
+  // Região vem do DDD do telefone — 31 = BH, 32-38 = interior MG.
   function renderMetaBH(d) {
     set('v-meta-total',    d.total);
     set('v-meta-bh',       d.bh);
@@ -460,20 +438,25 @@
   }
 
   // ─── Controle de loading ──────────────────────────────────────────────────────
-  var leadsCarregado = false;
-  var pipeCarregado  = false;
-  function checkLoading() { if (leadsCarregado && pipeCarregado) document.getElementById('loading').classList.add('hidden'); }
+  // A tela sai do "carregando" quando as duas fontes que ocupam area util
+  // chegam: o termometro (os cards de vendedor) e a faixa mensal.
+  var totaisCarregado = false;
+  var pipeCarregado   = false;
+  function checkLoading() { if (totaisCarregado && pipeCarregado) document.getElementById('loading').classList.add('hidden'); }
 
-  function loadLeads() {
-    fetch(N8N_LEADS, { cache: 'no-store' })
-      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(json) { var d = json.dados || json; if (d && typeof d === 'object') { renderLeads(d); leadsCarregado = true; checkLoading(); } })
-      .catch(function(e) { console.error('Erro loadLeads:', e); setTimeout(loadLeads, 10000); });
-  }
   function loadPipe() {
     fetch(N8N_PIPE, { cache: 'no-store' })
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(json) { var rows = json.dados || json; if (Array.isArray(rows) && rows.length) { renderVendedores(rows); pipeCarregado = true; checkLoading(); } })
+      .then(function(json) {
+        var rows = json.dados || json;
+        if (Array.isArray(rows) && rows.length) {
+          renderVendedores(rows); pipeCarregado = true; checkLoading();
+          // O relogio do cabecalho fica no pipe porque e a fonte que recarrega
+          // mais rapido (10s) -- antes vinha da planilha, a cada 120s.
+          document.getElementById('update-time').textContent = 'atualizado às ' +
+            new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+      })
       .catch(function(e) { console.error('Erro loadPipe:', e); setTimeout(loadPipe, 10000); });
   }
 
@@ -511,16 +494,14 @@
   function loadTotais() {
     fetch(N8N_TOTAIS, { cache: 'no-store' })
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(json) { if (json && typeof json.total === 'number') renderTotais(json); })
+      .then(function(json) { if (json && typeof json.total === 'number') { renderTotais(json); totaisCarregado = true; checkLoading(); } })
       .catch(function(e) { console.error('Erro loadTotais:', e); setTimeout(loadTotais, 15000); });
   }
 
-  loadLeads();
   loadPipe();
   loadMetaSP();
   loadMetaBH();
   loadTotais();
-  setInterval(loadLeads, 120000);
   setInterval(loadPipe,   10000);
   setInterval(loadMetaSP, 120000);
   setInterval(loadMetaBH, 120000);
