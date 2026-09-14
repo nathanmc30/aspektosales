@@ -41,7 +41,7 @@
       gap: 12px;
       min-height: 0;
     }
-    .mensal-strip { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
+    .mensal-strip { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
     .meta-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-height: 0; }
     .meta-row { display: flex; gap: 8px; flex: 1; min-height: 0; }
     .meta-row .ads-total-block { flex: 1.15; }
@@ -182,6 +182,12 @@
         <div class="lbl">Total Leads SP mês</div>
         <div class="val-num" id="v-leads-sp-mes">—</div>
         <div class="sub">leads captados em SP</div>
+      </div>
+      <!-- Orgânico (número do Instagram) fica FORA da soma BH + SP de propósito -->
+      <div class="card">
+        <div class="lbl">Leads orgânicos hoje</div>
+        <div class="val-num" id="v-organico-hoje">—</div>
+        <div class="sub"><span id="v-organico-mes">—</span> no mês · Instagram</div>
       </div>
     </div>
 
@@ -504,6 +510,10 @@
     set('v-leads-mes',      num(d.total));
     set('v-leads-bh-mes',   num(d.bh));
     set('v-leads-sp-mes',   num(d.sp));
+    // Orgânico: traço, e não zero, quando a rota ainda não trouxer o campo —
+    // num() transformaria ausência em 0, e zero na TV parece dado real.
+    set('v-organico-hoje',  typeof d.organicoHoje === 'number' ? d.organicoHoje : '—');
+    set('v-organico-mes',   typeof d.organicoMes  === 'number' ? d.organicoMes  : '—');
   }
   function loadTotais() {
     fetch(N8N_TOTAIS, { cache: 'no-store' })
