@@ -1,0 +1,608 @@
+<title>Funil BH · Formulário × Direto</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{
+  --bg:#050505;
+  --surface:rgba(255,255,255,0.06);
+  --surface2:rgba(255,255,255,0.04);
+  --surface-solid:#131313;
+  --border:rgba(255,255,255,0.10);
+  --border-strong:rgba(255,255,255,0.18);
+  --text:#ffffff;
+  --text2:rgba(255,255,255,0.72);
+  --muted:rgba(255,255,255,0.45);
+  --faint:rgba(255,255,255,0.28);
+  --grid:rgba(255,255,255,0.07);
+  --accent:#6baed5;
+  --navy:#22385d;
+  --serieF:#3e92c6;
+  --serieO:#b8842a;
+  --serieF-soft:rgba(62,146,198,0.14);
+  --serieO-soft:rgba(184,132,42,0.14);
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:radial-gradient(900px 480px at 85% -10%, rgba(34,56,93,0.55), transparent 65%),
+                   radial-gradient(700px 420px at -10% 30%, rgba(34,56,93,0.28), transparent 60%);
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:-apple-system,"Segoe UI",system-ui,Roboto,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 60px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:6px}
+.brand{font-size:11px;letter-spacing:0.28em;color:var(--muted);text-transform:uppercase}
+h1{font-size:26px;font-weight:650;margin:2px 0 2px;letter-spacing:-0.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.sub b{color:var(--text2);font-weight:500}
+
+.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 22px;position:sticky;top:env(safe-area-inset-top,0px);z-index:30;padding-block:10px;background:rgba(5,5,5,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.filterbar .flabel{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.pill{appearance:none;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font:inherit;font-size:13px;padding:6px 14px;border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.pill:hover{background:var(--surface);border-color:var(--border-strong)}
+.pill[aria-pressed="true"]{background:rgba(107,174,213,0.16);border-color:rgba(107,174,213,0.55);color:#cfe6f4}
+.pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;align-items:center;gap:14px;margin-left:auto;font-size:12.5px;color:var(--text2)}
+.legend .key{display:inline-flex;align-items:center;gap:7px}
+.swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+.swF{background:var(--serieF)} .swO{background:var(--serieO)}
+
+section.card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px 16px;margin-bottom:18px}
+.card h2{font-size:15px;font-weight:600;margin:0;letter-spacing:0.01em}
+.card .h2row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:4px}
+.card .hint{font-size:12px;color:var(--muted)}
+.grid-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-bottom:18px}
+.tile{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 12px}
+.tile .tlabel{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.tile .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile .side .who{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.tile .side .val{font-size:24px;font-weight:650;letter-spacing:-0.01em;line-height:1.15}
+.tile .side .pct{font-size:12.5px;color:var(--text2)}
+.tile .side .pct .ref{color:var(--muted)}
+
+.minitiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.mini{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.mini .tlabel{font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.mini .val{font-size:21px;font-weight:650}
+.mini .note{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+svg{display:block;max-width:100%}
+svg text{font-family:inherit}
+.axis-tick{font-size:11px;fill:var(--muted)}
+.bar-name{font-size:12.5px;fill:var(--text2)}
+.bar-val{font-size:12.5px;fill:var(--text);font-weight:600}
+.bar-sub{font-size:11.5px;fill:var(--muted)}
+.stage-lbl{font-size:12.5px;fill:var(--text2)}
+
+.rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.rate{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px 11px}
+.rate .rt{font-size:12.5px;color:var(--text2);margin-bottom:2px}
+.rate .rt b{color:var(--text);font-weight:600}
+.rate .rr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:7px}
+.rate .who{font-size:11.5px;color:var(--muted);width:86px}
+.rate .track{height:8px;border-radius:99px;background:rgba(255,255,255,0.05);overflow:hidden}
+.rate .fill{height:100%;border-radius:99px}
+.rate .rv{font-size:13.5px;font-weight:650;min-width:52px;text-align:right}
+.rate .rn{font-size:11px;color:var(--muted);text-align:right}
+
+.duocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.duocol{grid-template-columns:1fr}}
+
+.tabs{display:inline-flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px}
+.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;padding:4px 12px;border-radius:8px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:rgba(255,255,255,0.10);color:var(--text)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+details.tbl{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+details.tbl summary{cursor:pointer;color:var(--muted);font-size:12px;user-select:none}
+details.tbl summary:hover{color:var(--text2)}
+table{border-collapse:collapse;width:100%;margin-top:8px;font-size:12.5px}
+th{color:var(--muted);font-weight:500;text-align:right;padding:5px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;font-variant-numeric:tabular-nums;color:var(--text2)}
+td:first-child{color:var(--text)}
+.tscroll{overflow-x:auto}
+
+#tooltip{position:fixed;pointer-events:none;z-index:99;background:#161616;border:1px solid var(--border-strong);border-radius:10px;padding:8px 11px;font-size:12.5px;box-shadow:0 8px 28px rgba(0,0,0,0.55);max-width:280px}
+#tooltip .tt-title{color:var(--muted);font-size:11.5px;margin-bottom:3px}
+#tooltip .tt-row{display:flex;align-items:center;gap:7px}
+#tooltip .tt-key{width:10px;height:3px;border-radius:2px;flex:none}
+#tooltip .tt-val{font-weight:650}
+#tooltip .tt-lbl{color:var(--text2)}
+
+footer.metodo{color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:14px;margin-top:26px}
+footer.metodo h3{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);margin:0 0 8px}
+footer.metodo ul{margin:0;padding-left:16px}
+footer.metodo li{margin-bottom:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="brand">Aspekto</span>
+  </header>
+  <h1>Funil BH · Formulário × Direto</h1>
+  <p class="sub">Leads do WhatsApp de BH (+55 31 9015-6972), criados de <b>25/08 a 18/09/2026</b> ·
+    <b id="subF">–</b> com formulário do Meta · <b id="subO">–</b> sem formulário (clique direto / orgânico) ·
+    dados do Salesforce em 18/09</p>
+
+  <div class="filterbar" id="filterbar">
+    <span class="flabel">Semana</span>
+    <span class="legend">
+      <span class="key"><span class="swatch swF"></span>Formulário</span>
+      <span class="key"><span class="swatch swO"></span>Sem formulário</span>
+    </span>
+  </div>
+
+  <div class="grid-tiles" id="scoreboard"></div>
+
+  <section class="card">
+    <div class="h2row"><h2>Avanço de funil</h2><span class="hint">barra = % dos leads do grupo que chegam à etapa · número = bruto</span></div>
+    <div id="funnel"></div>
+    <details class="tbl"><summary>Ver tabela</summary><div class="tscroll" id="funnelTable"></div></details>
+  </section>
+
+  <section class="card">
+    <div class="h2row"><h2>Taxas de passagem</h2><span class="hint">cada taxa nomeia a referência: de onde sai e para onde vai</span></div>
+    <div class="rates" id="rates"></div>
+  </section>
+
+  <section class="card">
+    <div class="h2row"><h2>Tendência semanal</h2><span class="hint">coortes pela semana de criação · a semana filtrada fica em destaque</span></div>
+    <div id="weeklyVol"></div>
+    <div class="duocol" style="margin-top:14px">
+      <div><div class="hint" style="margin-bottom:4px">% Conectado (respondeu) por semana</div><div id="weeklyCon"></div></div>
+      <div><div class="hint" style="margin-bottom:4px">% Lead → SQL por semana</div><div id="weeklySql"></div></div>
+    </div>
+    <details class="tbl"><summary>Ver tabela</summary><div class="tscroll" id="weeklyTable"></div></details>
+  </section>
+
+  <section class="card">
+    <div class="h2row"><h2>Conversão a SQL por DDD</h2><span class="hint">% dos leads do recorte que viraram Oportunidade</span></div>
+    <div id="ddd"></div>
+    <details class="tbl"><summary>Ver tabela</summary><div class="tscroll" id="dddTable"></div></details>
+  </section>
+
+  <section class="card">
+    <div class="h2row">
+      <h2>Origem paga do formulário</h2>
+      <div class="tabs" id="campTabs" role="group" aria-label="Dimensão">
+        <button type="button" id="tabCamp" aria-pressed="true">Campanhas</button>
+        <button type="button" id="tabAd" aria-pressed="false">Anúncios</button>
+      </div>
+      <span class="hint">só leads com formulário · barra = leads · % ao lado</span>
+    </div>
+    <div id="camps"></div>
+    <details class="tbl"><summary>Ver tabela</summary><div class="tscroll" id="campsTable"></div></details>
+  </section>
+
+  <section class="card">
+    <div class="h2row"><h2>Tempos e planilha do Meta</h2><span class="hint">medianas do recorte selecionado</span></div>
+    <div class="minitiles" id="extras"></div>
+  </section>
+
+  <footer class="metodo">
+    <h3>Método e definições</h3>
+    <ul>
+      <li><b>Formulário</b> = lead casado com a planilha do Meta ADS pelo leadgen_id (staging MetaLead no Salesforce). <b>Sem formulário</b> = os demais leads do mesmo número de BH — inclui anúncios de clique-direto para o WhatsApp e contatos orgânicos, que hoje não são separáveis no Salesforce.</li>
+      <li><b>Conectado (respondeu)</b> = Data de conexão preenchida OU passagem por Qualificação no histórico do lead — a união corrige a subcontagem conhecida do campo quando a resposta abre sessão nova.</li>
+      <li><b>SQL</b> = lead convertido em Oportunidade no Salesforce. <b>Agendou</b> = Oportunidade com agendamento registrado ou que passou pelo estágio "Avaliação agendada" (ou além). <b>Ganho</b> = estágio atual "Fechado ganho".</li>
+      <li>Canal BH determinado pela primeira sessão de WhatsApp do lead (fallback: oportunidade/contato convertido e fila de origem). Corte em 25/08 = início do funil automático e da cobertura da planilha.</li>
+      <li>Semana de 14/09 é parcial (até 18/09) e as conversões mais recentes ainda maturam — ciclo mediano até SQL é de ~18 h.</li>
+      <li>Valor ganho subregistrado: 7 das 9 oportunidades ganhas do período estão sem valor preenchido.</li>
+    </ul>
+  </footer>
+</div>
+
+<div id="tooltip" hidden></div>
+
+<script>
+const DATA = {"geradoEm":"18/09/2026","periodo":"25/08 a 18/09/2026","weeks":["24/08","31/08","07/09","14/09"],"weekLabels":{"24/08":"24–30/08","31/08":"31/08–06/09","07/09":"07–13/09","14/09":"14–18/09"},"slices":{"all":{"F":{"n":2562,"con":1047,"sql":174,"agd":42,"gan":7,"per":6,"valorGanho":17700,"ganComValor":2,"medRespMin":11,"medCicloH":17.8,"ddd31":{"n":1429,"con":584,"sql":116},"dddOut":{"n":1129,"con":462,"sql":58},"camps":[{"nome":"[BH][Leads][Formulario][E1]","n":842,"con":326,"sql":48},{"nome":"[BH][Leads][Formulario][L1]","n":763,"con":321,"sql":46},{"nome":"[BH][Leads][Formulario][E2]","n":317,"con":141,"sql":25},{"nome":"[BH][Leads][Formulario][E1] — Cópia","n":284,"con":112,"sql":31},{"nome":"[BH][Leads][Formulario][L2]","n":275,"con":112,"sql":13},{"nome":"[BH][Leads][Formulario][L3]","n":41,"con":18,"sql":5},{"nome":"[BH][Leads][Formulario][E3]","n":39,"con":16,"sql":6},{"nome":"[SP][Leads][Formulario][E1]","n":1,"con":1,"sql":0}],"ads":[{"nome":"Preço - Ad vencedor","n":1889,"con":759,"sql":125},{"nome":"Grupo - Nivel de consciencia – Formulario","n":136,"con":71,"sql":12},{"nome":"Grupo - Objeções – Formulario","n":134,"con":51,"sql":14},{"nome":"Grupo - Dores – Formulario","n":121,"con":47,"sql":5},{"nome":"Grupo - Autoridade – Formulario","n":108,"con":48,"sql":3},{"nome":"Grupo - Prova social – Formulario","n":93,"con":36,"sql":4},{"nome":"Grupo - Urgência - Formulario","n":80,"con":34,"sql":11},{"nome":"Teste - ADS - SP 2","n":1,"con":1,"sql":0}],"lagMedH":0.0,"lagLe1hPct":99.2},"O":{"n":1674,"con":835,"sql":121,"agd":25,"gan":2,"per":2,"valorGanho":0,"ganComValor":0,"medRespMin":12,"medCicloH":18.3,"ddd31":{"n":944,"con":492,"sql":83},"dddOut":{"n":718,"con":338,"sql":37}},"planilha":{"linhas":4272,"casadas":2564,"orfas":1708}},"24/08":{"F":{"n":417,"con":149,"sql":11,"agd":3,"gan":1,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":7.5,"medCicloH":136.1,"ddd31":{"n":281,"con":105,"sql":9},"dddOut":{"n":136,"con":44,"sql":2},"camps":[{"nome":"[BH][Leads][Formulario][E1]","n":307,"con":106,"sql":4},{"nome":"[BH][Leads][Formulario][E2]","n":93,"con":34,"sql":2},{"nome":"[BH][Leads][Formulario][E3]","n":17,"con":9,"sql":5}],"ads":[{"nome":"Preço - Ad vencedor","n":307,"con":106,"sql":4},{"nome":"Grupo - Nivel de consciencia – Formulario","n":24,"con":14,"sql":2},{"nome":"Grupo - Autoridade – Formulario","n":21,"con":5,"sql":0},{"nome":"Grupo - Dores – Formulario","n":20,"con":7,"sql":0},{"nome":"Grupo - Urgência - Formulario","n":17,"con":9,"sql":5},{"nome":"Grupo - Prova social – Formulario","n":15,"con":7,"sql":0},{"nome":"Grupo - Objeções – Formulario","n":13,"con":1,"sql":0}],"lagMedH":0.0,"lagLe1hPct":99.0},"O":{"n":94,"con":30,"sql":3,"agd":0,"gan":0,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":13.0,"medCicloH":116.3,"ddd31":{"n":64,"con":23,"sql":2},"dddOut":{"n":28,"con":7,"sql":1}},"planilha":{"linhas":686,"casadas":418,"orfas":268}},"31/08":{"F":{"n":1253,"con":508,"sql":108,"agd":25,"gan":5,"per":6,"valorGanho":17700,"ganComValor":2,"medRespMin":7,"medCicloH":17.4,"ddd31":{"n":698,"con":272,"sql":71},"dddOut":{"n":553,"con":235,"sql":37},"camps":[{"nome":"[BH][Leads][Formulario][E1]","n":534,"con":219,"sql":44},{"nome":"[BH][Leads][Formulario][E1] — Cópia","n":283,"con":111,"sql":30},{"nome":"[BH][Leads][Formulario][E2]","n":222,"con":106,"sql":23},{"nome":"[BH][Leads][Formulario][L1]","n":145,"con":48,"sql":8},{"nome":"[BH][Leads][Formulario][L2]","n":39,"con":14,"sql":2},{"nome":"[BH][Leads][Formulario][E3]","n":22,"con":7,"sql":1},{"nome":"[BH][Leads][Formulario][L3]","n":7,"con":2,"sql":0},{"nome":"[SP][Leads][Formulario][E1]","n":1,"con":1,"sql":0}],"ads":[{"nome":"Preço - Ad vencedor","n":962,"con":378,"sql":82},{"nome":"Grupo - Nivel de consciencia – Formulario","n":65,"con":37,"sql":9},{"nome":"Grupo - Dores – Formulario","n":55,"con":21,"sql":1},{"nome":"Grupo - Objeções – Formulario","n":50,"con":22,"sql":10},{"nome":"Grupo - Prova social – Formulario","n":47,"con":17,"sql":3},{"nome":"Grupo - Autoridade – Formulario","n":44,"con":23,"sql":2},{"nome":"Grupo - Urgência - Formulario","n":29,"con":9,"sql":1},{"nome":"Teste - ADS - SP 2","n":1,"con":1,"sql":0}],"lagMedH":0.0,"lagLe1hPct":99.6},"O":{"n":269,"con":104,"sql":13,"agd":3,"gan":0,"per":2,"valorGanho":0,"ganComValor":0,"medRespMin":11.0,"medCicloH":42.1,"ddd31":{"n":163,"con":63,"sql":11},"dddOut":{"n":102,"con":40,"sql":2}},"planilha":{"linhas":2122,"casadas":1260,"orfas":862}},"07/09":{"F":{"n":631,"con":272,"sql":36,"agd":9,"gan":1,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":17,"medCicloH":15.2,"ddd31":{"n":314,"con":137,"sql":23},"dddOut":{"n":315,"con":135,"sql":13},"camps":[{"nome":"[BH][Leads][Formulario][L1]","n":454,"con":195,"sql":28},{"nome":"[BH][Leads][Formulario][L2]","n":147,"con":64,"sql":5},{"nome":"[BH][Leads][Formulario][L3]","n":27,"con":11,"sql":3},{"nome":"[BH][Leads][Formulario][E2]","n":2,"con":1,"sql":0},{"nome":"[BH][Leads][Formulario][E1]","n":1,"con":1,"sql":0}],"ads":[{"nome":"Preço - Ad vencedor","n":455,"con":196,"sql":28},{"nome":"Grupo - Objeções – Formulario","n":49,"con":19,"sql":2},{"nome":"Grupo - Autoridade – Formulario","n":33,"con":16,"sql":1},{"nome":"Grupo - Urgência - Formulario","n":27,"con":11,"sql":3},{"nome":"Grupo - Nivel de consciencia – Formulario","n":26,"con":14,"sql":1},{"nome":"Grupo - Dores – Formulario","n":22,"con":9,"sql":1},{"nome":"Grupo - Prova social – Formulario","n":19,"con":7,"sql":0}],"lagMedH":0.0,"lagLe1hPct":98.9},"O":{"n":660,"con":324,"sql":63,"agd":16,"gan":1,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":14,"medCicloH":17.5,"ddd31":{"n":305,"con":166,"sql":41},"dddOut":{"n":351,"con":156,"sql":21}},"planilha":{"linhas":1015,"casadas":628,"orfas":387}},"14/09":{"F":{"n":261,"con":118,"sql":19,"agd":5,"gan":0,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":28,"medCicloH":18.5,"ddd31":{"n":136,"con":70,"sql":13},"dddOut":{"n":125,"con":48,"sql":6},"camps":[{"nome":"[BH][Leads][Formulario][L1]","n":164,"con":78,"sql":10},{"nome":"[BH][Leads][Formulario][L2]","n":89,"con":34,"sql":6},{"nome":"[BH][Leads][Formulario][L3]","n":7,"con":5,"sql":2},{"nome":"[BH][Leads][Formulario][E1] — Cópia","n":1,"con":1,"sql":1}],"ads":[{"nome":"Preço - Ad vencedor","n":165,"con":79,"sql":11},{"nome":"Grupo - Dores – Formulario","n":24,"con":10,"sql":3},{"nome":"Grupo - Objeções – Formulario","n":22,"con":9,"sql":2},{"nome":"Grupo - Nivel de consciencia – Formulario","n":21,"con":6,"sql":0},{"nome":"Grupo - Prova social – Formulario","n":12,"con":5,"sql":1},{"nome":"Grupo - Autoridade – Formulario","n":10,"con":4,"sql":0},{"nome":"Grupo - Urgência - Formulario","n":7,"con":5,"sql":2}],"lagMedH":0.0,"lagLe1hPct":98.5},"O":{"n":651,"con":377,"sql":42,"agd":6,"gan":1,"per":0,"valorGanho":0,"ganComValor":0,"medRespMin":10.0,"medCicloH":14.3,"ddd31":{"n":412,"con":240,"sql":29},"dddOut":{"n":237,"con":135,"sql":13}},"planilha":{"linhas":449,"casadas":258,"orfas":191}}}};
+
+const F_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--serieF').trim() || '#3e92c6';
+const O_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--serieO').trim() || '#b8842a';
+const NS = 'http://www.w3.org/2000/svg';
+const nf = new Intl.NumberFormat('pt-BR');
+let week = 'all';
+try { const w = localStorage.getItem('funilbh-week'); if (w && (w === 'all' || DATA.weeks.includes(w))) week = w; } catch (e) {}
+
+function pct(a, b, d = 1) { return b ? (100 * a / b).toLocaleString('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d}) + '%' : '–'; }
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function div(cls, parent) { const d = document.createElement('div'); if (cls) d.className = cls; if (parent) parent.appendChild(d); return d; }
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById('tooltip');
+function showTip(evt, title, rows) {
+  tip.textContent = '';
+  const t = div('tt-title', tip); t.textContent = title;
+  for (const r of rows) {
+    const row = div('tt-row', tip);
+    const k = div('tt-key', row); k.style.background = r.color || 'transparent';
+    const v = document.createElement('span'); v.className = 'tt-val'; v.textContent = r.val; row.appendChild(v);
+    const l = document.createElement('span'); l.className = 'tt-lbl'; l.textContent = r.lbl; row.appendChild(l);
+  }
+  tip.hidden = false;
+  const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + w > innerWidth - 8) x = evt.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = evt.clientY - h - pad;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip() { tip.hidden = true; }
+function hover(node, fn) {
+  node.addEventListener('pointermove', e => fn(e));
+  node.addEventListener('pointerleave', hideTip);
+  node.setAttribute('tabindex', '0');
+  node.addEventListener('focus', () => { const r = node.getBoundingClientRect(); fn({clientX: r.right, clientY: r.top}); });
+  node.addEventListener('blur', hideTip);
+}
+
+/* rounded-end horizontal bar path (square at baseline, 4px radius at data end) */
+function barPath(x, y, w, h, r) {
+  if (w <= 0.5) return `M${x},${y}h0.5v${h}h-0.5Z`;
+  r = Math.min(r, w, h / 2);
+  return `M${x},${y} h${w - r} a${r},${r} 0 0 1 ${r},${r} v${h - 2 * r} a${r},${r} 0 0 1 ${-r},${r} h${-(w - r)} Z`;
+}
+
+function slice() { return DATA.slices[week]; }
+function weekLabel(w) { return w === 'all' ? 'Período todo' : DATA.weekLabels[w] || w; }
+
+/* ---------- filter pills ---------- */
+(function buildFilter() {
+  const bar = document.getElementById('filterbar');
+  const legend = bar.querySelector('.legend');
+  const opts = ['all', ...DATA.weeks];
+  for (const w of opts) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'pill'; b.dataset.week = w;
+    b.textContent = w === 'all' ? 'Período todo' : 'Sem. ' + (DATA.weekLabels[w] || w);
+    b.setAttribute('aria-pressed', String(w === week));
+    b.addEventListener('click', () => {
+      week = w;
+      try { localStorage.setItem('funilbh-week', w); } catch (e) {}
+      bar.querySelectorAll('.pill').forEach(p => p.setAttribute('aria-pressed', String(p.dataset.week === w)));
+      renderAll();
+    });
+    bar.insertBefore(b, legend);
+  }
+})();
+
+/* ---------- scoreboard tiles ---------- */
+function renderScoreboard() {
+  const s = slice(), box = document.getElementById('scoreboard');
+  box.textContent = '';
+  const items = [
+    {lbl: 'Leads criados', f: [s.F.n, null], o: [s.O.n, null]},
+    {lbl: 'Conectado (respondeu)', f: [s.F.con, pct(s.F.con, s.F.n)], o: [s.O.con, pct(s.O.con, s.O.n)], ref: 'dos leads'},
+    {lbl: 'SQL (virou Oportunidade)', f: [s.F.sql, pct(s.F.sql, s.F.n)], o: [s.O.sql, pct(s.O.sql, s.O.n)], ref: 'dos leads'},
+    {lbl: 'Agendou avaliação', f: [s.F.agd, pct(s.F.agd, s.F.sql)], o: [s.O.agd, pct(s.O.agd, s.O.sql)], ref: 'dos SQLs'},
+  ];
+  for (const it of items) {
+    const t = div('tile', box);
+    const l = div('tlabel', t); l.textContent = it.lbl;
+    const duo = div('duo', t);
+    for (const [key, val, color] of [['Formulário', it.f, F_COLOR], ['Sem form.', it.o, O_COLOR]]) {
+      const side = div('side', duo);
+      const who = div('who', side);
+      const sw = document.createElement('span'); sw.className = 'swatch'; sw.style.background = color; who.appendChild(sw);
+      who.appendChild(document.createTextNode(key));
+      const v = div('val', side); v.textContent = nf.format(val[0]);
+      if (val[1]) { const p = div('pct', side); p.innerHTML = ''; p.textContent = val[1] + ' '; const r = document.createElement('span'); r.className = 'ref'; r.textContent = it.ref; p.appendChild(r); }
+    }
+  }
+}
+
+/* ---------- funnel ---------- */
+function renderFunnel() {
+  const s = slice(), host = document.getElementById('funnel');
+  host.textContent = '';
+  const stages = [
+    {lbl: 'Leads criados', f: s.F.n, o: s.O.n},
+    {lbl: 'Conectado (respondeu)', f: s.F.con, o: s.O.con},
+    {lbl: 'SQL · Oportunidade', f: s.F.sql, o: s.O.sql},
+    {lbl: 'Agendou avaliação', f: s.F.agd, o: s.O.agd},
+    {lbl: 'Fechado ganho', f: s.F.gan, o: s.O.gan},
+  ];
+  const W = Math.min(1060, host.clientWidth || 1060);
+  const nameW = W < 640 ? 150 : 210, valW = 128, plotW = W - nameW - valW;
+  const barH = 15, gap = 2, rowH = 56, top = 6;
+  const H = top + stages.length * rowH;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Funil comparado formulário × sem formulário'}, host);
+  stages.forEach((st, i) => {
+    const y = top + i * rowH;
+    const name = el('text', {x: 0, y: y + barH + 6, 'class': 'stage-lbl'}, svg);
+    name.textContent = st.lbl;
+    [['f', st.f, s.F.n, F_COLOR, 0, 'Formulário'], ['o', st.o, s.O.n, O_COLOR, barH + gap, 'Sem formulário']].forEach(([k, v, base, color, dy, serie]) => {
+      const p = base ? v / base : 0;
+      const bw = Math.max(p * plotW, v > 0 ? 2 : 0);
+      el('path', {d: `M${nameW},${y + dy} h${plotW} v${barH} h${-plotW}Z`, fill: 'rgba(255,255,255,0.035)'}, svg);
+      el('path', {d: barPath(nameW, y + dy, bw, barH, 4), fill: color}, svg);
+      const vt = el('text', {x: nameW + plotW + 10, y: y + dy + barH - 3.5, 'class': 'bar-val'}, svg);
+      vt.textContent = nf.format(v);
+      const pt2 = el('text', {x: nameW + plotW + 62, y: y + dy + barH - 3.5, 'class': 'bar-sub'}, svg);
+      pt2.textContent = i === 0 ? '100%' : pct(v, base);
+      const hit = el('rect', {x: nameW, y: y + dy - 2, width: plotW + valW, height: barH + 4, fill: 'transparent'}, svg);
+      hover(hit, e => showTip(e, st.lbl, [{color, val: nf.format(v), lbl: serie + ' · ' + (i === 0 ? '100%' : pct(v, base) + ' dos leads')}]));
+    });
+  });
+  const tb = document.getElementById('funnelTable');
+  tb.textContent = '';
+  const rows = stages.map(st => [st.lbl, nf.format(st.f), pct(st.f, s.F.n), nf.format(st.o), pct(st.o, s.O.n)]);
+  tb.appendChild(makeTable(['Etapa', 'Formulário (n)', '% do grupo', 'Sem form. (n)', '% do grupo'], rows));
+}
+
+/* ---------- passage rates ---------- */
+function renderRates() {
+  const s = slice(), host = document.getElementById('rates');
+  host.textContent = '';
+  const defs = [
+    {t: ['Lead ', ' Conectado'], f: [s.F.con, s.F.n], o: [s.O.con, s.O.n]},
+    {t: ['Conectado ', ' SQL (Oportunidade)'], f: [s.F.sql, s.F.con], o: [s.O.sql, s.O.con]},
+    {t: ['SQL ', ' Agendamento'], f: [s.F.agd, s.F.sql], o: [s.O.agd, s.O.sql]},
+  ];
+  const maxP = Math.max(...defs.flatMap(d => [d.f[1] ? d.f[0] / d.f[1] : 0, d.o[1] ? d.o[0] / d.o[1] : 0]), 0.01);
+  for (const d of defs) {
+    const c = div('rate', host);
+    const t = div('rt', c);
+    const b1 = document.createElement('b'); b1.textContent = d.t[0].trim();
+    const b2 = document.createElement('b'); b2.textContent = d.t[1].trim();
+    t.appendChild(b1); t.appendChild(document.createTextNode(' → ')); t.appendChild(b2);
+    for (const [who, pair, color] of [['Formulário', d.f, F_COLOR], ['Sem form.', d.o, O_COLOR]]) {
+      const row = div('rr', c);
+      const w = div('who', row); w.textContent = who;
+      const track = div('track', row);
+      const fill = div('fill', track);
+      const p = pair[1] ? pair[0] / pair[1] : 0;
+      fill.style.width = (100 * p / maxP) + '%';
+      fill.style.background = color;
+      const right = div('', row);
+      const rv = div('rv', right); rv.textContent = pct(pair[0], pair[1]);
+      const rn = div('rn', right); rn.textContent = nf.format(pair[0]) + ' de ' + nf.format(pair[1]);
+    }
+  }
+}
+
+/* ---------- weekly trend ---------- */
+function renderWeekly() {
+  const host = document.getElementById('weeklyVol');
+  host.textContent = '';
+  const W = Math.min(1060, host.clientWidth || 1060), H = 190;
+  const padL = 40, padR = 10, padT = 14, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const weeks = DATA.weeks;
+  const maxN = Math.max(...weeks.flatMap(w => [DATA.slices[w].F.n, DATA.slices[w].O.n]));
+  const yMax = Math.ceil(maxN / 250) * 250;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Leads criados por semana'}, host);
+  for (let g = 0; g <= 4; g++) {
+    const yv = yMax * g / 4, y = padT + plotH - plotH * g / 4;
+    el('line', {x1: padL, y1: y, x2: W - padR, y2: y, stroke: 'var(--grid)', 'stroke-width': 1}, svg);
+    const t = el('text', {x: padL - 7, y: y + 3.5, 'text-anchor': 'end', 'class': 'axis-tick', style: 'font-variant-numeric:tabular-nums'}, svg);
+    t.textContent = nf.format(yv);
+  }
+  const band = plotW / weeks.length;
+  const barW = Math.min(24, (band - 40) / 2);
+  weeks.forEach((w, i) => {
+    const cx = padL + band * i + band / 2;
+    const dim = (week !== 'all' && week !== w);
+    [[DATA.slices[w].F.n, F_COLOR, -barW - 1, 'Formulário'], [DATA.slices[w].O.n, O_COLOR, 1, 'Sem formulário']].forEach(([v, color, off, serie]) => {
+      const h = yMax ? v / yMax * plotH : 0;
+      const x = cx + off, y = padT + plotH - h;
+      const r = Math.min(4, barW / 2, h / 2);
+      const p = el('path', {d: `M${x},${y + r} a${r},${r} 0 0 1 ${r},${-r} h${barW - 2 * r} a${r},${r} 0 0 1 ${r},${r} v${h - r} h${-barW} Z`, fill: color, opacity: dim ? 0.3 : 1}, svg);
+      const hit = el('rect', {x: x - 3, y: padT, width: barW + 6, height: plotH, fill: 'transparent'}, svg);
+      hover(hit, e => showTip(e, 'Semana ' + (DATA.weekLabels[w] || w), [
+        {color: F_COLOR, val: nf.format(DATA.slices[w].F.n), lbl: 'Formulário'},
+        {color: O_COLOR, val: nf.format(DATA.slices[w].O.n), lbl: 'Sem formulário'},
+      ]));
+    });
+    const t = el('text', {x: cx, y: H - 8, 'text-anchor': 'middle', 'class': 'axis-tick', opacity: dim ? 0.5 : 1}, svg);
+    t.textContent = w;
+  });
+
+  drawRateLines('weeklyCon', w => [pr(DATA.slices[w].F.con, DATA.slices[w].F.n), pr(DATA.slices[w].O.con, DATA.slices[w].O.n)]);
+  drawRateLines('weeklySql', w => [pr(DATA.slices[w].F.sql, DATA.slices[w].F.n), pr(DATA.slices[w].O.sql, DATA.slices[w].O.n)]);
+
+  const tb = document.getElementById('weeklyTable');
+  tb.textContent = '';
+  const rows = DATA.weeks.map(w => {
+    const s = DATA.slices[w];
+    return ['Sem. ' + (DATA.weekLabels[w] || w), nf.format(s.F.n), pct(s.F.con, s.F.n), pct(s.F.sql, s.F.n), nf.format(s.O.n), pct(s.O.con, s.O.n), pct(s.O.sql, s.O.n)];
+  });
+  tb.appendChild(makeTable(['Semana', 'Form. leads', '% conect.', '% SQL', 'Sem f. leads', '% conect.', '% SQL'], rows));
+}
+function pr(a, b) { return b ? 100 * a / b : null; }
+
+function drawRateLines(hostId, getVals) {
+  const host = document.getElementById(hostId);
+  host.textContent = '';
+  const W = Math.min(520, host.clientWidth || 520), H = 150;
+  const padL = 38, padR = 46, padT = 12, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const weeks = DATA.weeks;
+  const series = weeks.map(getVals);
+  const all = series.flat().filter(v => v != null);
+  const yMax = Math.max(5, Math.ceil(Math.max(...all) / 10) * 10);
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img'}, host);
+  for (let g = 0; g <= 2; g++) {
+    const yv = yMax * g / 2, y = padT + plotH - plotH * g / 2;
+    el('line', {x1: padL, y1: y, x2: W - padR, y2: y, stroke: 'var(--grid)', 'stroke-width': 1}, svg);
+    const t = el('text', {x: padL - 6, y: y + 3.5, 'text-anchor': 'end', 'class': 'axis-tick'}, svg);
+    t.textContent = yv + '%';
+  }
+  const xs = weeks.map((w, i) => padL + plotW * (weeks.length === 1 ? 0.5 : i / (weeks.length - 1)));
+  [[0, F_COLOR, 'Formulário'], [1, O_COLOR, 'Sem formulário']].forEach(([si, color, serie]) => {
+    const pts = xs.map((x, i) => series[i][si] == null ? null : [x, padT + plotH - series[i][si] / yMax * plotH]).filter(Boolean);
+    if (pts.length > 1) el('path', {d: 'M' + pts.map(p => p.join(',')).join(' L'), fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}, svg);
+    pts.forEach((p, i) => {
+      el('circle', {cx: p[0], cy: p[1], r: 6, fill: 'var(--surface-solid)'}, svg);
+      el('circle', {cx: p[0], cy: p[1], r: 4, fill: color}, svg);
+    });
+    if (pts.length) {
+      const last = pts[pts.length - 1], v = series[series.length - 1][si];
+      const lt = el('text', {x: last[0] + 10, y: last[1] + 4 + (si === 0 && Math.abs((series[series.length-1][0]||0) - (series[series.length-1][1]||0)) < 8 ? -10 : 0), 'class': 'bar-val'}, svg);
+      lt.textContent = v != null ? v.toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%' : '';
+    }
+  });
+  weeks.forEach((w, i) => {
+    const dim = (week !== 'all' && week !== w);
+    const t = el('text', {x: xs[i], y: H - 6, 'text-anchor': 'middle', 'class': 'axis-tick', opacity: dim ? 0.5 : 1}, svg);
+    t.textContent = w;
+    const hit = el('rect', {x: xs[i] - 22, y: 0, width: 44, height: H, fill: 'transparent'}, svg);
+    hover(hit, e => showTip(e, 'Semana ' + (DATA.weekLabels[w] || w), [
+      {color: F_COLOR, val: series[i][0] != null ? series[i][0].toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%' : '–', lbl: 'Formulário'},
+      {color: O_COLOR, val: series[i][1] != null ? series[i][1].toLocaleString('pt-BR', {maximumFractionDigits: 1}) + '%' : '–', lbl: 'Sem formulário'},
+    ]));
+  });
+}
+
+/* ---------- DDD ---------- */
+function renderDDD() {
+  const s = slice(), host = document.getElementById('ddd');
+  host.textContent = '';
+  const rows = [
+    {serie: 'Formulário', color: F_COLOR, lbl: 'DDD 31', d: s.F.ddd31},
+    {serie: 'Formulário', color: F_COLOR, lbl: 'Outros DDDs', d: s.F.dddOut},
+    {serie: 'Sem formulário', color: O_COLOR, lbl: 'DDD 31', d: s.O.ddd31},
+    {serie: 'Sem formulário', color: O_COLOR, lbl: 'Outros DDDs', d: s.O.dddOut},
+  ];
+  const W = Math.min(1060, host.clientWidth || 1060);
+  const nameW = W < 640 ? 150 : 230, valW = 190, plotW = W - nameW - valW;
+  const maxP = Math.max(...rows.map(r => r.d.n ? r.d.sql / r.d.n : 0), 0.01);
+  const barH = 15, rowH = 34, top = 4;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${top + rows.length * rowH}`, width: '100%', role: 'img', 'aria-label': 'Conversão a SQL por DDD'}, host);
+  rows.forEach((r, i) => {
+    const y = top + i * rowH;
+    const name = el('text', {x: 0, y: y + barH - 3, 'class': 'bar-name'}, svg);
+    name.textContent = r.serie + ' · ' + r.lbl;
+    const p = r.d.n ? r.d.sql / r.d.n : 0;
+    const bw = Math.max(p / maxP * plotW, r.d.sql > 0 ? 2 : 0);
+    el('path', {d: `M${nameW},${y} h${plotW} v${barH} h${-plotW}Z`, fill: 'rgba(255,255,255,0.035)'}, svg);
+    el('path', {d: barPath(nameW, y, bw, barH, 4), fill: r.color}, svg);
+    const vt = el('text', {x: nameW + plotW + 10, y: y + barH - 3, 'class': 'bar-val'}, svg);
+    vt.textContent = pct(r.d.sql, r.d.n);
+    const st = el('text', {x: nameW + plotW + 58, y: y + barH - 3, 'class': 'bar-sub'}, svg);
+    st.textContent = nf.format(r.d.sql) + ' SQL de ' + nf.format(r.d.n) + ' leads';
+    const hit = el('rect', {x: 0, y: y - 2, width: W, height: barH + 6, fill: 'transparent'}, svg);
+    hover(hit, e => showTip(e, r.serie + ' · ' + r.lbl, [{color: r.color, val: pct(r.d.sql, r.d.n), lbl: nf.format(r.d.sql) + ' SQL de ' + nf.format(r.d.n) + ' leads'}]));
+  });
+  const tb = document.getElementById('dddTable');
+  tb.textContent = '';
+  tb.appendChild(makeTable(['Recorte', 'Leads', 'Conectados', 'SQL', '% SQL'],
+    rows.map(r => [r.serie + ' · ' + r.lbl, nf.format(r.d.n), nf.format(r.d.con), nf.format(r.d.sql), pct(r.d.sql, r.d.n)])));
+}
+
+/* ---------- campaigns / ads ---------- */
+let campDim = 'camps';
+function shortName(n) {
+  let s = n.replace(/\[BH\]|\[SP\]|\[Leads\]|\[Formulario\]/g, '').replace(/\[(.+?)\]/g, '$1').trim();
+  if (/^\[SP\]/.test(n) || n.startsWith('[SP]')) s = 'SP · ' + s;
+  return s || n;
+}
+function renderCamps() {
+  const s = slice(), host = document.getElementById('camps');
+  host.textContent = '';
+  const list = (s.F[campDim] || []).filter(c => c.n > 0).slice(0, 9);
+  if (!list.length) { const p = div('hint', host); p.textContent = 'Sem leads de formulário neste recorte.'; return; }
+  const W = Math.min(1060, host.clientWidth || 1060);
+  const nameW = W < 640 ? 130 : 220, valW = 250, plotW = W - nameW - valW;
+  const maxN = Math.max(...list.map(c => c.n));
+  const barH = 15, rowH = 33, top = 22;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${top + list.length * rowH}`, width: '100%', role: 'img', 'aria-label': 'Leads por ' + (campDim === 'camps' ? 'campanha' : 'anúncio')}, host);
+  const h1 = el('text', {x: nameW + plotW + 10, y: 12, 'class': 'axis-tick'}, svg); h1.textContent = 'leads';
+  const h2 = el('text', {x: nameW + plotW + 78, y: 12, 'class': 'axis-tick'}, svg); h2.textContent = '% conect.';
+  const h3 = el('text', {x: nameW + plotW + 156, y: 12, 'class': 'axis-tick'}, svg); h3.textContent = '% SQL';
+  list.forEach((c, i) => {
+    const y = top + i * rowH;
+    const nm = campDim === 'camps' ? shortName(c.nome) : c.nome;
+    const name = el('text', {x: 0, y: y + barH - 3, 'class': 'bar-name'}, svg);
+    name.textContent = nm.length > (W < 640 ? 16 : 28) ? nm.slice(0, W < 640 ? 15 : 27) + '…' : nm;
+    const bw = Math.max(c.n / maxN * plotW, 2);
+    el('path', {d: `M${nameW},${y} h${plotW} v${barH} h${-plotW}Z`, fill: 'rgba(255,255,255,0.035)'}, svg);
+    el('path', {d: barPath(nameW, y, bw, barH, 4), fill: F_COLOR}, svg);
+    const v1 = el('text', {x: nameW + plotW + 10, y: y + barH - 3, 'class': 'bar-val', style: 'font-variant-numeric:tabular-nums'}, svg); v1.textContent = nf.format(c.n);
+    const v2 = el('text', {x: nameW + plotW + 78, y: y + barH - 3, 'class': 'bar-sub', style: 'font-variant-numeric:tabular-nums'}, svg); v2.textContent = pct(c.con, c.n, 0);
+    const v3 = el('text', {x: nameW + plotW + 156, y: y + barH - 3, 'class': 'bar-sub', style: 'font-variant-numeric:tabular-nums'}, svg); v3.textContent = pct(c.sql, c.n);
+    const hit = el('rect', {x: 0, y: y - 2, width: W, height: barH + 6, fill: 'transparent'}, svg);
+    hover(hit, e => showTip(e, c.nome, [
+      {color: F_COLOR, val: nf.format(c.n), lbl: 'leads'},
+      {color: 'transparent', val: pct(c.con, c.n), lbl: 'conectaram (' + nf.format(c.con) + ')'},
+      {color: 'transparent', val: pct(c.sql, c.n), lbl: 'viraram SQL (' + nf.format(c.sql) + ')'},
+    ]));
+  });
+  const tb = document.getElementById('campsTable');
+  tb.textContent = '';
+  tb.appendChild(makeTable([campDim === 'camps' ? 'Campanha' : 'Anúncio', 'Leads', 'Conectados', '% conect.', 'SQL', '% SQL'],
+    (s.F[campDim] || []).map(c => [c.nome, nf.format(c.n), nf.format(c.con), pct(c.con, c.n), nf.format(c.sql), pct(c.sql, c.n)])));
+}
+document.getElementById('tabCamp').addEventListener('click', () => { campDim = 'camps'; syncTabs(); renderCamps(); });
+document.getElementById('tabAd').addEventListener('click', () => { campDim = 'ads'; syncTabs(); renderCamps(); });
+function syncTabs() {
+  document.getElementById('tabCamp').setAttribute('aria-pressed', String(campDim === 'camps'));
+  document.getElementById('tabAd').setAttribute('aria-pressed', String(campDim === 'ads'));
+}
+
+/* ---------- extras ---------- */
+function renderExtras() {
+  const s = slice(), host = document.getElementById('extras');
+  host.textContent = '';
+  const gan = s.F.gan + s.O.gan, comValor = s.F.ganComValor + s.O.ganComValor;
+  const valor = s.F.valorGanho + s.O.valorGanho;
+  const items = [
+    {lbl: 'Mediana até responder', val: fmtOrDash(s.F.medRespMin, ' min') , note: 'Formulário · sem form.: ' + fmtOrDash(s.O.medRespMin, ' min')},
+    {lbl: 'Ciclo mediano até SQL', val: fmtOrDash(s.F.medCicloH, ' h'), note: 'Formulário · sem form.: ' + fmtOrDash(s.O.medCicloH, ' h')},
+    {lbl: 'Formulário → WhatsApp', val: (s.F.lagLe1hPct != null ? s.F.lagLe1hPct.toLocaleString('pt-BR') + '%' : '–'), note: 'chegam em até 1 h (mediana ' + fmtOrDash(s.F.lagMedH, ' h') + ')'},
+    {lbl: 'Planilha do Meta', val: nf.format(s.planilha.orfas), note: 'órfãs de ' + nf.format(s.planilha.linhas) + ' formulários (' + pct(s.planilha.orfas, s.planilha.linhas, 0) + ' sem conversa)'},
+    {lbl: 'Valor ganho registrado', val: 'R$ ' + nf.format(valor), note: comValor + ' de ' + gan + ' opps ganhas com valor preenchido'},
+  ];
+  for (const it of items) {
+    const m = div('mini', host);
+    const l = div('tlabel', m); l.textContent = it.lbl;
+    const v = div('val', m); v.textContent = it.val;
+    const n = div('note', m); n.textContent = it.note;
+  }
+}
+function fmtOrDash(v, suf) { return v == null ? '–' : v.toLocaleString('pt-BR') + suf; }
+
+/* ---------- table helper ---------- */
+function makeTable(headers, rows) {
+  const t = document.createElement('table');
+  const thead = document.createElement('thead'); const trh = document.createElement('tr');
+  for (const h of headers) { const th = document.createElement('th'); th.textContent = h; trh.appendChild(th); }
+  thead.appendChild(trh); t.appendChild(thead);
+  const tb = document.createElement('tbody');
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    for (const c of r) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); }
+    tb.appendChild(tr);
+  }
+  t.appendChild(tb);
+  return t;
+}
+
+function renderAll() {
+  document.getElementById('subF').textContent = nf.format(DATA.slices.all.F.n);
+  document.getElementById('subO').textContent = nf.format(DATA.slices.all.O.n);
+  renderScoreboard();
+  renderFunnel();
+  renderRates();
+  renderWeekly();
+  renderDDD();
+  renderCamps();
+  renderExtras();
+}
+renderAll();
+let rsz;
+addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderAll, 180); });
+</script>
