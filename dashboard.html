@@ -99,31 +99,26 @@
     .v-stat-desc { font-size: 10px; color: #5ba3c9; margin-top: 2px; }
     .sep { width: 0.5px; height: 32px; background: #1e2d3d; flex-shrink: 0; }
 
-    /* Leads p/ abordar: Salesforce de um lado, Aspekto Business do outro */
-    .abordar { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-    .abordar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-    .abordar-total { font-size: 10px; color: #6e8394; white-space: nowrap; }
-    .abordar-total b { color: #c9d4de; font-weight: 500; }
-    .fontes { display: grid; grid-template-columns: 1fr 1fr; background: rgba(255,255,255,0.025); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
-    .fonte { position: relative; padding: 8px 12px 8px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .fonte::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; }
-    .fonte + .fonte { border-left: 0.5px solid rgba(255,255,255,0.07); }
-    .fonte-sf::before { background: #4fc3f7; }
-    .fonte-ab::before { background: #a78bfa; }
-    .fonte-tag { display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fonte-tag i { font-size: 12px; }
-    .fonte-sf .fonte-tag { color: #4fc3f7; }
-    .fonte-ab .fonte-tag { color: #b8a6fb; }
-    .fonte-val { font-size: 24px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
-    .fonte-val.zero { color: #4a5a6a; }
-    .fonte-desc { font-size: 10px; color: #6e8394; white-space: nowrap; }
+    /* Placar do vendedor: Salesforce | total | Aspekto Business, numeros grandes no centro */
+    .vendedor { justify-content: flex-start; }
+    .placar { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; margin-top: 2px; }
+    .placar-col { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; min-width: 0; height: 100%; }
+    .placar-col + .placar-col { border-left: 0.5px solid rgba(255,255,255,0.08); }
+    .placar-tag { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
+    .placar-tag i { font-size: 13px; }
+    .placar-sf .placar-tag { color: #4fc3f7; }
+    .placar-ab .placar-tag { color: #b8a6fb; }
+    .placar-total .placar-tag { color: #8b9aaa; }
+    .placar-num { font-size: 46px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+    .placar-total .placar-num { font-size: 58px; letter-spacing: -2px; }
+    .placar-num.zero { color: #3d4b59; }
+    .placar-desc { font-size: 11px; color: #6e8394; white-space: nowrap; }
     .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
     .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
     .org-fonte i { font-size: 11px; }
     .org-fonte b { font-weight: 500; color: #c9d4de; }
     .org-sf i { color: #4fc3f7; }
     .org-ab i { color: #b8a6fb; }
-    .v-info .v-stat-tempo { flex-shrink: 0; min-width: 128px; }
     .barra-wrap { height: 2px; background: #1e2d3d; border-radius: 2px; overflow: hidden; margin-top: 8px; flex-shrink: 0; }
     .barra-atencao { height: 2px; background: #f5c542; border-radius: 2px; }
     .barra-alerta { height: 2px; background: #f56b6b; border-radius: 2px; animation: pisca 1.2s infinite; }
@@ -372,13 +367,17 @@
     }
     return null;
   }
-  function fonteHTML(classe, icone, nome, valor, desc) {
-    var txt = valor === null ? '—' : fmt(valor);
-    return '<div class="fonte ' + classe + '">' +
-        '<div class="fonte-tag"><i class="ti ' + icone + '"></i>' + nome + '</div>' +
-        '<div class="fonte-val' + (valor === 0 ? ' zero' : '') + '">' + txt + '</div>' +
-        '<div class="fonte-desc">' + desc + '</div>' +
+  function colunaHTML(classe, icone, rotulo, valor, desc) {
+    return '<div class="placar-col ' + classe + '">' +
+        '<div class="placar-tag">' + (icone ? '<i class="ti ' + icone + '"></i>' : '') + rotulo + '</div>' +
+        '<div class="placar-num' + (valor === 0 ? ' zero' : '') + '">' + (valor === null ? '—' : fmt(valor)) + '</div>' +
+        '<div class="placar-desc">' + desc + '</div>' +
       '</div>';
+  }
+  // "2h 51min", "45 min": quanto tempo o lead mais antigo esta esperando.
+  function esperaStr(min) {
+    var h = Math.floor(min / 60), m = min % 60;
+    return h > 0 ? h + 'h' + (m > 0 ? ' ' + m + 'min' : '') : min + ' min';
   }
 
   function tempoStr(min) {
@@ -418,50 +417,28 @@
         else { estado = 'ok'; }
       }
 
-      var badgeClass, badgeIcon, badgeTexto, iconColor, descTexto, tempoColor, subtexto;
+      // O tempo de espera fica no selo do topo: "Aguardando 2h 51min" (amarelo a partir de 1h,
+      // vermelho a partir de 3h). Em dia, so "Atualizado".
+      var badgeClass, badgeIcon, badgeTexto, iconColor;
       if (estado === 'alerta') {
-        badgeClass = 'badge-alerta'; badgeIcon = 'ti-alert-circle';
-        badgeTexto = 'Crítico — +3h sem atualizar'; iconColor = 'color-danger';
-        descTexto = 'urgente'; tempoColor = 'color-danger'; subtexto = 'crítico';
+        badgeClass = 'badge-alerta'; badgeIcon = 'ti-alert-circle'; iconColor = 'color-danger';
+        badgeTexto = 'Aguardando ' + esperaStr(minutos);
       } else if (estado === 'atencao') {
-        badgeClass = 'badge-atencao'; badgeIcon = 'ti-alert-triangle';
-        badgeTexto = 'Atenção — ' + tempoStr(minutos) + ' sem atualizar'; iconColor = 'color-warn';
-        descTexto = 'requer atenção'; tempoColor = 'color-warn'; subtexto = 'passou do limite';
+        badgeClass = 'badge-atencao'; badgeIcon = 'ti-clock'; iconColor = 'color-warn';
+        badgeTexto = 'Aguardando ' + esperaStr(minutos);
       } else {
-        badgeClass = 'badge-ok'; badgeIcon = 'ti-check';
-        badgeTexto = 'Atualizado'; iconColor = 'color-ok';
-        descTexto = 'no pipe agora'; tempoColor = 'color-ok'; subtexto = 'dentro do prazo';
-      }
-
-      var barraHTML = '';
-      if (estado === 'atencao') {
-        barraHTML = '<div class="barra-wrap"><div class="barra-atencao" style="width:' + Math.min((minutos / 180) * 100, 99) + '%"></div></div>';
-      } else if (estado === 'alerta') {
-        barraHTML = '<div class="barra-wrap"><div class="barra-alerta" style="width:100%"></div></div>';
+        badgeClass = 'badge-ok'; badgeIcon = 'ti-check'; iconColor = 'color-ok';
+        badgeTexto = 'Atualizado';
       }
 
       var ab = abordarAB(nome);
       var total = negocios + (ab || 0);
       var centroHTML =
-        '<div class="v-info">' +
-          '<div class="abordar">' +
-            '<div class="abordar-head">' +
-              '<div class="v-stat-lbl">Leads p/ abordar</div>' +
-              '<div class="abordar-total"><b>' + fmt(total) + '</b> no total</div>' +
-            '</div>' +
-            '<div class="fontes">' +
-              fonteHTML('fonte-sf', 'ti-cloud', 'Salesforce', negocios, 'no pipe') +
-              fonteHTML('fonte-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab, ab === null ? 'sem sinal' : 'em Origens') +
-            '</div>' +
-          '</div>' +
-          '<div class="sep" style="height:48px;"></div>' +
-          '<div class="v-stat v-stat-tempo">' +
-            '<div class="v-stat-lbl">Última atualização</div>' +
-            '<div class="v-stat-val ' + (estado !== 'ok' ? tempoColor : '') + '" style="font-size:18px;">' + tempoStr(minutos) + '</div>' +
-            '<div class="v-stat-desc ' + tempoColor + '">' + subtexto + '</div>' +
-          '</div>' +
-        '</div>' +
-        barraHTML;
+        '<div class="placar">' +
+          colunaHTML('placar-sf', 'ti-cloud', 'Salesforce', negocios, 'no pipe') +
+          colunaHTML('placar-total', '', 'Total p/ abordar', ab === null ? negocios : total, total === 1 ? 'lead' : 'leads') +
+          colunaHTML('placar-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab, ab === null ? 'sem sinal' : 'em Origens') +
+        '</div>';
 
       var btnVerLeads = '';
       if (negocios > 0) {
