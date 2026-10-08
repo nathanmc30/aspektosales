@@ -98,6 +98,32 @@
     .v-stat-val { font-size: 22px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -0.5px; }
     .v-stat-desc { font-size: 10px; color: #5ba3c9; margin-top: 2px; }
     .sep { width: 0.5px; height: 32px; background: #1e2d3d; flex-shrink: 0; }
+
+    /* Leads p/ abordar: Salesforce de um lado, Aspekto Business do outro */
+    .abordar { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .abordar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .abordar-total { font-size: 10px; color: #6e8394; white-space: nowrap; }
+    .abordar-total b { color: #c9d4de; font-weight: 500; }
+    .fontes { display: grid; grid-template-columns: 1fr 1fr; background: rgba(255,255,255,0.025); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+    .fonte { position: relative; padding: 8px 12px 8px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .fonte::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; }
+    .fonte + .fonte { border-left: 0.5px solid rgba(255,255,255,0.07); }
+    .fonte-sf::before { background: #4fc3f7; }
+    .fonte-ab::before { background: #a78bfa; }
+    .fonte-tag { display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fonte-tag i { font-size: 12px; }
+    .fonte-sf .fonte-tag { color: #4fc3f7; }
+    .fonte-ab .fonte-tag { color: #b8a6fb; }
+    .fonte-val { font-size: 24px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+    .fonte-val.zero { color: #4a5a6a; }
+    .fonte-desc { font-size: 10px; color: #6e8394; white-space: nowrap; }
+    .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
+    .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
+    .org-fonte i { font-size: 11px; }
+    .org-fonte b { font-weight: 500; color: #c9d4de; }
+    .org-sf i { color: #4fc3f7; }
+    .org-ab i { color: #b8a6fb; }
+    .v-info .v-stat-tempo { flex-shrink: 0; min-width: 128px; }
     .barra-wrap { height: 2px; background: #1e2d3d; border-radius: 2px; overflow: hidden; margin-top: 8px; flex-shrink: 0; }
     .barra-atencao { height: 2px; background: #f5c542; border-radius: 2px; }
     .barra-alerta { height: 2px; background: #f56b6b; border-radius: 2px; animation: pisca 1.2s infinite; }
@@ -188,6 +214,10 @@
         <div class="lbl">Leads orgânicos hoje</div>
         <div class="val-num" id="v-organico-hoje">—</div>
         <div class="sub"><span id="v-organico-mes">—</span> no mês · Instagram</div>
+        <div class="org-fontes">
+          <span class="org-fonte org-sf"><i class="ti ti-cloud"></i>Salesforce <b id="v-org-sf">—</b></span>
+          <span class="org-fonte org-ab"><i class="ti ti-brand-whatsapp"></i>Aspekto Business <b id="v-org-ab">—</b></span>
+        </div>
       </div>
     </div>
 
@@ -273,6 +303,11 @@
   var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
   var N8N_META_BH        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-bh';
   var N8N_TOTAIS         = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-totais';
+  // Aspekto Business (08/10/2026): o worker de la manda ao n8n, a cada mudanca (e a cada 5 min
+  // mesmo sem mudanca), os leads em Origens de Vendas por pessoa e os organicos do dia/mes.
+  var N8N_AB             = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-ab';
+  // Sem chegar nada do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
+  var AB_VELHO_MS        = 15 * 60 * 1000;
 
   // ─── Mapa nome → email ───────────────────────────────────────────────────────
   var EMAIL_MAP = {
@@ -303,6 +338,36 @@
     if (!el) return;
     el.textContent = (typeof val === 'number') ? fmt(val) : String(val || '—');
   }
+  // "Antônio Vilaça" e "Antonio Vilaca" sao a mesma pessoa: sem acento, minusculo, primeiro + ultimo nome.
+  function chaveNome(n) {
+    var p = String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().split(/\s+/);
+    return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : (p[0] || '');
+  }
+  // Dado do Aspekto Business so vale se chegou ha menos de AB_VELHO_MS.
+  var abDados = null;
+  function abVivo() {
+    return !!(abDados && abDados.recebidoEm && (Date.now() - Date.parse(abDados.recebidoEm)) < AB_VELHO_MS);
+  }
+  // Leads em Origens do vendedor no Aspekto Business: pelo e-mail do EMAIL_MAP, senao pelo nome.
+  // null = sem dado (traco); pessoa que nao esta no Aspekto Business tambem e traco.
+  function abordarAB(nome) {
+    if (!abVivo() || !Array.isArray(abDados.vendedores)) return null;
+    var email = (EMAIL_MAP[nome] || '').toLowerCase(), k = chaveNome(nome);
+    for (var i = 0; i < abDados.vendedores.length; i++) {
+      var v = abDados.vendedores[i];
+      if ((email && String(v.email || '').toLowerCase() === email) || chaveNome(v.nome) === k) return num(v.abordar);
+    }
+    return null;
+  }
+  function fonteHTML(classe, icone, nome, valor, desc) {
+    var txt = valor === null ? '—' : fmt(valor);
+    return '<div class="fonte ' + classe + '">' +
+        '<div class="fonte-tag"><i class="ti ' + icone + '"></i>' + nome + '</div>' +
+        '<div class="fonte-val' + (valor === 0 ? ' zero' : '') + '">' + txt + '</div>' +
+        '<div class="fonte-desc">' + desc + '</div>' +
+      '</div>';
+  }
+
   function tempoStr(min) {
     if (min <= 0) return 'agora mesmo';
     var h = Math.floor(min / 60), m = min % 60;
@@ -314,7 +379,7 @@
   function renderVendedores(rows) {
     window._lastRows = rows;
     var container = document.getElementById('vendedores-container');
-    var novoHash = JSON.stringify(rows);
+    var novoHash = JSON.stringify(rows) + '|' + rows.map(function(r) { return abordarAB(r['vendedor']); }).join(',');
     if (container._lastHash === novoHash) return;
     container._lastHash = novoHash;
     container.innerHTML = '';
@@ -357,15 +422,22 @@
         barraHTML = '<div class="barra-wrap"><div class="barra-alerta" style="width:100%"></div></div>';
       }
 
+      var ab = abordarAB(nome);
+      var total = negocios + (ab || 0);
       var centroHTML =
         '<div class="v-info">' +
-          '<div class="v-stat">' +
-            '<div class="v-stat-lbl">Negócios p/ ganhar</div>' +
-            '<div class="v-stat-val">' + (negocios > 0 ? negocios : '—') + '</div>' +
-            '<div class="v-stat-desc ' + (estado === 'ok' ? 'color-ok' : tempoColor) + '">' + descTexto + '</div>' +
+          '<div class="abordar">' +
+            '<div class="abordar-head">' +
+              '<div class="v-stat-lbl">Leads p/ abordar</div>' +
+              '<div class="abordar-total"><b>' + fmt(total) + '</b> no total</div>' +
+            '</div>' +
+            '<div class="fontes">' +
+              fonteHTML('fonte-sf', 'ti-cloud', 'Salesforce', negocios, 'no pipe') +
+              fonteHTML('fonte-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab, ab === null ? 'sem sinal' : 'em Origens') +
+            '</div>' +
           '</div>' +
-          '<div class="sep"></div>' +
-          '<div class="v-stat">' +
+          '<div class="sep" style="height:48px;"></div>' +
+          '<div class="v-stat v-stat-tempo">' +
             '<div class="v-stat-lbl">Última atualização</div>' +
             '<div class="v-stat-val ' + (estado !== 'ok' ? tempoColor : '') + '" style="font-size:18px;">' + tempoStr(minutos) + '</div>' +
             '<div class="v-stat-desc ' + tempoColor + '">' + subtexto + '</div>' +
@@ -512,8 +584,33 @@
     set('v-leads-sp-mes',   num(d.sp));
     // Orgânico: traço, e não zero, quando a rota ainda não trouxer o campo —
     // num() transformaria ausência em 0, e zero na TV parece dado real.
-    set('v-organico-hoje',  typeof d.organicoHoje === 'number' ? d.organicoHoje : '—');
-    set('v-organico-mes',   typeof d.organicoMes  === 'number' ? d.organicoMes  : '—');
+    window._totais = d;
+    renderOrganico();
+  }
+  // Organicos = Salesforce (numero do Instagram, rota dashboard-totais) + Aspekto Business (origem
+  // "Organico"). Lado sem dado vira traco no detalhe; o total soma so o que chegou.
+  function renderOrganico() {
+    var d = window._totais || {};
+    var sfHoje = typeof d.organicoHoje === 'number' ? d.organicoHoje : null;
+    var sfMes  = typeof d.organicoMes  === 'number' ? d.organicoMes  : null;
+    var org = abVivo() && abDados.organico ? abDados.organico : null;
+    var abHoje = org && typeof org.hoje === 'number' ? org.hoje : null;
+    var abMes  = org && typeof org.mes  === 'number' ? org.mes  : null;
+    function soma(a, b) { return a === null && b === null ? '—' : (a || 0) + (b || 0); }
+    set('v-organico-hoje', soma(sfHoje, abHoje));
+    set('v-organico-mes',  soma(sfMes, abMes));
+    set('v-org-sf', sfHoje === null ? '—' : sfHoje);
+    set('v-org-ab', abHoje === null ? '—' : abHoje);
+  }
+  function loadAB() {
+    fetch(N8N_AB, { cache: 'no-store' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(json) {
+        if (json && Array.isArray(json.vendedores)) abDados = json;
+        renderOrganico();
+        if (window._lastRows) renderVendedores(window._lastRows);
+      })
+      .catch(function(e) { console.error('Erro loadAB:', e); });
   }
   function loadTotais() {
     fetch(N8N_TOTAIS, { cache: 'no-store' })
@@ -526,7 +623,9 @@
   loadMetaSP();
   loadMetaBH();
   loadTotais();
+  loadAB();
   setInterval(loadPipe,   10000);
+  setInterval(loadAB,     30000);
   setInterval(loadMetaSP, 120000);
   setInterval(loadMetaBH, 120000);
   setInterval(loadTotais, 120000);
