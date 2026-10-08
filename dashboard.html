@@ -110,6 +110,14 @@
     .placar-ab .placar-tag { color: #b8a6fb; }
     .placar-num { font-size: 60px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
     .placar-num.zero { color: #34414e; }
+    .placar.uma { grid-template-columns: 1fr; }
+    /* Tudo abordado: o placar vira um selo de "em dia" */
+    .em-dia { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+    .em-dia-icone { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                    background: rgba(74,222,128,0.08); border: 0.5px solid rgba(74,222,128,0.28); box-shadow: 0 0 28px rgba(74,222,128,0.10); }
+    .em-dia-icone i { font-size: 34px; color: #4ade80; }
+    .em-dia-txt { font-size: 18px; font-weight: 500; color: #d7f5e0; letter-spacing: -0.2px; }
+    .em-dia-sub { font-size: 11px; color: #5f8a6c; }
     .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
     .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
     .org-fonte i { font-size: 11px; }
@@ -428,11 +436,22 @@
       }
 
       var ab = abordarAB(nome);
-      var centroHTML =
-        '<div class="placar">' +
-          colunaHTML('placar-sf', 'ti-cloud', 'Salesforce', negocios) +
-          colunaHTML('placar-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab) +
-        '</div>';
+      // Fonte com 0 some e a outra fica no centro; as duas em 0 = tudo abordado. Sem dado (null,
+      // traco) nao e zero: continua aparecendo.
+      var colunas = [];
+      if (negocios !== 0) colunas.push(colunaHTML('placar-sf', 'ti-cloud', 'Salesforce', negocios));
+      if (ab !== 0) colunas.push(colunaHTML('placar-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab));
+      var emDia = !colunas.length;
+      var centroHTML = emDia
+        ? '<div class="em-dia">' +
+            '<div class="em-dia-icone"><i class="ti ti-check"></i></div>' +
+            '<div class="em-dia-txt">Tudo em dia</div>' +
+            '<div class="em-dia-sub">nenhum lead esperando abordagem</div>' +
+          '</div>'
+        : '<div class="placar' + (colunas.length === 1 ? ' uma' : '') + '">' + colunas.join('') + '</div>';
+      // Em dia e sem atraso, o selo "Atualizado" repetiria o centro: some.
+      var badgeHTML = (emDia && estado === 'ok') ? ''
+        : '<div class="v-badge ' + badgeClass + '"><i class="ti ' + badgeIcon + '"></i>' + badgeTexto + '</div>';
 
       var btnVerLeads = '';
       if (negocios > 0) {
@@ -450,7 +469,7 @@
           '</div>' +
           '<div style="display:flex;align-items:center;gap:6px;">' +
             btnVerLeads +
-            '<div class="v-badge ' + badgeClass + '"><i class="ti ' + badgeIcon + '"></i>' + badgeTexto + '</div>' +
+            badgeHTML +
           '</div>' +
         '</div>' +
         centroHTML;
