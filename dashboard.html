@@ -99,20 +99,17 @@
     .v-stat-desc { font-size: 10px; color: #5ba3c9; margin-top: 2px; }
     .sep { width: 0.5px; height: 32px; background: #1e2d3d; flex-shrink: 0; }
 
-    /* Placar do vendedor: Salesforce | total | Aspekto Business, numeros grandes no centro */
+    /* Placar do vendedor: Salesforce | Aspekto Business, so o nome da fonte e o numero */
     .vendedor { justify-content: flex-start; }
-    .placar { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; margin-top: 2px; }
-    .placar-col { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; min-width: 0; height: 100%; }
-    .placar-col + .placar-col { border-left: 0.5px solid rgba(255,255,255,0.08); }
-    .placar-tag { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
-    .placar-tag i { font-size: 13px; }
+    .placar { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+    .placar-col { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; min-width: 0; padding: 4px 0; }
+    .placar-col + .placar-col { border-left: 0.5px solid rgba(255,255,255,0.09); }
+    .placar-tag { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
+    .placar-tag i { font-size: 14px; }
     .placar-sf .placar-tag { color: #4fc3f7; }
     .placar-ab .placar-tag { color: #b8a6fb; }
-    .placar-total .placar-tag { color: #8b9aaa; }
-    .placar-num { font-size: 46px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
-    .placar-total .placar-num { font-size: 58px; letter-spacing: -2px; }
-    .placar-num.zero { color: #3d4b59; }
-    .placar-desc { font-size: 11px; color: #6e8394; white-space: nowrap; }
+    .placar-num { font-size: 60px; font-weight: 500; color: #e6edf3; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+    .placar-num.zero { color: #34414e; }
     .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
     .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
     .org-fonte i { font-size: 11px; }
@@ -367,11 +364,10 @@
     }
     return null;
   }
-  function colunaHTML(classe, icone, rotulo, valor, desc) {
+  function colunaHTML(classe, icone, rotulo, valor) {
     return '<div class="placar-col ' + classe + '">' +
-        '<div class="placar-tag">' + (icone ? '<i class="ti ' + icone + '"></i>' : '') + rotulo + '</div>' +
+        '<div class="placar-tag"><i class="ti ' + icone + '"></i>' + rotulo + '</div>' +
         '<div class="placar-num' + (valor === 0 ? ' zero' : '') + '">' + (valor === null ? '—' : fmt(valor)) + '</div>' +
-        '<div class="placar-desc">' + desc + '</div>' +
       '</div>';
   }
   // "2h 51min", "45 min": quanto tempo o lead mais antigo esta esperando.
@@ -432,12 +428,10 @@
       }
 
       var ab = abordarAB(nome);
-      var total = negocios + (ab || 0);
       var centroHTML =
         '<div class="placar">' +
-          colunaHTML('placar-sf', 'ti-cloud', 'Salesforce', negocios, 'no pipe') +
-          colunaHTML('placar-total', '', 'Total p/ abordar', ab === null ? negocios : total, total === 1 ? 'lead' : 'leads') +
-          colunaHTML('placar-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab, ab === null ? 'sem sinal' : 'em Origens') +
+          colunaHTML('placar-sf', 'ti-cloud', 'Salesforce', negocios) +
+          colunaHTML('placar-ab', 'ti-brand-whatsapp', 'Aspekto Business', ab) +
         '</div>';
 
       var btnVerLeads = '';
