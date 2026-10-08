@@ -303,10 +303,10 @@
   var N8N_META_SP        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-sp';
   var N8N_META_BH        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-bh';
   var N8N_TOTAIS         = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-totais';
-  // Aspekto Business (08/10/2026): o worker de la manda ao n8n, a cada mudanca (e a cada 5 min
-  // mesmo sem mudanca), os leads em Origens de Vendas por pessoa e os organicos do dia/mes.
-  var N8N_AB             = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-ab';
-  // Sem chegar nada do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
+  // Aspekto Business (08/10/2026): lido direto da API dele, sem n8n. Leads em Origens de Vendas
+  // por pessoa e organicos do dia/mes; o servidor guarda a resposta 30 s (api/src/tv.ts).
+  var AB_TERMOMETRO      = 'https://crm.aspekto.cloud/api/tv/termometro';
+  // Sem resposta boa do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
   var AB_VELHO_MS        = 15 * 60 * 1000;
 
   // ─── Mapa nome → email ───────────────────────────────────────────────────────
@@ -343,19 +343,32 @@
     var p = String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().split(/\s+/);
     return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : (p[0] || '');
   }
-  // Dado do Aspekto Business so vale se chegou ha menos de AB_VELHO_MS.
-  var abDados = null;
-  function abVivo() {
-    return !!(abDados && abDados.recebidoEm && (Date.now() - Date.parse(abDados.recebidoEm)) < AB_VELHO_MS);
-  }
-  // Leads em Origens do vendedor no Aspekto Business: pelo e-mail do EMAIL_MAP, senao pelo nome.
+  // A API nao manda e-mail: manda `chave`, os 16 primeiros hex do sha256 do e-mail minusculo.
+  // Aqui se calcula a mesma chave para cada e-mail do EMAIL_MAP (uma vez, na abertura).
+  var CHAVES = {};
+  (function () {
+    if (!window.crypto || !crypto.subtle) return;
+    Object.keys(EMAIL_MAP).forEach(function (nome) {
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(EMAIL_MAP[nome].trim().toLowerCase()))
+        .then(function (buf) {
+          CHAVES[nome] = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); })
+            .join('').slice(0, 16);
+          if (window._lastRows) renderVendedores(window._lastRows);
+        });
+    });
+  })();
+  // Dado do Aspekto Business so vale se a ultima resposta boa chegou ha menos de AB_VELHO_MS
+  // (hora deste navegador: o relogio da TV pode estar torto em relacao ao servidor).
+  var abDados = null, abChegouEm = 0;
+  function abVivo() { return !!abDados && (Date.now() - abChegouEm) < AB_VELHO_MS; }
+  // Leads em Origens do vendedor no Aspekto Business: pela chave do e-mail, senao pelo nome.
   // null = sem dado (traco); pessoa que nao esta no Aspekto Business tambem e traco.
   function abordarAB(nome) {
     if (!abVivo() || !Array.isArray(abDados.vendedores)) return null;
-    var email = (EMAIL_MAP[nome] || '').toLowerCase(), k = chaveNome(nome);
+    var chave = CHAVES[nome] || '', k = chaveNome(nome);
     for (var i = 0; i < abDados.vendedores.length; i++) {
       var v = abDados.vendedores[i];
-      if ((email && String(v.email || '').toLowerCase() === email) || chaveNome(v.nome) === k) return num(v.abordar);
+      if ((chave && v.chave === chave) || chaveNome(v.nome) === k) return num(v.abordar);
     }
     return null;
   }
@@ -383,6 +396,11 @@
     if (container._lastHash === novoHash) return;
     container._lastHash = novoHash;
     container.innerHTML = '';
+    // Grade pela quantidade: ate 6 em 3x2; 7 e 8 em 4x2; mais que isso em 3 linhas.
+    var n = rows.length;
+    var cols = n <= 6 ? 3 : n <= 8 ? 4 : Math.ceil(n / 3);
+    container.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+    container.style.gridTemplateRows = 'repeat(' + Math.max(2, Math.ceil(n / cols)) + ', minmax(0, 1fr))';
 
     rows.forEach(function(row) {
       var nome     = row['vendedor'] || '—';
@@ -603,14 +621,19 @@
     set('v-org-ab', abHoje === null ? '—' : abHoje);
   }
   function loadAB() {
-    fetch(N8N_AB, { cache: 'no-store' })
+    fetch(AB_TERMOMETRO, { cache: 'no-store' })
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(json) {
-        if (json && Array.isArray(json.vendedores)) abDados = json;
+        if (json && Array.isArray(json.vendedores)) { abDados = json; abChegouEm = Date.now(); }
         renderOrganico();
         if (window._lastRows) renderVendedores(window._lastRows);
       })
-      .catch(function(e) { console.error('Erro loadAB:', e); });
+      .catch(function(e) {
+        console.error('Erro loadAB:', e);
+        // Velho demais: repinta para o traco aparecer (sem isso o numero antigo ficaria na tela).
+        renderOrganico();
+        if (window._lastRows) renderVendedores(window._lastRows);
+      });
   }
   function loadTotais() {
     fetch(N8N_TOTAIS, { cache: 'no-store' })
