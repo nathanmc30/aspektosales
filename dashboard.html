@@ -118,6 +118,7 @@
     .em-dia-icone i { font-size: 34px; color: #4ade80; }
     .em-dia-txt { font-size: 18px; font-weight: 500; color: #d7f5e0; letter-spacing: -0.2px; }
     .em-dia-sub { font-size: 11px; color: #5f8a6c; }
+    .org-fontes[hidden] { display: none; }
     .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
     .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
     .org-fonte i { font-size: 11px; }
@@ -203,11 +204,19 @@
         <div class="lbl">Total Leads BH mês</div>
         <div class="val-num" id="v-leads-bh-mes">—</div>
         <div class="sub">leads captados em BH</div>
+        <div class="org-fontes" id="split-bh-mes" hidden>
+          <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-bh-mes-sf">—</b></span>
+          <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-bh-mes-form">—</b></span>
+        </div>
       </div>
       <div class="card">
         <div class="lbl">Total Leads SP mês</div>
         <div class="val-num" id="v-leads-sp-mes">—</div>
         <div class="sub">leads captados em SP</div>
+        <div class="org-fontes" id="split-sp-mes" hidden>
+          <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-sp-mes-sf">—</b></span>
+          <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-sp-mes-form">—</b></span>
+        </div>
       </div>
       <!-- Orgânico (número do Instagram) fica FORA da soma BH + SP de propósito -->
       <div class="card">
@@ -233,6 +242,10 @@
             <div class="ads-total-lbl">Total</div>
             <div class="ads-total-val" id="v-meta-total">—</div>
             <div class="ads-total-desc">gerados hoje</div>
+            <div class="org-fontes" id="split-meta-bh" hidden>
+              <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-meta-bh-sf">—</b></span>
+              <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-meta-bh-form">—</b></span>
+            </div>
           </div>
           <div class="ads-grid">
             <div class="ads-region">
@@ -263,6 +276,10 @@
             <div class="ads-total-lbl">Total</div>
             <div class="ads-total-val" id="v-meta-sp">—</div>
             <div class="ads-total-desc">gerados hoje</div>
+            <div class="org-fontes" id="split-meta-sp" hidden>
+              <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-meta-sp-sf">—</b></span>
+              <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-meta-sp-form">—</b></span>
+            </div>
           </div>
           <div class="ads-grid">
             <div class="ads-region">
@@ -304,7 +321,8 @@
   var N8N_META_BH        = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-meta-bh';
   var N8N_TOTAIS         = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-totais';
   // Aspekto Business (08/10/2026): lido direto da API dele, sem n8n. Leads em Origens de Vendas
-  // por pessoa e organicos do dia/mes; o servidor guarda a resposta 30 s (api/src/tv.ts).
+  // por pessoa, organicos do dia/mes e, desde 04/11/2026, os leads de formulario A/B por praca
+  // (campo formulario); o servidor guarda a resposta 30 s (api/src/tv.ts).
   var AB_TERMOMETRO      = 'https://crm.aspekto.cloud/api/tv/termometro';
   // Sem resposta boa do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
   var AB_VELHO_MS        = 15 * 60 * 1000;
@@ -361,6 +379,26 @@
   // (hora deste navegador: o relogio da TV pode estar torto em relacao ao servidor).
   var abDados = null, abChegouEm = 0;
   function abVivo() { return !!abDados && (Date.now() - abChegouEm) < AB_VELHO_MS; }
+  // Leads de formulario A/B que o worker mandou ao Aspekto Business (04/11/2026): somam com o
+  // Salesforce nos cards de BH e SP do mes e nos paineis de hoje. O worker so manda quem nao tem
+  // Lead no Salesforce, entao a soma quase nao conta ninguem duas vezes. Sem dado vivo, o card
+  // mostra so o Salesforce e o "Formulario" vira traco. A linha Salesforce | Formulario so aparece
+  // depois que a API mandou o campo pela primeira vez (antes da publicacao, a tela fica como era).
+  var formVisto = false;
+  function formAB() { return abVivo() && abDados.formulario ? abDados.formulario : null; }
+  function mostrarSplit(id, sf, form) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = !formVisto;
+    set(id + '-sf', sf);
+    set(id + '-form', form === null ? '—' : form);
+  }
+  // Repinta o que soma com o formulario quando a resposta do Aspekto Business chega ou envelhece.
+  function renderComFormulario() {
+    renderFaixa();
+    if (window._metaBH) renderMetaBH(window._metaBH);
+    if (window._metaSP) renderMetaSP(window._metaSP);
+  }
   // Leads em Origens do vendedor no Aspekto Business: pela chave do e-mail, senao pelo nome.
   // null = sem dado (traco); pessoa que nao esta no Aspekto Business tambem e traco.
   function abordarAB(nome) {
@@ -527,14 +565,22 @@
   // ─── Render métricas de leads ─────────────────────────────────────────────────
   // Meta BH: leads do dia pela fila de BH, direto do Salesforce (via n8n).
   // Região vem do DDD do telefone — 31 = BH, 32-38 = interior MG.
+  // Mais os leads de formulario A/B de BH de hoje (Aspekto Business), com a mesma regra de DDD.
   function renderMetaBH(d) {
-    set('v-meta-total',    d.total);
-    set('v-meta-bh',       d.bh);
-    set('v-meta-interior', d.interior);
-    set('v-meta-fora',     d.fora);
-    document.getElementById('pct-bh').textContent       = pct(d.bh,       d.total);
-    document.getElementById('pct-interior').textContent = pct(d.interior, d.total);
-    document.getElementById('pct-fora').textContent     = pct(d.fora,     d.total);
+    window._metaBH = d;
+    var f = formAB(), x = f && f.bh ? f.bh : null;
+    var total    = num(d.total)    + (x ? num(x.hoje)     : 0);
+    var bh       = num(d.bh)       + (x ? num(x.capital)  : 0);
+    var interior = num(d.interior) + (x ? num(x.interior) : 0);
+    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0);
+    set('v-meta-total',    total);
+    set('v-meta-bh',       bh);
+    set('v-meta-interior', interior);
+    set('v-meta-fora',     fora);
+    document.getElementById('pct-bh').textContent       = pct(bh,       total);
+    document.getElementById('pct-interior').textContent = pct(interior, total);
+    document.getElementById('pct-fora').textContent     = pct(fora,     total);
+    mostrarSplit('split-meta-bh', num(d.total), x ? num(x.hoje) : null);
   }
 
   // ─── Controle de loading ──────────────────────────────────────────────────────
@@ -561,14 +607,22 @@
   }
 
   // Meta SP direto do Clint (via n8n): leads do dia por região, DDD 11 = capital, 12-19 = interior SP
+  // Mais os leads de formulario A/B de SP de hoje (Aspekto Business), com a mesma regra de DDD.
   function renderMetaSP(d) {
-    set('v-meta-sp',      d.total);
-    set('v-meta-sp-cap',  d.capital);
-    set('v-meta-sp-int',  d.interior);
-    set('v-meta-sp-fora', d.fora);
-    document.getElementById('pct-sp-cap').textContent  = pct(d.capital,  d.total);
-    document.getElementById('pct-sp-int').textContent  = pct(d.interior, d.total);
-    document.getElementById('pct-sp-fora').textContent = pct(d.fora,     d.total);
+    window._metaSP = d;
+    var f = formAB(), x = f && f.sp ? f.sp : null;
+    var total    = num(d.total)    + (x ? num(x.hoje)     : 0);
+    var capital  = num(d.capital)  + (x ? num(x.capital)  : 0);
+    var interior = num(d.interior) + (x ? num(x.interior) : 0);
+    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0);
+    set('v-meta-sp',      total);
+    set('v-meta-sp-cap',  capital);
+    set('v-meta-sp-int',  interior);
+    set('v-meta-sp-fora', fora);
+    document.getElementById('pct-sp-cap').textContent  = pct(capital,  total);
+    document.getElementById('pct-sp-int').textContent  = pct(interior, total);
+    document.getElementById('pct-sp-fora').textContent = pct(fora,     total);
+    mostrarSplit('split-meta-sp', num(d.total), x ? num(x.hoje) : null);
   }
   function loadMetaSP() {
     fetch(N8N_META_SP, { cache: 'no-store' })
@@ -587,13 +641,25 @@
   // Faixa mensal: captacao do mes por praca, direto do Salesforce. O total ja
   // vem somado do n8n para o numero grande fechar com os dois cards do lado.
   function renderTotais(d) {
-    set('v-leads-mes',      num(d.total));
-    set('v-leads-bh-mes',   num(d.bh));
-    set('v-leads-sp-mes',   num(d.sp));
+    window._totais = d;
+    renderFaixa();
     // Orgânico: traço, e não zero, quando a rota ainda não trouxer o campo —
     // num() transformaria ausência em 0, e zero na TV parece dado real.
-    window._totais = d;
     renderOrganico();
+  }
+  // BH e SP do mes = Salesforce + leads de formulario A/B do Aspekto Business; o numero grande
+  // continua sendo a soma dos dois cards do lado.
+  function renderFaixa() {
+    var d = window._totais;
+    if (!d) return;
+    var f = formAB();
+    var fbh = f && f.bh ? num(f.bh.mes) : null;
+    var fsp = f && f.sp ? num(f.sp.mes) : null;
+    set('v-leads-mes',    num(d.total) + (fbh || 0) + (fsp || 0));
+    set('v-leads-bh-mes', num(d.bh) + (fbh || 0));
+    set('v-leads-sp-mes', num(d.sp) + (fsp || 0));
+    mostrarSplit('split-bh-mes', num(d.bh), fbh);
+    mostrarSplit('split-sp-mes', num(d.sp), fsp);
   }
   // Organicos = Salesforce (numero do Instagram, rota dashboard-totais) + Aspekto Business (origem
   // "Organico"). Lado sem dado vira traco no detalhe; o total soma so o que chegou.
@@ -615,13 +681,16 @@
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(json) {
         if (json && Array.isArray(json.vendedores)) { abDados = json; abChegouEm = Date.now(); }
+        if (abDados && abDados.formulario) formVisto = true;
         renderOrganico();
+        renderComFormulario();
         if (window._lastRows) renderVendedores(window._lastRows);
       })
       .catch(function(e) {
         console.error('Erro loadAB:', e);
         // Velho demais: repinta para o traco aparecer (sem isso o numero antigo ficaria na tela).
         renderOrganico();
+        renderComFormulario();
         if (window._lastRows) renderVendedores(window._lastRows);
       });
   }
