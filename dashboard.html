@@ -119,6 +119,7 @@
     .em-dia-txt { font-size: 18px; font-weight: 500; color: #d7f5e0; letter-spacing: -0.2px; }
     .em-dia-sub { font-size: 11px; color: #5f8a6c; }
     .org-fontes[hidden] { display: none; }
+    .org-fonte[hidden] { display: none; }
     .org-fontes { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: #6e8394; white-space: nowrap; }
     .org-fonte { display: inline-flex; align-items: center; gap: 4px; }
     .org-fonte i { font-size: 11px; }
@@ -207,6 +208,7 @@
         <div class="org-fontes" id="split-bh-mes" hidden>
           <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-bh-mes-sf">—</b></span>
           <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-bh-mes-form">—</b></span>
+          <span class="org-fonte" id="split-bh-mes-anu-w" hidden><i class="ti ti-speakerphone"></i>Anúncios <b id="split-bh-mes-anu">—</b></span>
         </div>
       </div>
       <div class="card">
@@ -216,6 +218,7 @@
         <div class="org-fontes" id="split-sp-mes" hidden>
           <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-sp-mes-sf">—</b></span>
           <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-sp-mes-form">—</b></span>
+          <span class="org-fonte" id="split-sp-mes-anu-w" hidden><i class="ti ti-speakerphone"></i>Anúncios <b id="split-sp-mes-anu">—</b></span>
         </div>
       </div>
       <!-- Orgânico (número do Instagram) fica FORA da soma BH + SP de propósito -->
@@ -245,6 +248,7 @@
             <div class="org-fontes" id="split-meta-bh" hidden>
               <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-meta-bh-sf">—</b></span>
               <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-meta-bh-form">—</b></span>
+              <span class="org-fonte" id="split-meta-bh-anu-w" hidden><i class="ti ti-speakerphone"></i>Anúncios <b id="split-meta-bh-anu">—</b></span>
             </div>
           </div>
           <div class="ads-grid">
@@ -279,6 +283,7 @@
             <div class="org-fontes" id="split-meta-sp" hidden>
               <span class="org-fonte"><i class="ti ti-cloud"></i>Salesforce <b id="split-meta-sp-sf">—</b></span>
               <span class="org-fonte"><i class="ti ti-forms"></i>Formulário <b id="split-meta-sp-form">—</b></span>
+              <span class="org-fonte" id="split-meta-sp-anu-w" hidden><i class="ti ti-speakerphone"></i>Anúncios <b id="split-meta-sp-anu">—</b></span>
             </div>
           </div>
           <div class="ads-grid">
@@ -322,7 +327,8 @@
   var N8N_TOTAIS         = 'https://n8n-ai.grupoaspekto.com/webhook/dashboard-totais';
   // Aspekto Business (08/10/2026): lido direto da API dele, sem n8n. Leads em Origens de Vendas
   // por pessoa, organicos do dia/mes e, desde 04/11/2026, os leads de formulario A/B por praca
-  // (campo formulario); o servidor guarda a resposta 30 s (api/src/tv.ts).
+  // (campo formulario) e, desde 10/11/2026, os leads novos da origem "Anuncios SP CRM" (campo anuncios);
+  // o servidor guarda a resposta 30 s (api/src/tv.ts).
   var AB_TERMOMETRO      = 'https://crm.aspekto.cloud/api/tv/termometro';
   // Sem resposta boa do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
   var AB_VELHO_MS        = 15 * 60 * 1000;
@@ -386,12 +392,19 @@
   // depois que a API mandou o campo pela primeira vez (antes da publicacao, a tela fica como era).
   var formVisto = false;
   function formAB() { return abVivo() && abDados.formulario ? abDados.formulario : null; }
-  function mostrarSplit(id, sf, form) {
+  // Leads novos da origem "Anuncios SP CRM" (o numero da API oficial no Aspekto Business, pedido do
+  // Nathan de 10/11/2026): somam na praca como o formulario. A API manda null na praca sem essa
+  // origem, e ai a fonte "Anuncios" nem aparece; com a origem e o Aspekto Business fora, vira traco.
+  var anuVisto = { bh: false, sp: false };
+  function anuDe(praca) { return abVivo() && abDados.anuncios && abDados.anuncios[praca] ? abDados.anuncios[praca] : null; }
+  function mostrarSplit(id, sf, form, praca, anu) {
     var el = document.getElementById(id);
     if (!el) return;
     el.hidden = !formVisto;
     set(id + '-sf', sf);
     set(id + '-form', form === null ? '—' : form);
+    var w = document.getElementById(id + '-anu-w');
+    if (w) { w.hidden = !anuVisto[praca]; set(id + '-anu', anu === null ? '—' : anu); }
   }
   // Repinta o que soma com o formulario quando a resposta do Aspekto Business chega ou envelhece.
   function renderComFormulario() {
@@ -568,11 +581,11 @@
   // Mais os leads de formulario A/B de BH de hoje (Aspekto Business), com a mesma regra de DDD.
   function renderMetaBH(d) {
     window._metaBH = d;
-    var f = formAB(), x = f && f.bh ? f.bh : null;
-    var total    = num(d.total)    + (x ? num(x.hoje)     : 0);
-    var bh       = num(d.bh)       + (x ? num(x.capital)  : 0);
-    var interior = num(d.interior) + (x ? num(x.interior) : 0);
-    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0);
+    var f = formAB(), x = f && f.bh ? f.bh : null, a = anuDe('bh');
+    var total    = num(d.total)    + (x ? num(x.hoje)     : 0) + (a ? num(a.hoje)     : 0);
+    var bh       = num(d.bh)       + (x ? num(x.capital)  : 0) + (a ? num(a.capital)  : 0);
+    var interior = num(d.interior) + (x ? num(x.interior) : 0) + (a ? num(a.interior) : 0);
+    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0) + (a ? num(a.fora)     : 0);
     set('v-meta-total',    total);
     set('v-meta-bh',       bh);
     set('v-meta-interior', interior);
@@ -580,7 +593,7 @@
     document.getElementById('pct-bh').textContent       = pct(bh,       total);
     document.getElementById('pct-interior').textContent = pct(interior, total);
     document.getElementById('pct-fora').textContent     = pct(fora,     total);
-    mostrarSplit('split-meta-bh', num(d.total), x ? num(x.hoje) : null);
+    mostrarSplit('split-meta-bh', num(d.total), x ? num(x.hoje) : null, 'bh', a ? num(a.hoje) : null);
   }
 
   // ─── Controle de loading ──────────────────────────────────────────────────────
@@ -610,11 +623,11 @@
   // Mais os leads de formulario A/B de SP de hoje (Aspekto Business), com a mesma regra de DDD.
   function renderMetaSP(d) {
     window._metaSP = d;
-    var f = formAB(), x = f && f.sp ? f.sp : null;
-    var total    = num(d.total)    + (x ? num(x.hoje)     : 0);
-    var capital  = num(d.capital)  + (x ? num(x.capital)  : 0);
-    var interior = num(d.interior) + (x ? num(x.interior) : 0);
-    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0);
+    var f = formAB(), x = f && f.sp ? f.sp : null, a = anuDe('sp');
+    var total    = num(d.total)    + (x ? num(x.hoje)     : 0) + (a ? num(a.hoje)     : 0);
+    var capital  = num(d.capital)  + (x ? num(x.capital)  : 0) + (a ? num(a.capital)  : 0);
+    var interior = num(d.interior) + (x ? num(x.interior) : 0) + (a ? num(a.interior) : 0);
+    var fora     = num(d.fora)     + (x ? num(x.fora)     : 0) + (a ? num(a.fora)     : 0);
     set('v-meta-sp',      total);
     set('v-meta-sp-cap',  capital);
     set('v-meta-sp-int',  interior);
@@ -622,7 +635,7 @@
     document.getElementById('pct-sp-cap').textContent  = pct(capital,  total);
     document.getElementById('pct-sp-int').textContent  = pct(interior, total);
     document.getElementById('pct-sp-fora').textContent = pct(fora,     total);
-    mostrarSplit('split-meta-sp', num(d.total), x ? num(x.hoje) : null);
+    mostrarSplit('split-meta-sp', num(d.total), x ? num(x.hoje) : null, 'sp', a ? num(a.hoje) : null);
   }
   function loadMetaSP() {
     fetch(N8N_META_SP, { cache: 'no-store' })
@@ -647,19 +660,21 @@
     // num() transformaria ausência em 0, e zero na TV parece dado real.
     renderOrganico();
   }
-  // BH e SP do mes = Salesforce + leads de formulario A/B do Aspekto Business; o numero grande
-  // continua sendo a soma dos dois cards do lado.
+  // BH e SP do mes = Salesforce + leads de formulario A/B + leads da origem "Anuncios" do Aspekto
+  // Business; o numero grande continua sendo a soma dos dois cards do lado.
   function renderFaixa() {
     var d = window._totais;
     if (!d) return;
     var f = formAB();
     var fbh = f && f.bh ? num(f.bh.mes) : null;
     var fsp = f && f.sp ? num(f.sp.mes) : null;
-    set('v-leads-mes',    num(d.total) + (fbh || 0) + (fsp || 0));
-    set('v-leads-bh-mes', num(d.bh) + (fbh || 0));
-    set('v-leads-sp-mes', num(d.sp) + (fsp || 0));
-    mostrarSplit('split-bh-mes', num(d.bh), fbh);
-    mostrarSplit('split-sp-mes', num(d.sp), fsp);
+    var abh = anuDe('bh') ? num(anuDe('bh').mes) : null;
+    var asp = anuDe('sp') ? num(anuDe('sp').mes) : null;
+    set('v-leads-mes',    num(d.total) + (fbh || 0) + (fsp || 0) + (abh || 0) + (asp || 0));
+    set('v-leads-bh-mes', num(d.bh) + (fbh || 0) + (abh || 0));
+    set('v-leads-sp-mes', num(d.sp) + (fsp || 0) + (asp || 0));
+    mostrarSplit('split-bh-mes', num(d.bh), fbh, 'bh', abh);
+    mostrarSplit('split-sp-mes', num(d.sp), fsp, 'sp', asp);
   }
   // Organicos = Salesforce (numero do Instagram, rota dashboard-totais) + Aspekto Business (origem
   // "Organico"). Lado sem dado vira traco no detalhe; o total soma so o que chegou.
@@ -682,6 +697,7 @@
       .then(function(json) {
         if (json && Array.isArray(json.vendedores)) { abDados = json; abChegouEm = Date.now(); }
         if (abDados && abDados.formulario) formVisto = true;
+        if (abDados && abDados.anuncios) { anuVisto.bh = !!abDados.anuncios.bh; anuVisto.sp = !!abDados.anuncios.sp; }
         renderOrganico();
         renderComFormulario();
         if (window._lastRows) renderVendedores(window._lastRows);
