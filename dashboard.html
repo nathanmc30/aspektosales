@@ -328,7 +328,8 @@
   // Aspekto Business (08/10/2026): lido direto da API dele, sem n8n. Leads em Origens de Vendas
   // por pessoa, organicos do dia/mes e, desde 04/11/2026, os leads de formulario A/B por praca
   // (campo formulario) e, desde 10/11/2026, os leads novos da origem "Anuncios SP CRM" (campo anuncios);
-  // o servidor guarda a resposta 30 s (api/src/tv.ts).
+  // o servidor refaz a contagem quando o CRM avisa mudanca, no maximo a cada 5 s, e a TV pede a cada
+  // 5 s (18/11/2026: quase na hora; sem aviso, a resposta vale 30 s; api/src/tv.ts).
   var AB_TERMOMETRO      = 'https://crm.aspekto.cloud/api/tv/termometro';
   // Sem resposta boa do Aspekto Business ha mais que isto, o lado dele vira traco (nunca zero).
   var AB_VELHO_MS        = 15 * 60 * 1000;
@@ -723,7 +724,7 @@
   loadTotais();
   loadAB();
   setInterval(loadPipe,   10000);
-  setInterval(loadAB,     30000);
+  setInterval(loadAB,     5000);
   setInterval(loadMetaSP, 120000);
   setInterval(loadMetaBH, 120000);
   setInterval(loadTotais, 120000);
